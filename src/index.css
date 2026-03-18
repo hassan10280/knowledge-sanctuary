@@ -4,60 +4,67 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 210 18% 20%;
+    --background: 210 20% 98%;
+    --foreground: 215 25% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 18% 20%;
+    --card-foreground: 215 25% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 18% 20%;
+    --popover-foreground: 215 25% 18%;
 
-    --primary: 207 55% 48%;
+    --primary: 207 58% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 207 25% 95%;
-    --secondary-foreground: 210 18% 20%;
+    --secondary: 207 20% 94%;
+    --secondary-foreground: 215 25% 18%;
 
-    --muted: 210 12% 95%;
-    --muted-foreground: 210 8% 50%;
+    --muted: 210 14% 94%;
+    --muted-foreground: 210 10% 48%;
 
-    --accent: 207 65% 42%;
+    --accent: 207 68% 38%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 210 12% 91%;
-    --input: 210 12% 91%;
-    --ring: 207 55% 48%;
+    --border: 210 14% 89%;
+    --input: 210 14% 89%;
+    --ring: 207 58% 45%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 207 55% 48%;
+    --sidebar-background: 207 58% 45%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 207 65% 42%;
+    --sidebar-primary: 207 68% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 207 50% 55%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 207 45% 60%;
-    --sidebar-ring: 207 65% 42%;
+    --sidebar-ring: 207 68% 38%;
 
     /* Custom tokens */
-    --sky: 207 55% 48%;
-    --sky-deep: 207 65% 38%;
-    --sky-light: 207 45% 78%;
-    --sky-pale: 207 30% 95%;
-    --coral: 0 72% 55%;
-    --mint: 160 40% 45%;
-    --sand: 40 15% 97%;
-    --sand-dark: 40 10% 94%;
+    --sky: 207 58% 45%;
+    --sky-deep: 207 68% 32%;
+    --sky-light: 207 50% 75%;
+    --sky-pale: 207 35% 95%;
+    --sky-glow: 207 80% 60%;
+    --coral: 4 78% 58%;
+    --coral-light: 4 80% 68%;
+    --mint: 162 45% 42%;
+    --mint-light: 162 40% 88%;
+    --gold: 42 80% 55%;
+    --gold-light: 42 75% 90%;
+    --sand: 38 25% 96%;
+    --sand-dark: 38 18% 92%;
 
     --font-serif: 'Instrument Serif', Georgia, serif;
     --font-sans: 'Geist', system-ui, sans-serif;
 
-    --shadow-book: 0 20px 40px -15px hsla(207, 62%, 40%, 0.15);
-    --shadow-card: 0 4px 20px -4px hsla(207, 62%, 40%, 0.08);
+    --shadow-book: 0 25px 50px -15px hsla(207, 60%, 30%, 0.2);
+    --shadow-card: 0 4px 24px -4px hsla(207, 60%, 30%, 0.08);
+    --shadow-card-hover: 0 12px 40px -8px hsla(207, 60%, 30%, 0.15);
+    --shadow-glow: 0 0 60px -10px hsla(207, 80%, 50%, 0.3);
   }
 
   .dark {
@@ -67,19 +74,19 @@
     --card-foreground: 210 15% 92%;
     --popover: 210 22% 11%;
     --popover-foreground: 210 15% 92%;
-    --primary: 207 62% 68%;
+    --primary: 207 62% 60%;
     --primary-foreground: 210 25% 8%;
     --secondary: 210 20% 16%;
     --secondary-foreground: 210 15% 92%;
     --muted: 210 20% 16%;
     --muted-foreground: 210 10% 60%;
-    --accent: 207 72% 58%;
+    --accent: 207 72% 50%;
     --accent-foreground: 210 25% 8%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 210 18% 20%;
     --input: 210 18% 20%;
-    --ring: 207 62% 68%;
+    --ring: 207 62% 60%;
   }
 }
 
@@ -158,9 +165,32 @@
     box-shadow: var(--shadow-card);
   }
 
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
   .tracking-meta {
     letter-spacing: 0.15em;
     text-transform: uppercase;
     font-size: 0.75rem;
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, hsl(207, 68%, 32%) 0%, hsl(207, 58%, 45%) 40%, hsl(207, 80%, 60%) 100%);
+  }
+
+  .gradient-section {
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--sand)) 100%);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--sky-deep)) 0%, hsl(var(--sky-glow)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

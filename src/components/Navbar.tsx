@@ -16,7 +16,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-18">
           <Link to="/" className="flex items-center gap-2">
@@ -28,18 +28,19 @@ const Navbar = () => {
               <Link
                 key={link.label}
                 to={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-300"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-300 relative group"
               >
                 {link.label}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary rounded-full group-hover:w-full transition-all duration-300" />
               </Link>
             ))}
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+            <button className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all duration-200">
               <Search className="h-5 w-5" />
             </button>
-            <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-accent transition-colors duration-300">
+            <button className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:shadow-lg hover:shadow-primary/25 transition-all duration-300">
               <User className="h-4 w-4" />
               Sign In
             </button>
@@ -59,7 +60,7 @@ const Navbar = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-border bg-background"
+            className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl"
           >
             <div className="px-6 py-4 space-y-3">
               {navLinks.map((link) => (
@@ -72,7 +73,7 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-md">
+              <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-lg">
                 <User className="h-4 w-4" />
                 Sign In
               </button>
