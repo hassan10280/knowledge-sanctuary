@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Menu, X, BookOpen, User } from "lucide-react";
+import { Search, Menu, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import logo from "@/assets/logo.jpg";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -18,33 +19,27 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <span className="font-serif text-xl text-foreground">
-              Bayt al-Hikma
-            </span>
+            <img src={logo} alt="MadrasahMatters" className="h-9 w-auto" />
           </Link>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 to={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-300"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-3">
             <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Search className="h-5 w-5" />
             </button>
-            <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-emerald-darker transition-colors duration-300">
+            <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-accent transition-colors duration-300">
               <User className="h-4 w-4" />
               Sign In
             </button>
@@ -58,7 +53,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
