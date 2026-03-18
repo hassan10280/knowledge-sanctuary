@@ -56,9 +56,20 @@ export default {
           deep: "hsl(var(--sky-deep))",
           light: "hsl(var(--sky-light))",
           pale: "hsl(var(--sky-pale))",
+          glow: "hsl(var(--sky-glow))",
         },
-        coral: "hsl(var(--coral))",
-        mint: "hsl(var(--mint))",
+        coral: {
+          DEFAULT: "hsl(var(--coral))",
+          light: "hsl(var(--coral-light))",
+        },
+        mint: {
+          DEFAULT: "hsl(var(--mint))",
+          light: "hsl(var(--mint-light))",
+        },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          light: "hsl(var(--gold-light))",
+        },
         sand: {
           DEFAULT: "hsl(var(--sand))",
           dark: "hsl(var(--sand-dark))",
