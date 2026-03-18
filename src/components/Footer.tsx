@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="md:col-span-1">
-            <img src={logo} alt="MadrasahMatters" className="h-10 w-auto mb-4 brightness-0 invert" />
+            <img src={logo} alt="MadrasahMatters" className="h-14 w-auto mb-4 brightness-0 invert" />
             <p className="text-sm text-primary-foreground/60 leading-relaxed">
               A curated digital sanctuary of Islamic scholarship for the UK community.
             </p>
