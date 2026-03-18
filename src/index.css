@@ -4,54 +4,54 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 210 20% 15%;
+    --background: 0 0% 100%;
+    --foreground: 210 18% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card-foreground: 210 18% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover-foreground: 210 18% 20%;
 
-    --primary: 207 62% 68%;
+    --primary: 207 55% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 207 30% 93%;
-    --secondary-foreground: 210 20% 15%;
+    --secondary: 207 25% 95%;
+    --secondary-foreground: 210 18% 20%;
 
-    --muted: 210 15% 94%;
-    --muted-foreground: 210 10% 45%;
+    --muted: 210 12% 95%;
+    --muted-foreground: 210 8% 50%;
 
-    --accent: 207 72% 58%;
+    --accent: 207 65% 42%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 210 15% 90%;
-    --input: 210 15% 90%;
-    --ring: 207 62% 68%;
+    --border: 210 12% 91%;
+    --input: 210 12% 91%;
+    --ring: 207 55% 48%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 207 62% 68%;
+    --sidebar-background: 207 55% 48%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 207 72% 50%;
+    --sidebar-primary: 207 65% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 55% 60%;
+    --sidebar-accent: 207 50% 55%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 207 50% 75%;
-    --sidebar-ring: 207 72% 50%;
+    --sidebar-border: 207 45% 60%;
+    --sidebar-ring: 207 65% 42%;
 
     /* Custom tokens */
-    --sky: 207 62% 68%;
-    --sky-deep: 207 72% 50%;
-    --sky-light: 207 60% 85%;
-    --sky-pale: 207 50% 95%;
-    --coral: 16 80% 60%;
-    --mint: 160 40% 50%;
-    --sand: 40 20% 96%;
-    --sand-dark: 40 15% 92%;
+    --sky: 207 55% 48%;
+    --sky-deep: 207 65% 38%;
+    --sky-light: 207 45% 78%;
+    --sky-pale: 207 30% 95%;
+    --coral: 0 72% 55%;
+    --mint: 160 40% 45%;
+    --sand: 40 15% 97%;
+    --sand-dark: 40 10% 94%;
 
     --font-serif: 'Instrument Serif', Georgia, serif;
     --font-sans: 'Geist', system-ui, sans-serif;

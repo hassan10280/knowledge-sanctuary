@@ -25,7 +25,7 @@ const HeroSection = () => {
           className="font-serif text-5xl sm:text-6xl lg:text-7xl text-primary-foreground leading-[1.1] mb-8"
         >
           Explore the Treasures{" "}
-          <em className="text-foreground">of Knowledge</em>
+          <em className="text-white/80">of Knowledge</em>
         </motion.h1>
 
         <motion.p
