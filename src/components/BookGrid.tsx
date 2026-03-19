@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, ChevronRight, Star, ShoppingBag } from "lucide-react";
+import { BookOpen, ChevronRight, Star, Eye } from "lucide-react";
 import { useBooks, useCategories } from "@/hooks/useBooks";
+import BookDetailModal from "./BookDetailModal";
 
-const BookCard = ({ book, index }: { book: any; index: number }) => {
+const BookCard = ({ book, index, onViewDetails }: { book: any; index: number; onViewDetails: (book: any) => void }) => {
   const coverAccent = book.cover_color ? book.cover_color + "cc" : "#2980b9";
   return (
     <motion.div
@@ -11,6 +13,7 @@ const BookCard = ({ book, index }: { book: any; index: number }) => {
       viewport={{ once: true }}
       transition={{ duration: 0.45, delay: index * 0.06, ease: [0.2, 0.8, 0.2, 1] }}
       className="group cursor-pointer"
+      onClick={() => onViewDetails(book)}
     >
       <div className="relative">
         {book.discount_percent > 0 && (
@@ -39,7 +42,7 @@ const BookCard = ({ book, index }: { book: any; index: number }) => {
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 flex items-center justify-center">
             <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-3 group-hover:translate-y-0">
               <button className="px-5 py-2.5 bg-white text-foreground text-xs font-semibold rounded-lg shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5">
-                <ShoppingBag className="h-3.5 w-3.5" />
+                <Eye className="h-3.5 w-3.5" />
                 View Details
               </button>
             </div>
@@ -69,6 +72,7 @@ const BookCard = ({ book, index }: { book: any; index: number }) => {
 const BookGrid = () => {
   const { data: books, isLoading: booksLoading } = useBooks();
   const { data: categories, isLoading: catsLoading } = useCategories();
+  const [selectedBook, setSelectedBook] = useState<any>(null);
 
   if (booksLoading || catsLoading) {
     return (
@@ -97,17 +101,17 @@ const BookGrid = () => {
             >
               <div>
                 <p className="text-xs font-medium tracking-widest uppercase text-primary mb-1.5">{category.name}</p>
-                <h2 className="font-serif text-3xl sm:text-4xl text-foreground">{category.name_bn || category.name}</h2>
+                <h2 className="font-serif text-3xl sm:text-4xl text-foreground">{category.name}</h2>
               </div>
               <button className="flex items-center gap-1 text-sm text-primary hover:text-accent transition-colors font-medium group/btn">
-                সব দেখুন
+                View All
                 <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
               </button>
             </motion.div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
               {category.books.map((book: any, i: number) => (
-                <BookCard key={book.id} book={book} index={i} />
+                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} />
               ))}
             </div>
           </div>
@@ -127,6 +131,12 @@ const BookGrid = () => {
           </button>
         </motion.div>
       </div>
+
+      <BookDetailModal
+        book={selectedBook}
+        open={!!selectedBook}
+        onOpenChange={(open) => { if (!open) setSelectedBook(null); }}
+      />
     </section>
   );
 };
