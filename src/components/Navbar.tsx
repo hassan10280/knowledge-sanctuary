@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, X, User, LogOut, Shield } from "lucide-react";
+import { Search, Menu, X, User, LogOut, Shield, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/contexts/CartContext";
 import logoWhite from "@/assets/logo-white.png";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { data: settings } = useSiteSettings("header");
   const { user, isAdmin, loading, signOut } = useAuth();
+  const { totalItems } = useCart();
   const navigate = useNavigate();
 
   const get = (key: string, fallback: any) => {
@@ -63,6 +65,16 @@ const Navbar = () => {
             <button className="p-2 text-white/80 hover:text-white transition-colors duration-200">
               <Search className="h-5 w-5" />
             </button>
+
+            {/* Cart icon */}
+            <Link to="/cart" className="relative p-2 text-white/80 hover:text-white transition-colors duration-200">
+              <ShoppingCart className="h-5 w-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[hsl(var(--coral))] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
 
             {!loading && (
               <>
