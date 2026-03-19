@@ -200,6 +200,9 @@ const Admin = () => {
             <TabsTrigger value="footer" className="text-xs sm:text-sm gap-1.5">
               <Layout className="h-3.5 w-3.5" /> Footer
             </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm gap-1.5">
+              <Users className="h-3.5 w-3.5" /> Users
+            </TabsTrigger>
           </TabsList>
 
           {/* HEADER TAB */}
