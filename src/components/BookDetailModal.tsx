@@ -1,8 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ShoppingCart, Star, Check } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { BookOpen, ShoppingCart, Star, Check, ArrowRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface BookDetailModalProps {
@@ -13,6 +15,7 @@ interface BookDetailModalProps {
 
 const BookDetailModal = ({ book, open, onOpenChange }: BookDetailModalProps) => {
   const { addItem, items } = useCart();
+  const navigate = useNavigate();
   const [justAdded, setJustAdded] = useState(false);
   const isInCart = items.some((i) => i.id === book?.id);
 
@@ -30,14 +33,19 @@ const BookDetailModal = ({ book, open, onOpenChange }: BookDetailModalProps) => 
     setTimeout(() => setJustAdded(false), 2000);
   };
 
+  const handleGoToCart = () => {
+    onOpenChange(false);
+    navigate("/cart");
+  };
+
   const coverAccent = book.cover_color ? book.cover_color + "cc" : "#2980b9";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-hidden p-0 gap-0 flex flex-col">
         {/* Header gradient */}
         <div
-          className="p-6 sm:p-8 text-center relative overflow-hidden"
+          className="p-6 sm:p-8 text-center relative overflow-hidden shrink-0"
           style={{ background: `linear-gradient(145deg, ${book.cover_color || "#1a5276"} 0%, ${coverAccent} 100%)` }}
         >
           <div className="absolute inset-0 opacity-[0.06]" style={{
@@ -53,72 +61,86 @@ const BookDetailModal = ({ book, open, onOpenChange }: BookDetailModalProps) => 
           </div>
         </div>
 
-        <div className="p-6 sm:p-8 space-y-6">
-          <DialogHeader className="space-y-1 p-0">
-            <DialogDescription className="text-sm text-primary font-medium italic">
-              Take a moment to explore this book
-            </DialogDescription>
-            <DialogTitle className="sr-only">{book.title}</DialogTitle>
-          </DialogHeader>
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <ScrollArea className="flex-1">
+            <div className="p-6 sm:p-8 space-y-6">
+              <DialogHeader className="space-y-1 p-0">
+                <DialogDescription className="text-sm text-primary font-medium italic">
+                  Take a moment to explore this book
+                </DialogDescription>
+                <DialogTitle className="sr-only">{book.title}</DialogTitle>
+              </DialogHeader>
 
-          {/* Rating & Price */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {book.rating && (
-                <>
-                  <Star className="h-4 w-4 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
-                  <span className="text-sm font-semibold text-foreground">{book.rating} / 5</span>
-                </>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">£{Number(book.price).toFixed(2)}</span>
-              {book.original_price && (
-                <span className="text-sm text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
-              )}
-            </div>
-          </div>
+              {/* Rating & Price */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {book.rating && (
+                    <>
+                      <Star className="h-4 w-4 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
+                      <span className="text-sm font-semibold text-foreground">{book.rating} / 5</span>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-primary">£{Number(book.price).toFixed(2)}</span>
+                  {book.original_price && (
+                    <span className="text-sm text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
+                  )}
+                </div>
+              </div>
 
-          {/* Description */}
-          {book.description && (
-            <div>
-              <h4 className="text-sm font-semibold text-foreground mb-2">Description</h4>
-              <p className="text-sm text-muted-foreground leading-relaxed">{book.description}</p>
-            </div>
-          )}
-
-          {!book.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              A carefully curated addition to our collection by {book.author}. This book covers essential topics in {book.category} and is recommended for readers of all levels.
-            </p>
-          )}
-
-          {/* Discount badge */}
-          {book.discount_percent > 0 && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[hsl(var(--coral))]/10 text-[hsl(var(--coral))] rounded-full text-xs font-semibold">
-              {book.discount_percent}% OFF — Limited Time
-            </div>
-          )}
-
-          {/* Add to Cart */}
-          <Button
-            onClick={handleAddToCart}
-            className="w-full h-12 text-base font-semibold gap-2 bg-gradient-to-r from-primary to-accent hover:shadow-lg transition-all duration-300"
-          >
-            <AnimatePresence mode="wait">
-              {justAdded || isInCart ? (
-                <motion.span key="added" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
-                  <Check className="h-5 w-5" />
-                  {justAdded ? "Added to Cart!" : "Add Another"}
-                </motion.span>
+              {/* Description with scrollable area */}
+              {book.description ? (
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Description</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{book.description}</p>
+                </div>
               ) : (
-                <motion.span key="add" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  Add to Cart
-                </motion.span>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  A carefully curated addition to our collection by {book.author}. This book covers essential topics in {book.category} and is recommended for readers of all levels.
+                </p>
               )}
-            </AnimatePresence>
-          </Button>
+
+              {/* Discount badge */}
+              {book.discount_percent > 0 && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[hsl(var(--coral))]/10 text-[hsl(var(--coral))] rounded-full text-xs font-semibold">
+                  {book.discount_percent}% OFF — Limited Time
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Add to Cart / Go to Cart - sticky at bottom */}
+          <div className="p-6 sm:p-8 pt-0 shrink-0">
+            {isInCart && !justAdded ? (
+              <Button
+                onClick={handleGoToCart}
+                className="w-full h-12 text-base font-semibold gap-2 bg-[hsl(var(--mint))] hover:bg-[hsl(var(--mint))]/90 text-white transition-all duration-300"
+              >
+                <ArrowRight className="h-5 w-5" />
+                Go to Cart
+              </Button>
+            ) : (
+              <Button
+                onClick={handleAddToCart}
+                className="w-full h-12 text-base font-semibold gap-2 bg-gradient-to-r from-primary to-accent hover:shadow-lg transition-all duration-300"
+              >
+                <AnimatePresence mode="wait">
+                  {justAdded ? (
+                    <motion.span key="added" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
+                      <Check className="h-5 w-5" />
+                      Added to Cart!
+                    </motion.span>
+                  ) : (
+                    <motion.span key="add" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5" />
+                      Add to Cart
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
