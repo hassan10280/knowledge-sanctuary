@@ -5,7 +5,7 @@ import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategory, useDeleteCategory } from "@/hooks/useBooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Image, Menu, Users, Shield, ShieldOff } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,28 +46,13 @@ const Admin = () => {
     }
   }, [settings]);
 
-  const getSetting = (section: string, key: string) => {
-    return localSettings[section]?.[key] ?? "";
-  };
+  const getSetting = (section: string, key: string) => localSettings[section]?.[key] ?? "";
 
   const setSetting = (section: string, key: string, value: any) => {
     setLocalSettings((prev) => ({
       ...prev,
       [section]: { ...prev[section], [key]: value },
     }));
-  };
-
-  const saveSetting = async (section: string, key: string) => {
-    try {
-      await updateSetting.mutateAsync({
-        section,
-        key,
-        value: localSettings[section]?.[key],
-      });
-      toast.success("Saved!");
-    } catch (e: any) {
-      toast.error(e.message);
-    }
   };
 
   const saveAllSection = async (section: string) => {
@@ -88,13 +73,21 @@ const Admin = () => {
     if (!file) return;
     const path = `logos/${Date.now()}-${file.name}`;
     const { error } = await supabase.storage.from("site-assets").upload(path, file);
-    if (error) {
-      toast.error("Upload failed: " + error.message);
-      return;
-    }
+    if (error) { toast.error("Upload failed: " + error.message); return; }
     const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(path);
     await updateSetting.mutateAsync({ section: "header", key: "logo_url", value: urlData.publicUrl });
     toast.success("Logo uploaded!");
+  };
+
+  const handleSampleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingBook) return;
+    const path = `samples/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("site-assets").upload(path, file);
+    if (error) { toast.error("Upload failed: " + error.message); return; }
+    const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(path);
+    setEditingBook({ ...editingBook, sample_url: urlData.publicUrl });
+    toast.success("Sample uploaded!");
   };
 
   const handleSaveBook = async () => {
@@ -103,9 +96,7 @@ const Admin = () => {
       await upsertBook.mutateAsync(editingBook);
       toast.success("Book saved!");
       setEditingBook(null);
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const handleSaveCategory = async () => {
@@ -114,9 +105,7 @@ const Admin = () => {
       await upsertCategory.mutateAsync(editingCategory);
       toast.success("Category saved!");
       setEditingCategory(null);
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    } catch (e: any) { toast.error(e.message); }
   };
 
   if (loading || settingsLoading) {
@@ -127,7 +116,7 @@ const Admin = () => {
     );
   }
 
-  const SettingField = ({ section, keyName, label, multiline = false }: { section: string; keyName: string; label: string; multiline?: boolean }) => {
+  const SettingField = ({ section, keyName, label, multiline = false, type = "text" }: { section: string; keyName: string; label: string; multiline?: boolean; type?: string }) => {
     const val = getSetting(section, keyName);
     const displayVal = typeof val === "string" ? val : JSON.stringify(val, null, 2);
     return (
@@ -137,29 +126,94 @@ const Admin = () => {
           <Textarea
             value={displayVal}
             onChange={(e) => {
-              try {
-                setSetting(section, keyName, JSON.parse(e.target.value));
-              } catch {
-                setSetting(section, keyName, e.target.value);
-              }
+              try { setSetting(section, keyName, JSON.parse(e.target.value)); }
+              catch { setSetting(section, keyName, e.target.value); }
             }}
             rows={4}
           />
+        ) : type === "color" ? (
+          <div className="flex items-center gap-2">
+            <Input
+              type="color"
+              value={displayVal || "#000000"}
+              onChange={(e) => setSetting(section, keyName, e.target.value)}
+              className="w-12 h-10 p-1 cursor-pointer"
+            />
+            <Input
+              value={displayVal}
+              onChange={(e) => setSetting(section, keyName, e.target.value)}
+              placeholder="#000000"
+              className="flex-1"
+            />
+          </div>
         ) : (
           <Input
+            type={type}
             value={displayVal}
             onChange={(e) => {
-              try {
-                setSetting(section, keyName, JSON.parse(e.target.value));
-              } catch {
-                setSetting(section, keyName, e.target.value);
-              }
+              try { setSetting(section, keyName, JSON.parse(e.target.value)); }
+              catch { setSetting(section, keyName, e.target.value); }
             }}
           />
         )}
       </div>
     );
   };
+
+  /* Design controls sub-component */
+  const DesignControls = ({ section, label }: { section: string; label: string }) => (
+    <details className="border border-border rounded-lg overflow-hidden">
+      <summary className="flex items-center gap-2 px-4 py-3 bg-muted/50 cursor-pointer hover:bg-muted transition-colors">
+        <Paintbrush className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold text-foreground">{label} — Design Controls</span>
+      </summary>
+      <div className="p-4 space-y-4 bg-card">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Spacing */}
+          <div className="space-y-3 p-3 border border-border rounded-lg">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Layout className="h-3 w-3" /> Spacing
+            </h4>
+            <SettingField section={section} keyName="margin" label="Margin (e.g. 0 auto)" />
+            <SettingField section={section} keyName="padding" label="Padding (e.g. 20px 16px)" />
+            <SettingField section={section} keyName="gap" label="Gap / Spacing" />
+          </div>
+          {/* Colors */}
+          <div className="space-y-3 p-3 border border-border rounded-lg">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Palette className="h-3 w-3" /> Colors
+            </h4>
+            <SettingField section={section} keyName="bg_color" label="Background Color" type="color" />
+            <SettingField section={section} keyName="text_color" label="Text Color" type="color" />
+            <SettingField section={section} keyName="accent_color" label="Accent / Button Color" type="color" />
+          </div>
+          {/* Typography */}
+          <div className="space-y-3 p-3 border border-border rounded-lg">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Type className="h-3 w-3" /> Typography
+            </h4>
+            <SettingField section={section} keyName="font_family" label="Font Family" />
+            <SettingField section={section} keyName="font_size" label="Font Size (e.g. 16px)" />
+            <SettingField section={section} keyName="font_weight" label="Font Weight (e.g. 400, 600, bold)" />
+            <SettingField section={section} keyName="line_height" label="Line Height (e.g. 1.5)" />
+          </div>
+          {/* Button & Layout */}
+          <div className="space-y-3 p-3 border border-border rounded-lg">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Settings className="h-3 w-3" /> Button & Layout
+            </h4>
+            <SettingField section={section} keyName="button_bg" label="Button Background" type="color" />
+            <SettingField section={section} keyName="button_text" label="Button Text Color" type="color" />
+            <SettingField section={section} keyName="button_radius" label="Button Radius (e.g. 8px)" />
+            <SettingField section={section} keyName="layout" label="Layout (e.g. grid, flex, centered)" />
+          </div>
+        </div>
+        <Button onClick={() => saveAllSection(section)} size="sm" className="gap-2">
+          <Save className="h-3.5 w-3.5" /> Save {label} Design
+        </Button>
+      </div>
+    </details>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,6 +250,9 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="categories" className="text-xs sm:text-sm gap-1.5">
               <BookOpen className="h-3.5 w-3.5" /> Categories
+            </TabsTrigger>
+            <TabsTrigger value="design" className="text-xs sm:text-sm gap-1.5">
+              <Paintbrush className="h-3.5 w-3.5" /> Design
             </TabsTrigger>
             <TabsTrigger value="footer" className="text-xs sm:text-sm gap-1.5">
               <Layout className="h-3.5 w-3.5" /> Footer
@@ -257,7 +314,7 @@ const Admin = () => {
                 <CardTitle className="font-serif">Books Management</CardTitle>
                 <Button
                   size="sm"
-                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", rating: 4.5, sort_order: 0 })}
+                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", rating: 4.5, sort_order: 0, sample_url: "" })}
                   className="gap-1.5"
                 >
                   <Plus className="h-4 w-4" /> Add Book
@@ -276,7 +333,7 @@ const Admin = () => {
                         className="px-3 py-2 border rounded-md text-sm bg-background"
                       >
                         {categories?.map((c) => (
-                          <option key={c.id} value={c.name}>{c.name} ({c.name_bn})</option>
+                          <option key={c.id} value={c.name}>{c.name}</option>
                         ))}
                       </select>
                       <Input type="number" step="0.01" placeholder="Price" value={editingBook.price || ""} onChange={(e) => setEditingBook({ ...editingBook, price: parseFloat(e.target.value) || null })} />
@@ -287,6 +344,22 @@ const Admin = () => {
                       <Input type="number" placeholder="Sort Order" value={editingBook.sort_order || 0} onChange={(e) => setEditingBook({ ...editingBook, sort_order: parseInt(e.target.value) || 0 })} />
                     </div>
                     <Textarea placeholder="Description" value={editingBook.description || ""} onChange={(e) => setEditingBook({ ...editingBook, description: e.target.value })} />
+                    
+                    {/* Sample URL */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Sample Preview (PDF or Image)</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Input
+                          placeholder="Sample URL (or upload below)"
+                          value={editingBook.sample_url || ""}
+                          onChange={(e) => setEditingBook({ ...editingBook, sample_url: e.target.value })}
+                          className="flex-1"
+                        />
+                        <Input type="file" accept=".pdf,image/*" onChange={handleSampleUpload} className="max-w-xs" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Upload a PDF or image for the "Read a Sample" feature</p>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button size="sm" onClick={handleSaveBook} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
                       <Button size="sm" variant="outline" onClick={() => setEditingBook(null)}>Cancel</Button>
@@ -331,7 +404,7 @@ const Admin = () => {
                   <div className="mb-6 p-4 bg-muted rounded-lg space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Input placeholder="Name (English)" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} />
-                      <Input placeholder="Name (Bangla)" value={editingCategory.name_bn || ""} onChange={(e) => setEditingCategory({ ...editingCategory, name_bn: e.target.value })} />
+                      <Input placeholder="Name (Secondary)" value={editingCategory.name_bn || ""} onChange={(e) => setEditingCategory({ ...editingCategory, name_bn: e.target.value })} />
                       <Input placeholder="Icon" value={editingCategory.icon || ""} onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })} />
                       <Input type="number" placeholder="Sort Order" value={editingCategory.sort_order || 0} onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })} />
                     </div>
@@ -357,6 +430,32 @@ const Admin = () => {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* DESIGN TAB */}
+          <TabsContent value="design">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif flex items-center gap-2">
+                  <Paintbrush className="h-5 w-5 text-primary" />
+                  Section Design Controls
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Customise margin, padding, colours, typography, button styles and layout for each section.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <DesignControls section="design_header" label="Header" />
+                <DesignControls section="design_hero" label="Hero Section" />
+                <DesignControls section="design_books" label="Books Grid" />
+                <DesignControls section="design_book_card" label="Book Card" />
+                <DesignControls section="design_book_modal" label="Book Detail Modal" />
+                <DesignControls section="design_cart" label="Cart Page" />
+                <DesignControls section="design_checkout" label="Checkout Page" />
+                <DesignControls section="design_footer" label="Footer" />
+                <DesignControls section="design_auth" label="Auth / Login Page" />
               </CardContent>
             </Card>
           </TabsContent>
@@ -412,31 +511,19 @@ const UsersManagement = () => {
     setLoadingAdmins(false);
   };
 
-  useEffect(() => {
-    fetchAdmins();
-  }, []);
+  useEffect(() => { fetchAdmins(); }, []);
 
   const handleMakeAdmin = async () => {
     if (!adminEmail.trim()) return;
     setAdding(true);
-
     try {
-      // Use edge function to find user by email and add admin role
       const { data, error } = await supabase.functions.invoke("manage-admin", {
         body: { action: "add", email: adminEmail.trim() },
       });
-
       if (error) throw error;
-      if (data?.error) {
-        toast.error(data.error);
-      } else {
-        toast.success(`${adminEmail} is now an admin!`);
-        setAdminEmail("");
-        fetchAdmins();
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to add admin");
-    }
+      if (data?.error) { toast.error(data.error); }
+      else { toast.success(`${adminEmail} is now an admin!`); setAdminEmail(""); fetchAdmins(); }
+    } catch (e: any) { toast.error(e.message || "Failed to add admin"); }
     setAdding(false);
   };
 
@@ -447,15 +534,9 @@ const UsersManagement = () => {
         body: { action: "remove", role_id: roleId, user_id: userId },
       });
       if (error) throw error;
-      if (data?.error) {
-        toast.error(data.error);
-      } else {
-        toast.success("Admin removed!");
-        fetchAdmins();
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to remove admin");
-    }
+      if (data?.error) { toast.error(data.error); }
+      else { toast.success("Admin removed!"); fetchAdmins(); }
+    } catch (e: any) { toast.error(e.message || "Failed to remove admin"); }
   };
 
   return (
@@ -464,28 +545,18 @@ const UsersManagement = () => {
         <CardTitle className="font-serif">User Role Management</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Add admin */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Make someone Admin</label>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              placeholder="Enter user email..."
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-              className="flex-1"
-              type="email"
-            />
+            <Input placeholder="Enter user email..." value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="flex-1" type="email" />
             <Button onClick={handleMakeAdmin} disabled={adding || !adminEmail.trim()} className="gap-1.5 shrink-0">
               <Shield className="h-4 w-4" />
               {adding ? "Adding..." : "Make Admin"}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            The user must have an account (signed up) before you can make them admin.
-          </p>
+          <p className="text-xs text-muted-foreground">The user must have an account (signed up) before you can make them admin.</p>
         </div>
 
-        {/* Current admins */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-foreground">Current Admins</h3>
           {loadingAdmins ? (
@@ -500,12 +571,7 @@ const UsersManagement = () => {
                     <Shield className="h-4 w-4 text-primary" />
                     <span className="text-sm font-mono">{admin.email || admin.user_id}</span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive gap-1"
-                    onClick={() => handleRemoveAdmin(admin.id, admin.user_id)}
-                  >
+                  <Button size="sm" variant="ghost" className="text-destructive gap-1" onClick={() => handleRemoveAdmin(admin.id, admin.user_id)}>
                     <ShieldOff className="h-3.5 w-3.5" />
                     Remove
                   </Button>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Menu, X, User, LogOut, Shield, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,10 +9,17 @@ import logoWhite from "@/assets/logo-white.png";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { data: settings } = useSiteSettings("header");
   const { user, isAdmin, loading, signOut } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const get = (key: string, fallback: any) => {
     const s = settings?.find((s) => s.key === key);
@@ -37,7 +44,13 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? "bg-[hsl(207,68%,28%)]/95 backdrop-blur-xl shadow-lg"
+          : "bg-transparent"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 sm:h-24">
           <Link to="/" className="flex items-center">
@@ -66,7 +79,6 @@ const Navbar = () => {
               <Search className="h-5 w-5" />
             </button>
 
-            {/* Cart icon */}
             <Link to="/cart" className="relative p-2 text-white/80 hover:text-white transition-colors duration-200">
               <ShoppingCart className="h-5 w-5" />
               {totalItems > 0 && (
