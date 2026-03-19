@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Menu, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import logo from "@/assets/logo-transparent.png";
+import logo from "@/assets/logo-white.png";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -16,14 +16,14 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent">
-      <div className="max-w-7xl mx-auto px-5 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+    <nav className="fixed top-0 left-0 right-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20 sm:h-24">
           <Link to="/" className="flex items-center">
             <img
               src={logo}
               alt="Madrasah Matters"
-              className="h-14 sm:h-16 w-auto brightness-0 invert drop-shadow-md"
+              className="h-12 sm:h-16 w-auto"
             />
           </Link>
 
@@ -40,9 +40,9 @@ const Navbar = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <button className="p-2 text-white/80 hover:text-white transition-colors duration-200">
-              <Search className="h-5 w-5" />
+              <Search className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <button className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-white/15 text-white border border-white/25 rounded-lg hover:bg-white/25 transition-all duration-300 backdrop-blur-sm">
               <User className="h-4 w-4" />
