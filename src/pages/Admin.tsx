@@ -400,14 +400,14 @@ const UsersManagement = () => {
 
   const fetchAdmins = async () => {
     setLoadingAdmins(true);
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("id, user_id, role")
-      .eq("role", "admin");
-
-    if (roles) {
-      // We store roles with user_id; we'll show the user_id since we can't query auth.users
-      setAdmins(roles.map((r) => ({ id: r.id, user_id: r.user_id })));
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "list" },
+      });
+      if (error) throw error;
+      setAdmins(data?.admins || []);
+    } catch (e) {
+      console.error("Failed to fetch admins", e);
     }
     setLoadingAdmins(false);
   };
