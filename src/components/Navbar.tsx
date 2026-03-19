@@ -2,18 +2,28 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Menu, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import logo from "@/assets/logo-white.png";
-
-const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Browse Books", href: "/browse" },
-  { label: "Categories", href: "/categories" },
-  { label: "Membership", href: "/membership" },
-  { label: "Contact", href: "/contact" },
-];
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import logoWhite from "@/assets/logo-white.png";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: settings } = useSiteSettings("header");
+
+  const get = (key: string, fallback: any) => {
+    const s = settings?.find((s) => s.key === key);
+    return s?.value ?? fallback;
+  };
+
+  const navLinks = get("nav_links", [
+    { label: "Home", href: "/" },
+    { label: "Browse Books", href: "/browse" },
+    { label: "Categories", href: "/categories" },
+    { label: "Membership", href: "/membership" },
+    { label: "Contact", href: "/contact" },
+  ]) as Array<{ label: string; href: string }>;
+
+  const logoSize = get("logo_size", "h-14 sm:h-16") as string;
+  const logoUrl = get("logo_url", null) as string | null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
@@ -21,9 +31,9 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20 sm:h-24">
           <Link to="/" className="flex items-center">
             <img
-              src={logo}
+              src={logoUrl || logoWhite}
               alt="Madrasah Matters"
-              className="h-12 sm:h-16 w-auto"
+              className={`${logoSize} w-auto ${!logoUrl ? '' : ''}`}
             />
           </Link>
 
