@@ -28,8 +28,9 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
           </div>
         )}
         <div
-          className="aspect-[3/4] rounded-xl shadow-card group-hover:shadow-book group-hover:-translate-y-2 transition-all duration-500 flex items-center justify-center overflow-hidden relative"
+          className="aspect-[3/4] rounded-xl shadow-card group-hover:shadow-book group-hover:-translate-y-2 transition-all duration-500 flex items-center justify-center overflow-hidden relative cursor-pointer"
           style={{ background: `linear-gradient(145deg, ${book.cover_color || "#1a5276"} 0%, ${coverAccent} 100%)` }}
+          onClick={() => onViewDetails(book)}
         >
           <div className="absolute inset-0 opacity-[0.06]" style={{
             backgroundImage: `radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)`,
@@ -46,19 +47,19 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
             <div className="w-12 h-[1px] bg-white/30 mx-auto mt-4" />
           </div>
 
-          {/* Hover overlay with two buttons */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-500 flex flex-col items-center justify-center gap-2">
-            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-3 group-hover:translate-y-0 flex flex-col gap-2">
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500 flex flex-col items-center justify-center gap-3 p-4">
+            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 flex flex-col gap-2.5 w-full max-w-[180px]">
               <button
                 onClick={(e) => { e.stopPropagation(); onViewDetails(book); }}
-                className="px-5 py-2.5 bg-white text-foreground text-xs font-semibold rounded-lg shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5"
+                className="w-full px-4 py-2.5 bg-white text-foreground text-xs font-semibold rounded-lg shadow-lg hover:bg-white/95 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <Eye className="h-3.5 w-3.5" />
                 View Details
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onReadSample(book); }}
-                className="px-5 py-2.5 bg-white/20 text-white text-xs font-semibold rounded-lg shadow-lg hover:bg-white/30 hover:scale-105 transition-all flex items-center gap-1.5 backdrop-blur-sm border border-white/20"
+                className="w-full px-4 py-2.5 bg-[hsl(var(--gold))]/90 text-white text-xs font-semibold rounded-lg shadow-lg hover:bg-[hsl(var(--gold))] hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
               >
                 <BookText className="h-3.5 w-3.5" />
                 Read a Sample
@@ -68,27 +69,27 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 space-y-1.5">
         <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h4>
-        <p className="text-xs text-muted-foreground mt-1">{book.author}</p>
+        <p className="text-xs text-muted-foreground">{book.author}</p>
         {book.rating && (
-          <div className="flex items-center gap-1 mt-1.5">
+          <div className="flex items-center gap-1">
             <Star className="h-3 w-3 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
             <span className="text-xs font-medium text-foreground">{book.rating}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-primary">£{Number(book.price).toFixed(2)}</span>
           {book.original_price && (
             <span className="text-xs text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
           )}
         </div>
 
-        {/* Add to Cart / Go to Cart button */}
+        {/* Add to Cart / Go to Cart */}
         {isInCart ? (
           <button
             onClick={() => navigate("/cart")}
-            className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-[hsl(var(--mint))]/10 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 rounded-lg hover:bg-[hsl(var(--mint))]/20 transition-all"
+            className="mt-1.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-[hsl(var(--mint))]/10 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 rounded-lg hover:bg-[hsl(var(--mint))]/20 transition-all"
           >
             <ArrowRight className="h-3.5 w-3.5" />
             Go to Cart
@@ -96,7 +97,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
         ) : (
           <button
             onClick={() => onViewDetails(book)}
-            className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-all"
+            className="mt-1.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-all"
           >
             <ShoppingCart className="h-3.5 w-3.5" />
             Add to Cart
