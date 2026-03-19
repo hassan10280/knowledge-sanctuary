@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_addresses: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          city: string
+          country: string
+          county: string | null
+          created_at: string
+          full_name: string
+          id: string
+          is_default: boolean | null
+          phone: string | null
+          postcode: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          city: string
+          country?: string
+          county?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          is_default?: boolean | null
+          phone?: string | null
+          postcode: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          city?: string
+          country?: string
+          county?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_default?: boolean | null
+          phone?: string | null
+          postcode?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           author: string
@@ -92,6 +140,99 @@ export type Database = {
           name?: string
           name_bn?: string | null
           sort_order?: number | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          order_id: string
+          price: number
+          quantity: number
+          title: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          order_id: string
+          price: number
+          quantity?: number
+          title: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          order_id?: string
+          price?: number
+          quantity?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          billing_address: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_name: string | null
+          billing_postcode: string | null
+          created_at: string
+          id: string
+          payment_method: string
+          status: string
+          total: number
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postcode?: string | null
+          created_at?: string
+          id?: string
+          payment_method?: string
+          status?: string
+          total?: number
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postcode?: string | null
+          created_at?: string
+          id?: string
+          payment_method?: string
+          status?: string
+          total?: number
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
