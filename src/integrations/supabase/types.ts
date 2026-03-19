@@ -76,6 +76,7 @@ export type Database = {
           original_price: number | null
           price: number | null
           rating: number | null
+          sample_url: string | null
           sort_order: number | null
           title: string
           updated_at: string
@@ -93,6 +94,7 @@ export type Database = {
           original_price?: number | null
           price?: number | null
           rating?: number | null
+          sample_url?: string | null
           sort_order?: number | null
           title: string
           updated_at?: string
@@ -110,6 +112,7 @@ export type Database = {
           original_price?: number | null
           price?: number | null
           rating?: number | null
+          sample_url?: string | null
           sort_order?: number | null
           title?: string
           updated_at?: string
