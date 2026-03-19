@@ -380,9 +380,142 @@ const Admin = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* USERS TAB */}
+          <TabsContent value="users">
+            <UsersManagement />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
+  );
+};
+
+/* ─── Users / Role Management Component ─── */
+const UsersManagement = () => {
+  const [adminEmail, setAdminEmail] = useState("");
+  const [admins, setAdmins] = useState<Array<{ id: string; user_id: string; email?: string }>>([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(true);
+  const [adding, setAdding] = useState(false);
+
+  const fetchAdmins = async () => {
+    setLoadingAdmins(true);
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("id, user_id, role")
+      .eq("role", "admin");
+
+    if (roles) {
+      // We store roles with user_id; we'll show the user_id since we can't query auth.users
+      setAdmins(roles.map((r) => ({ id: r.id, user_id: r.user_id })));
+    }
+    setLoadingAdmins(false);
+  };
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  const handleMakeAdmin = async () => {
+    if (!adminEmail.trim()) return;
+    setAdding(true);
+
+    try {
+      // Use edge function to find user by email and add admin role
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "add", email: adminEmail.trim() },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+      } else {
+        toast.success(`${adminEmail} is now an admin!`);
+        setAdminEmail("");
+        fetchAdmins();
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to add admin");
+    }
+    setAdding(false);
+  };
+
+  const handleRemoveAdmin = async (roleId: string, userId: string) => {
+    if (!confirm("Are you sure you want to remove this admin?")) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "remove", role_id: roleId, user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+      } else {
+        toast.success("Admin removed!");
+        fetchAdmins();
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to remove admin");
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif">User Role Management</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Add admin */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Make someone Admin</label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="Enter user email..."
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              className="flex-1"
+              type="email"
+            />
+            <Button onClick={handleMakeAdmin} disabled={adding || !adminEmail.trim()} className="gap-1.5 shrink-0">
+              <Shield className="h-4 w-4" />
+              {adding ? "Adding..." : "Make Admin"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            The user must have an account (signed up) before you can make them admin.
+          </p>
+        </div>
+
+        {/* Current admins */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-foreground">Current Admins</h3>
+          {loadingAdmins ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : admins.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No admins found</p>
+          ) : (
+            <div className="space-y-2">
+              {admins.map((admin) => (
+                <div key={admin.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-mono">{admin.email || admin.user_id}</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive gap-1"
+                    onClick={() => handleRemoveAdmin(admin.id, admin.user_id)}
+                  >
+                    <ShieldOff className="h-3.5 w-3.5" />
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
