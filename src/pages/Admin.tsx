@@ -5,12 +5,23 @@ import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategory, useDeleteCategory } from "@/hooks/useBooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const FONT_FAMILIES = [
+  "Instrument Serif", "Georgia", "Geist", "system-ui", "Inter", "Roboto", "Open Sans",
+  "Lora", "Playfair Display", "Merriweather", "Poppins", "Montserrat", "Raleway",
+];
+const FONT_WEIGHTS = ["300", "400", "500", "600", "700", "800", "900"];
+const FONT_SIZES = ["10", "11", "12", "13", "14", "15", "16", "18", "20", "22", "24", "28", "32", "36", "40", "48", "56", "64"];
+const LAYOUT_OPTIONS = ["default", "grid", "flex", "centered", "wide", "compact"];
 
 const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -47,6 +58,10 @@ const Admin = () => {
   }, [settings]);
 
   const getSetting = (section: string, key: string) => localSettings[section]?.[key] ?? "";
+  const getSettingNum = (section: string, key: string, fallback = 0) => {
+    const v = localSettings[section]?.[key];
+    return typeof v === "number" ? v : fallback;
+  };
 
   const setSetting = (section: string, key: string, value: any) => {
     setLocalSettings((prev) => ({
@@ -133,18 +148,8 @@ const Admin = () => {
           />
         ) : type === "color" ? (
           <div className="flex items-center gap-2">
-            <Input
-              type="color"
-              value={displayVal || "#000000"}
-              onChange={(e) => setSetting(section, keyName, e.target.value)}
-              className="w-12 h-10 p-1 cursor-pointer"
-            />
-            <Input
-              value={displayVal}
-              onChange={(e) => setSetting(section, keyName, e.target.value)}
-              placeholder="#000000"
-              className="flex-1"
-            />
+            <Input type="color" value={displayVal || "#000000"} onChange={(e) => setSetting(section, keyName, e.target.value)} className="w-12 h-10 p-1 cursor-pointer" />
+            <Input value={displayVal} onChange={(e) => setSetting(section, keyName, e.target.value)} placeholder="#000000" className="flex-1" />
           </div>
         ) : (
           <Input
@@ -160,60 +165,244 @@ const Admin = () => {
     );
   };
 
-  /* Design controls sub-component */
-  const DesignControls = ({ section, label }: { section: string; label: string }) => (
-    <details className="border border-border rounded-lg overflow-hidden">
-      <summary className="flex items-center gap-2 px-4 py-3 bg-muted/50 cursor-pointer hover:bg-muted transition-colors">
-        <Paintbrush className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-foreground">{label} — Design Controls</span>
-      </summary>
-      <div className="p-4 space-y-4 bg-card">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Spacing */}
-          <div className="space-y-3 p-3 border border-border rounded-lg">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Layout className="h-3 w-3" /> Spacing
-            </h4>
-            <SettingField section={section} keyName="margin" label="Margin (e.g. 0 auto)" />
-            <SettingField section={section} keyName="padding" label="Padding (e.g. 20px 16px)" />
-            <SettingField section={section} keyName="gap" label="Gap / Spacing" />
-          </div>
-          {/* Colors */}
-          <div className="space-y-3 p-3 border border-border rounded-lg">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Palette className="h-3 w-3" /> Colors
-            </h4>
-            <SettingField section={section} keyName="bg_color" label="Background Color" type="color" />
-            <SettingField section={section} keyName="text_color" label="Text Color" type="color" />
-            <SettingField section={section} keyName="accent_color" label="Accent / Button Color" type="color" />
-          </div>
-          {/* Typography */}
-          <div className="space-y-3 p-3 border border-border rounded-lg">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Type className="h-3 w-3" /> Typography
-            </h4>
-            <SettingField section={section} keyName="font_family" label="Font Family" />
-            <SettingField section={section} keyName="font_size" label="Font Size (e.g. 16px)" />
-            <SettingField section={section} keyName="font_weight" label="Font Weight (e.g. 400, 600, bold)" />
-            <SettingField section={section} keyName="line_height" label="Line Height (e.g. 1.5)" />
-          </div>
-          {/* Button & Layout */}
-          <div className="space-y-3 p-3 border border-border rounded-lg">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Settings className="h-3 w-3" /> Button & Layout
-            </h4>
-            <SettingField section={section} keyName="button_bg" label="Button Background" type="color" />
-            <SettingField section={section} keyName="button_text" label="Button Text Color" type="color" />
-            <SettingField section={section} keyName="button_radius" label="Button Radius (e.g. 8px)" />
-            <SettingField section={section} keyName="layout" label="Layout (e.g. grid, flex, centered)" />
-          </div>
+  /* ─── Visual Spacing Control (4-side slider + px input) ─── */
+  const SpacingControl = ({ section, keyName, label }: { section: string; keyName: string; label: string }) => {
+    const sides = ["top", "right", "bottom", "left"] as const;
+    return (
+      <div className="space-y-2">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {sides.map((side) => {
+            const k = `${keyName}_${side}`;
+            const v = getSettingNum(section, k, 0);
+            return (
+              <div key={side} className="space-y-1">
+                <span className="text-[10px] text-muted-foreground capitalize">{side}</span>
+                <div className="flex items-center gap-2">
+                  <Slider
+                    min={0} max={100} step={1}
+                    value={[v]}
+                    onValueChange={([val]) => setSetting(section, k, val)}
+                    className="flex-1"
+                  />
+                  <span className="text-xs font-mono text-foreground w-10 text-right">{v}px</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <Button onClick={() => saveAllSection(section)} size="sm" className="gap-2">
-          <Save className="h-3.5 w-3.5" /> Save {label} Design
-        </Button>
       </div>
-    </details>
+    );
+  };
+
+  /* ─── Color Picker Control ─── */
+  const ColorControl = ({ section, keyName, label }: { section: string; keyName: string; label: string }) => {
+    const v = (getSetting(section, keyName) as string) || "#000000";
+    return (
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-foreground">{label}</Label>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="color"
+              value={v}
+              onChange={(e) => setSetting(section, keyName, e.target.value)}
+              className="w-9 h-9 rounded-lg border border-border cursor-pointer appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
+            />
+          </div>
+          <Input
+            value={v}
+            onChange={(e) => setSetting(section, keyName, e.target.value)}
+            placeholder="#000000"
+            className="flex-1 h-9 text-xs font-mono"
+          />
+          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => setSetting(section, keyName, "")}>
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  /* ─── Typography Dropdown Controls ─── */
+  const TypographyControls = ({ section }: { section: string }) => (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-foreground">Font Family</Label>
+        <Select value={(getSetting(section, "font_family") as string) || ""} onValueChange={(v) => setSetting(section, "font_family", v)}>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select font..." /></SelectTrigger>
+          <SelectContent>
+            {FONT_FAMILIES.map((f) => <SelectItem key={f} value={f} className="text-xs">{f}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Font Size</Label>
+          <Select value={(getSetting(section, "font_size") as string) || ""} onValueChange={(v) => setSetting(section, "font_size", v)}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Size..." /></SelectTrigger>
+            <SelectContent>
+              {FONT_SIZES.map((s) => <SelectItem key={s} value={s} className="text-xs">{s}px</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Font Weight</Label>
+          <Select value={(getSetting(section, "font_weight") as string) || ""} onValueChange={(v) => setSetting(section, "font_weight", v)}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Weight..." /></SelectTrigger>
+            <SelectContent>
+              {FONT_WEIGHTS.map((w) => <SelectItem key={w} value={w} className="text-xs">{w}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-foreground">Line Height</Label>
+        <div className="flex items-center gap-2">
+          <Slider
+            min={100} max={250} step={5}
+            value={[getSettingNum(section, "line_height", 150)]}
+            onValueChange={([v]) => setSetting(section, "line_height", v)}
+            className="flex-1"
+          />
+          <span className="text-xs font-mono text-foreground w-12 text-right">{(getSettingNum(section, "line_height", 150) / 100).toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
   );
+
+  /* ─── Button Style Controls ─── */
+  const ButtonStyleControls = ({ section }: { section: string }) => (
+    <div className="space-y-3">
+      <ColorControl section={section} keyName="button_bg" label="Button Background" />
+      <ColorControl section={section} keyName="button_text" label="Button Text Colour" />
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-foreground">Button Radius</Label>
+        <div className="flex items-center gap-2">
+          <Slider
+            min={0} max={24} step={1}
+            value={[getSettingNum(section, "button_radius", 8)]}
+            onValueChange={([v]) => setSetting(section, "button_radius", v)}
+            className="flex-1"
+          />
+          <span className="text-xs font-mono text-foreground w-10 text-right">{getSettingNum(section, "button_radius", 8)}px</span>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-foreground">Layout</Label>
+        <Select value={(getSetting(section, "layout") as string) || "default"} onValueChange={(v) => setSetting(section, "layout", v)}>
+          <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {LAYOUT_OPTIONS.map((l) => <SelectItem key={l} value={l} className="text-xs capitalize">{l}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  /* ─── Full Visual Design Panel for one section ─── */
+  const VisualDesignPanel = ({ section, label }: { section: string; label: string }) => {
+    const [open, setOpen] = useState(false);
+    return (
+      <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Paintbrush className="h-4 w-4 text-primary" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">{label}</span>
+          </div>
+          {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+        {open && (
+          <div className="px-5 pb-5 pt-2 space-y-5 border-t border-border">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Spacing */}
+              <div className="p-4 bg-muted/30 rounded-xl space-y-4 border border-border/50">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Layout className="h-3.5 w-3.5" /> Spacing
+                </h4>
+                <SpacingControl section={section} keyName="padding" label="Padding" />
+                <SpacingControl section={section} keyName="margin" label="Margin" />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gap</Label>
+                  <div className="flex items-center gap-2">
+                    <Slider
+                      min={0} max={64} step={2}
+                      value={[getSettingNum(section, "gap", 16)]}
+                      onValueChange={([v]) => setSetting(section, "gap", v)}
+                      className="flex-1"
+                    />
+                    <span className="text-xs font-mono text-foreground w-10 text-right">{getSettingNum(section, "gap", 16)}px</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Colours */}
+              <div className="p-4 bg-muted/30 rounded-xl space-y-4 border border-border/50">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Palette className="h-3.5 w-3.5" /> Colours
+                </h4>
+                <ColorControl section={section} keyName="bg_color" label="Background" />
+                <ColorControl section={section} keyName="text_color" label="Text" />
+                <ColorControl section={section} keyName="accent_color" label="Accent" />
+              </div>
+
+              {/* Typography */}
+              <div className="p-4 bg-muted/30 rounded-xl space-y-4 border border-border/50">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Type className="h-3.5 w-3.5" /> Typography
+                </h4>
+                <TypographyControls section={section} />
+              </div>
+
+              {/* Button & Layout */}
+              <div className="p-4 bg-muted/30 rounded-xl space-y-4 border border-border/50">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Settings className="h-3.5 w-3.5" /> Button & Layout
+                </h4>
+                <ButtonStyleControls section={section} />
+              </div>
+            </div>
+
+            {/* Preview bar */}
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-8 px-4 rounded-lg flex items-center text-xs font-semibold"
+                  style={{
+                    backgroundColor: (getSetting(section, "button_bg") as string) || "hsl(207 58% 45%)",
+                    color: (getSetting(section, "button_text") as string) || "#fff",
+                    borderRadius: `${getSettingNum(section, "button_radius", 8)}px`,
+                    fontFamily: (getSetting(section, "font_family") as string) || "inherit",
+                  }}
+                >
+                  Button Preview
+                </div>
+                <span
+                  className="text-xs"
+                  style={{
+                    fontFamily: (getSetting(section, "font_family") as string) || "inherit",
+                    fontSize: `${getSetting(section, "font_size") || 14}px`,
+                    fontWeight: (getSetting(section, "font_weight") as string) || "400",
+                    color: (getSetting(section, "text_color") as string) || "inherit",
+                  }}
+                >
+                  Text Preview
+                </span>
+              </div>
+              <Button onClick={() => saveAllSection(section)} size="sm" className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> Save
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -434,7 +623,7 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          {/* DESIGN TAB */}
+          {/* DESIGN TAB — Fully Visual Controls */}
           <TabsContent value="design">
             <Card>
               <CardHeader>
@@ -443,19 +632,21 @@ const Admin = () => {
                   Section Design Controls
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Customise margin, padding, colours, typography, button styles and layout for each section.
+                  Use sliders, colour pickers and dropdowns to customise every section — no CSS knowledge needed.
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <DesignControls section="design_header" label="Header" />
-                <DesignControls section="design_hero" label="Hero Section" />
-                <DesignControls section="design_books" label="Books Grid" />
-                <DesignControls section="design_book_card" label="Book Card" />
-                <DesignControls section="design_book_modal" label="Book Detail Modal" />
-                <DesignControls section="design_cart" label="Cart Page" />
-                <DesignControls section="design_checkout" label="Checkout Page" />
-                <DesignControls section="design_footer" label="Footer" />
-                <DesignControls section="design_auth" label="Auth / Login Page" />
+              <CardContent className="space-y-3">
+                <VisualDesignPanel section="design_header" label="Header" />
+                <VisualDesignPanel section="design_hero" label="Hero Section" />
+                <VisualDesignPanel section="design_books" label="Books Grid" />
+                <VisualDesignPanel section="design_book_card" label="Book Card" />
+                <VisualDesignPanel section="design_book_modal" label="Book Detail Modal" />
+                <VisualDesignPanel section="design_cart" label="Cart Page" />
+                <VisualDesignPanel section="design_checkout" label="Checkout Page" />
+                <VisualDesignPanel section="design_footer" label="Footer" />
+                <VisualDesignPanel section="design_auth" label="Auth / Login Page" />
+                <VisualDesignPanel section="design_logo" label="Logo" />
+                <VisualDesignPanel section="design_buttons_global" label="Global Buttons" />
               </CardContent>
             </Card>
           </TabsContent>
