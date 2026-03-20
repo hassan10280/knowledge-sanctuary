@@ -614,6 +614,15 @@ const Admin = () => {
             <TabsTrigger value="users" className="text-xs sm:text-sm gap-1.5">
               <Users className="h-3.5 w-3.5" /> Users
             </TabsTrigger>
+            <TabsTrigger value="wholesale-requests" className="text-xs sm:text-sm gap-1.5">
+              <Building2 className="h-3.5 w-3.5" /> Wholesale
+            </TabsTrigger>
+            <TabsTrigger value="form-builder" className="text-xs sm:text-sm gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Form Builder
+            </TabsTrigger>
+            <TabsTrigger value="discounts" className="text-xs sm:text-sm gap-1.5">
+              <Percent className="h-3.5 w-3.5" /> Discounts
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
