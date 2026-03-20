@@ -16,9 +16,57 @@ const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
+  const { data: shippingRules } = useShippingRules();
+  const validateCoupon = useValidateCoupon();
   const navigate = useNavigate();
   const location = useLocation();
   const cartContentRef = useRef<HTMLDivElement>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const isWholesale = wholesaleStatus === "approved";
+
+  // Calculate shipping based on rules
+  const calculateShipping = () => {
+    if (!shippingRules || shippingRules.length === 0) {
+      return totalPrice >= 25 ? 0 : 3.99; // fallback
+    }
+    const applicableRules = shippingRules
+      .filter(r => r.is_active && totalPrice >= Number(r.min_amount))
+      .filter(r => !r.is_wholesale || isWholesale)
+      .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
+    if (applicableRules.length > 0) {
+      return Number(applicableRules[0].shipping_cost);
+    }
+    // No rule matched, find default (min_amount = 0)
+    const defaultRule = shippingRules.find(r => r.is_active && Number(r.min_amount) === 0 && (!r.is_wholesale || isWholesale));
+    return defaultRule ? Number(defaultRule.shipping_cost) : 3.99;
+  };
+
+  const shipping = calculateShipping();
+
+  // Calculate coupon discount
+  const couponDiscount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? totalPrice * (Number(appliedCoupon.discount_value) / 100)
+      : Math.min(Number(appliedCoupon.discount_value), totalPrice)
+    : 0;
+
+  const grandTotal = Math.max(0, totalPrice - couponDiscount + shipping);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    try {
+      const coupon = await validateCoupon.mutateAsync({
+        code: couponCode,
+        orderTotal: totalPrice,
+        isWholesale,
+      });
+      setAppliedCoupon(coupon);
+      toast.success(`Coupon "${coupon.code}" applied!`);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
 
   useEffect(() => {
     if (location.state?.scrollToCart && cartContentRef.current) {
