@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify caller is admin
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -34,7 +33,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check caller is admin
     const { data: callerRole } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -52,7 +50,6 @@ Deno.serve(async (req) => {
     const { action, email, role_id, user_id } = await req.json();
 
     if (action === "add") {
-      // Find user by email
       const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
       if (listErr) throw listErr;
 
@@ -63,7 +60,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Check if already admin
       const { data: existing } = await supabaseAdmin
         .from("user_roles")
         .select("id")
@@ -94,8 +90,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
-      // Prevent removing yourself
       if (user_id === caller.id) {
         return new Response(JSON.stringify({ error: "You cannot remove your own admin role" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -120,7 +114,6 @@ Deno.serve(async (req) => {
         .select("id, user_id, role")
         .eq("role", "admin");
 
-      // Get emails for each admin
       const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
       const enriched = (roles || []).map((r) => {
         const u = users.find((u) => u.id === r.user_id);
@@ -128,6 +121,38 @@ Deno.serve(async (req) => {
       });
 
       return new Response(JSON.stringify({ admins: enriched }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // List ALL users with their roles
+    if (action === "list_all_users") {
+      const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
+      if (listErr) throw listErr;
+
+      const { data: allRoles } = await supabaseAdmin
+        .from("user_roles")
+        .select("id, user_id, role");
+
+      const enriched = users.map((u) => {
+        const roles = (allRoles || []).filter((r) => r.user_id === u.id);
+        const roleNames = roles.map((r) => r.role);
+        const primaryRole = roleNames.includes("admin")
+          ? "admin"
+          : roleNames.includes("wholesale")
+          ? "wholesale"
+          : "retail";
+        return {
+          id: u.id,
+          email: u.email || "Unknown",
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at,
+          role: primaryRole,
+          roles: roles,
+        };
+      });
+
+      return new Response(JSON.stringify({ users: enriched }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
