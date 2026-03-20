@@ -107,13 +107,15 @@ const ShippingRulesTab = ({ wholesaleOnly, retailOnly }: ShippingRulesTabProps) 
               </div>
             </div>
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={editing.is_wholesale}
-                  onCheckedChange={v => setEditing({ ...editing, is_wholesale: v })}
-                />
-                <Label className="text-xs">Wholesale Only</Label>
-              </div>
+              {!wholesaleOnly && !retailOnly && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={editing.is_wholesale}
+                    onCheckedChange={v => setEditing({ ...editing, is_wholesale: v })}
+                  />
+                  <Label className="text-xs">Wholesale Only</Label>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Switch
                   checked={editing.is_active}
