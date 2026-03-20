@@ -62,6 +62,38 @@ export type Database = {
         }
         Relationships: []
       }
+      book_ratings: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_ratings_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author: string
@@ -77,6 +109,7 @@ export type Database = {
           price: number | null
           rating: number | null
           sample_url: string | null
+          show_ratings: boolean | null
           sort_order: number | null
           title: string
           updated_at: string
@@ -95,6 +128,7 @@ export type Database = {
           price?: number | null
           rating?: number | null
           sample_url?: string | null
+          show_ratings?: boolean | null
           sort_order?: number | null
           title: string
           updated_at?: string
@@ -113,6 +147,7 @@ export type Database = {
           price?: number | null
           rating?: number | null
           sample_url?: string | null
+          show_ratings?: boolean | null
           sort_order?: number | null
           title?: string
           updated_at?: string
