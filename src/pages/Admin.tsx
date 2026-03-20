@@ -685,10 +685,10 @@ const Admin = () => {
                       <Input type="number" placeholder="Discount %" value={editingBook.discount_percent || ""} onChange={(e) => setEditingBook({ ...editingBook, discount_percent: parseInt(e.target.value) || 0 })} />
                       <div className="space-y-1.5">
                         <Label className="text-xs">Publisher</Label>
-                        <Select value={editingBook.publisher || ""} onValueChange={(v) => setEditingBook({ ...editingBook, publisher: v })}>
+                        <Select value={editingBook.publisher || "__none__"} onValueChange={(v) => setEditingBook({ ...editingBook, publisher: v === "__none__" ? "" : v })}>
                           <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select publisher..." /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="" className="text-sm">No Publisher</SelectItem>
+                            <SelectItem value="__none__" className="text-sm">No Publisher</SelectItem>
                             {publishers?.map((p) => (
                               <SelectItem key={p.id} value={p.name} className="text-sm">{p.name}</SelectItem>
                             ))}
