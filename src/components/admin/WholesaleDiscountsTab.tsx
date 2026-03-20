@@ -142,8 +142,25 @@ const WholesaleDiscountsTab = () => {
                   value={editing.discount_percent}
                   onChange={e => setEditing({ ...editing, discount_percent: parseFloat(e.target.value) || 0 })}
                   className="h-9 text-xs"
+                  disabled={editing.fixed_price && Number(editing.fixed_price) > 0}
                 />
               </div>
+
+              {editing.discount_type === "product" && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Fixed Price Override (£)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={editing.fixed_price || ""}
+                    onChange={e => setEditing({ ...editing, fixed_price: parseFloat(e.target.value) || null })}
+                    className="h-9 text-xs"
+                    placeholder="Leave empty for % discount"
+                  />
+                  <p className="text-[10px] text-muted-foreground">If set, this overrides % discount with a fixed wholesale price.</p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
