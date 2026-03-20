@@ -59,7 +59,7 @@ const ShippingRulesTab = ({ wholesaleOnly, retailOnly }: ShippingRulesTabProps) 
         </CardTitle>
         <Button
           size="sm"
-          onClick={() => setEditing({ rule_name: "", min_amount: 25, shipping_cost: 0, is_wholesale: false, is_active: true })}
+          onClick={() => setEditing({ rule_name: "", min_amount: 25, shipping_cost: 0, is_wholesale: !!wholesaleOnly, is_active: true })}
           className="gap-1.5"
         >
           <Plus className="h-4 w-4" /> Add Rule
