@@ -44,7 +44,25 @@ const Checkout = () => {
     phone: "",
   });
 
-  const shipping = totalPrice >= 25 ? 0 : 3.99;
+  const isWholesale = wholesaleStatus === "approved";
+
+  // Dynamic shipping calculation
+  const calculateShipping = () => {
+    if (!shippingRules || shippingRules.length === 0) {
+      return totalPrice >= 25 ? 0 : 3.99;
+    }
+    const applicableRules = shippingRules
+      .filter(r => r.is_active && totalPrice >= Number(r.min_amount))
+      .filter(r => !r.is_wholesale || isWholesale)
+      .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
+    if (applicableRules.length > 0) {
+      return Number(applicableRules[0].shipping_cost);
+    }
+    const defaultRule = shippingRules.find(r => r.is_active && Number(r.min_amount) === 0 && (!r.is_wholesale || isWholesale));
+    return defaultRule ? Number(defaultRule.shipping_cost) : 3.99;
+  };
+
+  const shipping = calculateShipping();
   const grandTotal = totalPrice + shipping;
 
   useEffect(() => {
