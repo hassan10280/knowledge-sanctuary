@@ -25,7 +25,9 @@ const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
+  const { data: shippingRules } = useShippingRules();
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [savedAddress, setSavedAddress] = useState<any>(null);
   const [useSaved, setUseSaved] = useState(false);
