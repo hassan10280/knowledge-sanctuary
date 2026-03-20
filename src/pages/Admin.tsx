@@ -655,7 +655,7 @@ const Admin = () => {
                 <CardTitle className="font-serif">Books Management</CardTitle>
                 <Button
                   size="sm"
-                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", rating: 4.5, sort_order: 0, sample_url: "", show_ratings: true })}
+                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", cover_image: "", rating: 4.5, sort_order: 0, sample_url: "", show_ratings: true, publisher: "" })}
                   className="gap-1.5"
                 >
                   <Plus className="h-4 w-4" /> Add Book
