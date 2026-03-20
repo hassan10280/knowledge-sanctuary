@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Menu, X, User, LogOut, Shield, ShoppingCart, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -14,6 +14,8 @@ const Navbar = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -46,7 +48,7 @@ const Navbar = () => {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
+        !isHomePage || scrolled
           ? "bg-[hsl(207,68%,28%)]/95 backdrop-blur-xl shadow-lg"
           : "bg-transparent"
       }`}
