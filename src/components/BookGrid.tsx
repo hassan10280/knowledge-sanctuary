@@ -54,23 +54,29 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
         )}
         <div
           className="aspect-[3/4] rounded-xl shadow-card group-hover:shadow-book group-hover:-translate-y-2 transition-all duration-500 flex items-center justify-center overflow-hidden relative cursor-pointer"
-          style={{ background: `linear-gradient(145deg, ${book.cover_color || "#1a5276"} 0%, ${coverAccent} 100%)` }}
+          style={{ background: book.cover_image ? undefined : `linear-gradient(145deg, ${book.cover_color || "#1a5276"} 0%, ${coverAccent} 100%)` }}
           onClick={() => onViewDetails(book)}
         >
-          <div className="absolute inset-0 opacity-[0.06]" style={{
-            backgroundImage: `radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)`,
-            backgroundSize: '20px 20px'
-          }} />
-          <div className="absolute left-0 top-0 bottom-0 w-3 bg-black/15" />
-          <div className="text-center px-6 relative z-10">
-            <div className="w-12 h-[1px] bg-white/30 mx-auto mb-4" />
-            <div className="w-8 h-8 mx-auto mb-3 border border-white/20 rounded-full flex items-center justify-center">
-              <BookOpen className="h-4 w-4 text-white/50" />
-            </div>
-            <h4 className="font-serif text-white text-sm leading-tight drop-shadow-md">{book.title}</h4>
-            <p className="text-white/50 text-[10px] mt-2 font-medium tracking-wide">{book.author}</p>
-            <div className="w-12 h-[1px] bg-white/30 mx-auto mt-4" />
-          </div>
+          {(book as any).cover_image ? (
+            <img src={(book as any).cover_image} alt={book.title} className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <>
+              <div className="absolute inset-0 opacity-[0.06]" style={{
+                backgroundImage: `radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)`,
+                backgroundSize: '20px 20px'
+              }} />
+              <div className="absolute left-0 top-0 bottom-0 w-3 bg-black/15" />
+              <div className="text-center px-6 relative z-10">
+                <div className="w-12 h-[1px] bg-white/30 mx-auto mb-4" />
+                <div className="w-8 h-8 mx-auto mb-3 border border-white/20 rounded-full flex items-center justify-center">
+                  <BookOpen className="h-4 w-4 text-white/50" />
+                </div>
+                <h4 className="font-serif text-white text-sm leading-tight drop-shadow-md">{book.title}</h4>
+                <p className="text-white/50 text-[10px] mt-2 font-medium tracking-wide">{book.author}</p>
+                <div className="w-12 h-[1px] bg-white/30 mx-auto mt-4" />
+              </div>
+            </>
+          )}
 
           {/* Hover overlay with buttons */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500 flex flex-col items-center justify-center gap-3 p-4">
