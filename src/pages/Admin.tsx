@@ -622,6 +622,9 @@ const Admin = () => {
             <TabsTrigger value="categories" className="text-xs sm:text-sm gap-1.5">
               <BookOpen className="h-3.5 w-3.5" /> Categories
             </TabsTrigger>
+            <TabsTrigger value="publishers" className="text-xs sm:text-sm gap-1.5">
+              <Building2 className="h-3.5 w-3.5" /> Publishers
+            </TabsTrigger>
             <TabsTrigger value="design" className="text-xs sm:text-sm gap-1.5">
               <Paintbrush className="h-3.5 w-3.5" /> Design
             </TabsTrigger>
