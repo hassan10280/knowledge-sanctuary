@@ -42,6 +42,7 @@ const Admin = () => {
   const [editingBook, setEditingBook] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openPanels, setOpenPanels] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
