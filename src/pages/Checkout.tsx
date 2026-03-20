@@ -322,12 +322,16 @@ const Checkout = () => {
               {/* Order Summary */}
               <div className="bg-card border border-border rounded-xl p-6 space-y-3">
                 <h2 className="font-serif text-xl text-foreground mb-4">Order Summary</h2>
-                {items.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-foreground">{item.title} × {item.quantity}</span>
-                    <span className="font-medium text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
+                {items.map((item) => {
+                  const disc = cartDiscounts.itemPrices.get(item.id);
+                  const unitPrice = disc ? disc.finalPrice : item.price;
+                  return (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span className="text-foreground">{item.title} × {item.quantity}</span>
+                      <span className="font-medium text-foreground">£{(unitPrice * item.quantity).toFixed(2)}</span>
+                    </div>
+                  );
+                })}
                 <div className="border-t border-border pt-3 space-y-2">
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Shipping</span>
