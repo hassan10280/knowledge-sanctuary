@@ -77,8 +77,9 @@ const WholesaleDiscountsTab = () => {
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-          <strong>Priority Rule:</strong> Product-specific → Publisher-based → Category-based. Higher priority discounts override lower ones.
+        <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground space-y-1">
+          <p><strong>Priority Rule:</strong> Fixed Price Override → Product-specific → Publisher-based → Category-based.</p>
+          <p><strong>Fixed Price:</strong> If set on a product discount, the wholesale price is fixed regardless of percentage.</p>
         </div>
 
         {editing && (
