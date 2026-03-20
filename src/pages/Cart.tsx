@@ -2,15 +2,17 @@ import { useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const { user, loading } = useAuth();
+  const { wholesaleStatus } = useWholesaleStatus(user);
   const navigate = useNavigate();
   const location = useLocation();
   const cartContentRef = useRef<HTMLDivElement>(null);
