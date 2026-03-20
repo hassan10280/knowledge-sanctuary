@@ -129,7 +129,7 @@ const Navbar = () => {
                       Log In
                     </Link>
                     <Link
-                      to="/auth"
+                      to="/auth?intent=signup"
                       className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-white/15 text-white border border-white/25 rounded-lg hover:bg-white/25 transition-all duration-300 backdrop-blur-sm"
                     >
                       <User className="h-4 w-4" />
