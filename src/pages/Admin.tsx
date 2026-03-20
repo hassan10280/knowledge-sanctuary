@@ -760,7 +760,11 @@ const Admin = () => {
                   {books?.map((book) => (
                     <div key={book.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-10 rounded" style={{ backgroundColor: book.cover_color || "#3b82f6" }} />
+                        {(book as any).cover_image ? (
+                          <img src={(book as any).cover_image} alt={book.title} className="w-8 h-10 rounded object-cover" />
+                        ) : (
+                          <div className="w-8 h-10 rounded" style={{ backgroundColor: book.cover_color || "#3b82f6" }} />
+                        )}
                         <div>
                           <p className="text-sm font-medium">{book.title}</p>
                           <p className="text-xs text-muted-foreground">{book.author} • {book.category} • £{book.price}</p>
