@@ -171,7 +171,7 @@ const Navbar = () => {
               ))}
 
               <Link
-                to="/wholesale/apply"
+                to="/auth?intent=wholesale"
                 className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--gold))] py-2 transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
