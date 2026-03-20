@@ -99,6 +99,7 @@ export type Database = {
           author: string
           category: string
           cover_color: string | null
+          cover_image: string | null
           cover_pattern: string | null
           created_at: string
           description: string | null
@@ -119,6 +120,7 @@ export type Database = {
           author: string
           category: string
           cover_color?: string | null
+          cover_image?: string | null
           cover_pattern?: string | null
           created_at?: string
           description?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           author?: string
           category?: string
           cover_color?: string | null
+          cover_image?: string | null
           cover_pattern?: string | null
           created_at?: string
           description?: string | null
@@ -274,6 +277,27 @@ export type Database = {
           transaction_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      publishers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number | null
         }
         Relationships: []
       }

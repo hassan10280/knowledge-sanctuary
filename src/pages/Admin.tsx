@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategory, useDeleteCategory } from "@/hooks/useBooks";
+import { usePublishers } from "@/hooks/usePublishers";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
 import WholesaleDiscountsTab from "@/components/admin/WholesaleDiscountsTab";
+import PublishersTab from "@/components/admin/PublishersTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +34,7 @@ const Admin = () => {
   const { data: settings, isLoading: settingsLoading } = useSiteSettings();
   const { data: books } = useBooks();
   const { data: categories } = useCategories();
+  const { data: publishers } = usePublishers();
   const updateSetting = useUpdateSetting();
   const upsertBook = useUpsertBook();
   const deleteBook = useDeleteBook();
@@ -107,6 +110,17 @@ const Admin = () => {
     const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(path);
     setEditingBook({ ...editingBook, sample_url: urlData.publicUrl });
     toast.success("Sample uploaded!");
+  };
+
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingBook) return;
+    const path = `covers/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("site-assets").upload(path, file);
+    if (error) { toast.error("Upload failed: " + error.message); return; }
+    const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(path);
+    setEditingBook({ ...editingBook, cover_image: urlData.publicUrl });
+    toast.success("Cover image uploaded!");
   };
 
   const handleSaveBook = async () => {
@@ -608,6 +622,9 @@ const Admin = () => {
             <TabsTrigger value="categories" className="text-xs sm:text-sm gap-1.5">
               <BookOpen className="h-3.5 w-3.5" /> Categories
             </TabsTrigger>
+            <TabsTrigger value="publishers" className="text-xs sm:text-sm gap-1.5">
+              <Building2 className="h-3.5 w-3.5" /> Publishers
+            </TabsTrigger>
             <TabsTrigger value="design" className="text-xs sm:text-sm gap-1.5">
               <Paintbrush className="h-3.5 w-3.5" /> Design
             </TabsTrigger>
@@ -641,7 +658,7 @@ const Admin = () => {
                 <CardTitle className="font-serif">Books Management</CardTitle>
                 <Button
                   size="sm"
-                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", rating: 4.5, sort_order: 0, sample_url: "", show_ratings: true })}
+                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", cover_image: "", rating: 4.5, sort_order: 0, sample_url: "", show_ratings: true, publisher: "" })}
                   className="gap-1.5"
                 >
                   <Plus className="h-4 w-4" /> Add Book
@@ -664,19 +681,48 @@ const Admin = () => {
                         ))}
                       </select>
                       <Input type="number" step="0.01" placeholder="Price" value={editingBook.price || ""} onChange={(e) => setEditingBook({ ...editingBook, price: parseFloat(e.target.value) || null })} />
-                      <Input type="number" step="0.01" placeholder="Original Price" value={editingBook.original_price || ""} onChange={(e) => setEditingBook({ ...editingBook, original_price: parseFloat(e.target.value) || null })} />
+                      <Input type="number" step="0.01" placeholder="Original Price (Sale)" value={editingBook.original_price || ""} onChange={(e) => setEditingBook({ ...editingBook, original_price: parseFloat(e.target.value) || null })} />
                       <Input type="number" placeholder="Discount %" value={editingBook.discount_percent || ""} onChange={(e) => setEditingBook({ ...editingBook, discount_percent: parseInt(e.target.value) || 0 })} />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Publisher</Label>
+                        <Select value={editingBook.publisher || ""} onValueChange={(v) => setEditingBook({ ...editingBook, publisher: v })}>
+                          <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select publisher..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="" className="text-sm">No Publisher</SelectItem>
+                            {publishers?.map((p) => (
+                              <SelectItem key={p.id} value={p.name} className="text-sm">{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Cover Color</Label>
                         <input type="color" value={editingBook.cover_color || "#1a5276"} onChange={(e) => setEditingBook({ ...editingBook, cover_color: e.target.value })} className="w-10 h-8 rounded border cursor-pointer" />
                       </div>
                       <Input type="number" step="0.1" placeholder="Rating" value={editingBook.rating || ""} onChange={(e) => setEditingBook({ ...editingBook, rating: parseFloat(e.target.value) || null })} />
-                      <Input placeholder="Publisher" value={editingBook.publisher || ""} onChange={(e) => setEditingBook({ ...editingBook, publisher: e.target.value })} />
                       <Input type="number" placeholder="Sort Order" value={editingBook.sort_order || 0} onChange={(e) => setEditingBook({ ...editingBook, sort_order: parseInt(e.target.value) || 0 })} />
                     </div>
                     <Textarea placeholder="Description" value={editingBook.description || ""} onChange={(e) => setEditingBook({ ...editingBook, description: e.target.value })} />
 
-                    {/* Show Ratings Toggle */}
+                    {/* Cover Image Upload */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                        <Image className="h-4 w-4" /> Cover Image
+                      </label>
+                      <div className="flex flex-col sm:flex-row gap-2 items-start">
+                        <Input type="file" accept="image/*" onChange={handleCoverImageUpload} className="max-w-xs" />
+                        {editingBook.cover_image && (
+                          <div className="flex items-center gap-2">
+                            <img src={editingBook.cover_image} alt="Cover" className="h-16 w-12 object-cover rounded border" />
+                            <Button size="sm" variant="ghost" className="text-destructive text-xs" onClick={() => setEditingBook({ ...editingBook, cover_image: "" })}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Upload a cover image. If not provided, the cover color will be used.</p>
+                    </div>
+
                     <div className="flex items-center gap-3 py-2">
                       <Switch
                         checked={editingBook.show_ratings !== false}
@@ -714,7 +760,11 @@ const Admin = () => {
                   {books?.map((book) => (
                     <div key={book.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-10 rounded" style={{ backgroundColor: book.cover_color || "#3b82f6" }} />
+                        {(book as any).cover_image ? (
+                          <img src={(book as any).cover_image} alt={book.title} className="w-8 h-10 rounded object-cover" />
+                        ) : (
+                          <div className="w-8 h-10 rounded" style={{ backgroundColor: book.cover_color || "#3b82f6" }} />
+                        )}
                         <div>
                           <p className="text-sm font-medium">{book.title}</p>
                           <p className="text-xs text-muted-foreground">{book.author} • {book.category} • £{book.price}</p>
@@ -816,6 +866,7 @@ const Admin = () => {
           <TabsContent value="wholesale-requests"><WholesaleRequestsTab /></TabsContent>
           <TabsContent value="form-builder"><FormBuilderTab /></TabsContent>
           <TabsContent value="discounts"><WholesaleDiscountsTab /></TabsContent>
+          <TabsContent value="publishers"><PublishersTab /></TabsContent>
         </Tabs>
       </div>
     </div>
