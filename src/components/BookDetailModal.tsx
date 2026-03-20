@@ -18,9 +18,21 @@ interface BookDetailModalProps {
 
 const BookDetailModal = ({ book, open, onOpenChange }: BookDetailModalProps) => {
   const { addItem, items } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [justAdded, setJustAdded] = useState(false);
+  const [hoverStar, setHoverStar] = useState(0);
   const isInCart = items.some((i) => i.id === book?.id);
+
+  const { data: allRatings } = useBookRatings(book?.id);
+  const { data: userRating } = useUserRating(book?.id, user?.id);
+  const { data: hasPurchased } = useHasPurchased(book?.id, user?.id);
+  const submitRating = useSubmitRating();
+
+  const avgRating = allRatings?.length
+    ? (allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length).toFixed(1)
+    : book?.rating;
+  const ratingCount = allRatings?.length || 0;
 
   if (!book) return null;
 
