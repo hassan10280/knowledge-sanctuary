@@ -28,6 +28,8 @@ const Checkout = () => {
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const { data: shippingRules } = useShippingRules();
+  const { data: books } = useBooks();
+  const { getCartDiscounts } = useDiscountCalculator();
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(1);
@@ -48,13 +50,23 @@ const Checkout = () => {
 
   const isWholesale = wholesaleStatus === "approved";
 
+  const bookDetails = (books || []).map((b: any) => ({
+    id: b.id,
+    price: Number(b.price),
+    publisher: b.publisher || "",
+    category: b.category || "",
+  }));
+
+  const cartDiscounts = getCartDiscounts(items, bookDetails);
+
   // Dynamic shipping calculation
   const calculateShipping = () => {
+    const baseAmount = cartDiscounts.discountedSubtotal;
     if (!shippingRules || shippingRules.length === 0) {
-      return totalPrice >= 25 ? 0 : 3.99;
+      return baseAmount >= 25 ? 0 : 3.99;
     }
     const applicableRules = shippingRules
-      .filter(r => r.is_active && totalPrice >= Number(r.min_amount))
+      .filter(r => r.is_active && baseAmount >= Number(r.min_amount))
       .filter(r => !r.is_wholesale || isWholesale)
       .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
     if (applicableRules.length > 0) {
@@ -65,7 +77,7 @@ const Checkout = () => {
   };
 
   const shipping = calculateShipping();
-  const grandTotal = totalPrice + shipping;
+  const grandTotal = cartDiscounts.discountedSubtotal + shipping;
 
   useEffect(() => {
     if (!authLoading && !user) {
