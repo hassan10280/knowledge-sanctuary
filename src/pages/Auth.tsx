@@ -49,8 +49,6 @@ const Auth = () => {
 
   const switchToLogin = () => {
     setMode("login");
-    setSignupStep("type");
-    setCustomerType(null);
   };
 
   const handleTypeSelected = () => {
