@@ -805,6 +805,10 @@ const Admin = () => {
           <TabsContent value="users">
             <UsersManagement />
           </TabsContent>
+
+          <TabsContent value="wholesale-requests"><WholesaleRequestsTab /></TabsContent>
+          <TabsContent value="form-builder"><FormBuilderTab /></TabsContent>
+          <TabsContent value="discounts"><WholesaleDiscountsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
