@@ -1,5 +1,3 @@
-import { motion } from "framer-motion";
-
 const GeometricPattern = () => (
   <>
     <svg
@@ -27,16 +25,13 @@ const GeometricPattern = () => (
       </defs>
       <rect width="400" height="400" fill="url(#islamic-geo)" />
     </svg>
-    {/* Floating geometric accents */}
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
-      className="absolute top-1/4 right-[10%] w-40 h-40 border border-white/[0.06] rounded-full"
+    <div
+      className="absolute top-1/4 right-[10%] w-40 h-40 border border-white/[0.06] rounded-full will-change-transform"
+      style={{ animation: "spin 120s linear infinite" }}
     />
-    <motion.div
-      animate={{ rotate: -360 }}
-      transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
-      className="absolute bottom-1/3 left-[8%] w-60 h-60 border border-white/[0.04] rounded-full"
+    <div
+      className="absolute bottom-1/3 left-[8%] w-60 h-60 border border-white/[0.04] rounded-full will-change-transform"
+      style={{ animation: "spin 90s linear infinite reverse" }}
     />
   </>
 );
