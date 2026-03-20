@@ -1,13 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
+import { useShippingRules, useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
