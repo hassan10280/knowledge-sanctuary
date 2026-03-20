@@ -168,6 +168,14 @@ const Navbar = () => {
                     {user ? (
                       <>
                         <p className="text-xs text-white/40 truncate">{user.email}</p>
+                        <Link
+                          to="/profile"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <User className="h-4 w-4" />
+                          My Profile
+                        </Link>
                         {isAdmin && (
                           <Link
                             to="/admin"
