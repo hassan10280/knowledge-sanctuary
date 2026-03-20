@@ -187,6 +187,51 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expiry_date: string | null
+          id: string
+          is_active: boolean
+          min_order_amount: number | null
+          updated_at: string
+          usage_limit: number | null
+          used_count: number
+          wholesale_only: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean
+          min_order_amount?: number | null
+          updated_at?: string
+          usage_limit?: number | null
+          used_count?: number
+          wholesale_only?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean
+          min_order_amount?: number | null
+          updated_at?: string
+          usage_limit?: number | null
+          used_count?: number
+          wholesale_only?: boolean
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           book_id: string
@@ -301,6 +346,39 @@ export type Database = {
         }
         Relationships: []
       }
+      shipping_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_wholesale: boolean
+          min_amount: number
+          rule_name: string
+          shipping_cost: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          min_amount?: number
+          rule_name?: string
+          shipping_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          min_amount?: number
+          rule_name?: string
+          shipping_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           id: string
@@ -388,6 +466,7 @@ export type Database = {
           created_at: string
           discount_percent: number
           discount_type: string
+          fixed_price: number | null
           id: string
           reference_value: string
           updated_at: string
@@ -397,6 +476,7 @@ export type Database = {
           created_at?: string
           discount_percent?: number
           discount_type?: string
+          fixed_price?: number | null
           id?: string
           reference_value: string
           updated_at?: string
@@ -406,6 +486,7 @@ export type Database = {
           created_at?: string
           discount_percent?: number
           discount_type?: string
+          fixed_price?: number | null
           id?: string
           reference_value?: string
           updated_at?: string
@@ -452,6 +533,36 @@ export type Database = {
           placeholder?: string | null
           required?: boolean | null
           sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wholesale_quantity_tiers: {
+        Row: {
+          created_at: string
+          discount_percent: number
+          id: string
+          max_qty: number | null
+          min_qty: number
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          max_qty?: number | null
+          min_qty: number
+          scope?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          max_qty?: number | null
+          min_qty?: number
+          scope?: string
           updated_at?: string
         }
         Relationships: []

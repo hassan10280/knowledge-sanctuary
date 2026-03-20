@@ -29,6 +29,12 @@ const WholesaleDiscountsTab = () => {
       if (toSave.discount_type === "publisher" || toSave.discount_type === "category") {
         toSave.book_id = null;
       }
+      // If fixed_price is set, discount_percent becomes 0
+      if (toSave.fixed_price && Number(toSave.fixed_price) > 0) {
+        toSave.discount_percent = 0;
+      } else {
+        toSave.fixed_price = null;
+      }
       await upsertDiscount.mutateAsync(toSave);
       toast.success("Discount saved!");
       setEditing(null);
@@ -64,15 +70,16 @@ const WholesaleDiscountsTab = () => {
         </CardTitle>
         <Button
           size="sm"
-          onClick={() => setEditing({ discount_type: "publisher", reference_value: "", discount_percent: 10, book_id: null })}
+          onClick={() => setEditing({ discount_type: "publisher", reference_value: "", discount_percent: 10, book_id: null, fixed_price: null })}
           className="gap-1.5"
         >
           <Plus className="h-4 w-4" /> Add Discount
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-          <strong>Priority Rule:</strong> Product-specific → Publisher-based → Category-based. Higher priority discounts override lower ones.
+        <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground space-y-1">
+          <p><strong>Priority Rule:</strong> Fixed Price Override → Product-specific → Publisher-based → Category-based.</p>
+          <p><strong>Fixed Price:</strong> If set on a product discount, the wholesale price is fixed regardless of percentage.</p>
         </div>
 
         {editing && (
@@ -135,8 +142,25 @@ const WholesaleDiscountsTab = () => {
                   value={editing.discount_percent}
                   onChange={e => setEditing({ ...editing, discount_percent: parseFloat(e.target.value) || 0 })}
                   className="h-9 text-xs"
+                  disabled={editing.fixed_price && Number(editing.fixed_price) > 0}
                 />
               </div>
+
+              {editing.discount_type === "product" && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Fixed Price Override (£)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={editing.fixed_price || ""}
+                    onChange={e => setEditing({ ...editing, fixed_price: parseFloat(e.target.value) || null })}
+                    className="h-9 text-xs"
+                    placeholder="Leave empty for % discount"
+                  />
+                  <p className="text-[10px] text-muted-foreground">If set, this overrides % discount with a fixed wholesale price.</p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -157,7 +181,11 @@ const WholesaleDiscountsTab = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium">{d.reference_value}</p>
-                  <p className="text-xs text-muted-foreground">{d.discount_percent}% discount</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(d as any).fixed_price && Number((d as any).fixed_price) > 0
+                      ? `Fixed Price: £${Number((d as any).fixed_price).toFixed(2)}`
+                      : `${d.discount_percent}% discount`}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-1">

@@ -1,21 +1,72 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
+import { useShippingRules, useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
+  const { data: shippingRules } = useShippingRules();
+  const validateCoupon = useValidateCoupon();
   const navigate = useNavigate();
   const location = useLocation();
   const cartContentRef = useRef<HTMLDivElement>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const isWholesale = wholesaleStatus === "approved";
+
+  // Calculate shipping based on rules
+  const calculateShipping = () => {
+    if (!shippingRules || shippingRules.length === 0) {
+      return totalPrice >= 25 ? 0 : 3.99; // fallback
+    }
+    const applicableRules = shippingRules
+      .filter(r => r.is_active && totalPrice >= Number(r.min_amount))
+      .filter(r => !r.is_wholesale || isWholesale)
+      .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
+    if (applicableRules.length > 0) {
+      return Number(applicableRules[0].shipping_cost);
+    }
+    // No rule matched, find default (min_amount = 0)
+    const defaultRule = shippingRules.find(r => r.is_active && Number(r.min_amount) === 0 && (!r.is_wholesale || isWholesale));
+    return defaultRule ? Number(defaultRule.shipping_cost) : 3.99;
+  };
+
+  const shipping = calculateShipping();
+
+  // Calculate coupon discount
+  const couponDiscount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? totalPrice * (Number(appliedCoupon.discount_value) / 100)
+      : Math.min(Number(appliedCoupon.discount_value), totalPrice)
+    : 0;
+
+  const grandTotal = Math.max(0, totalPrice - couponDiscount + shipping);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    try {
+      const coupon = await validateCoupon.mutateAsync({
+        code: couponCode,
+        orderTotal: totalPrice,
+        isWholesale,
+      });
+      setAppliedCoupon(coupon);
+      toast.success(`Coupon "${coupon.code}" applied!`);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
 
   useEffect(() => {
     if (location.state?.scrollToCart && cartContentRef.current) {
@@ -115,25 +166,57 @@ const Cart = () => {
               ))}
 
               <div className="mt-8 bg-card border border-border rounded-xl p-6 space-y-4">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>£{totalPrice.toFixed(2)}</span>
+                {/* Coupon Code */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Promo Code</p>
+                  {appliedCoupon ? (
+                    <div className="flex items-center gap-2 p-2.5 bg-primary/5 border border-primary/20 rounded-lg">
+                      <Ticket className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-mono font-semibold text-primary">{appliedCoupon.code}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({appliedCoupon.discount_type === "percentage" ? `${appliedCoupon.discount_value}% off` : `£${Number(appliedCoupon.discount_value).toFixed(2)} off`})
+                      </span>
+                      <button onClick={() => setAppliedCoupon(null)} className="ml-auto text-muted-foreground hover:text-destructive">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        value={couponCode}
+                        onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter code..."
+                        className="font-mono uppercase text-sm"
+                      />
+                      <Button variant="outline" size="sm" onClick={handleApplyCoupon} disabled={validateCoupon.isPending} className="shrink-0">
+                        Apply
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Shipping</span>
-                  <span>{totalPrice >= 25 ? "Free" : "£3.99"}</span>
+
+                <div className="border-t border-border pt-4 space-y-2">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>£{totalPrice.toFixed(2)}</span>
+                  </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Coupon Discount</span>
+                      <span>-£{couponDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Shipping</span>
+                    <span>{shipping === 0 ? "Free" : `£${shipping.toFixed(2)}`}</span>
+                  </div>
+                  <div className="border-t border-border pt-3 flex justify-between">
+                    <span className="font-semibold text-foreground">Total</span>
+                    <span className="text-xl font-bold text-primary">
+                      £{grandTotal.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div className="border-t border-border pt-4 flex justify-between">
-                  <span className="font-semibold text-foreground">Total</span>
-                  <span className="text-xl font-bold text-primary">
-                    £{(totalPrice + (totalPrice >= 25 ? 0 : 3.99)).toFixed(2)}
-                  </span>
-                </div>
-                {totalPrice < 25 && (
-                  <p className="text-xs text-muted-foreground">
-                    Add £{(25 - totalPrice).toFixed(2)} more to qualify for free shipping.
-                  </p>
-                )}
                 {user && wholesaleStatus === "pending" ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">

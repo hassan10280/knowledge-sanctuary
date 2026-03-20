@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
+import { useShippingRules } from "@/hooks/useAdvancedDiscounts";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -24,7 +25,9 @@ const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
+  const { data: shippingRules } = useShippingRules();
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [savedAddress, setSavedAddress] = useState<any>(null);
   const [useSaved, setUseSaved] = useState(false);
@@ -41,7 +44,25 @@ const Checkout = () => {
     phone: "",
   });
 
-  const shipping = totalPrice >= 25 ? 0 : 3.99;
+  const isWholesale = wholesaleStatus === "approved";
+
+  // Dynamic shipping calculation
+  const calculateShipping = () => {
+    if (!shippingRules || shippingRules.length === 0) {
+      return totalPrice >= 25 ? 0 : 3.99;
+    }
+    const applicableRules = shippingRules
+      .filter(r => r.is_active && totalPrice >= Number(r.min_amount))
+      .filter(r => !r.is_wholesale || isWholesale)
+      .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
+    if (applicableRules.length > 0) {
+      return Number(applicableRules[0].shipping_cost);
+    }
+    const defaultRule = shippingRules.find(r => r.is_active && Number(r.min_amount) === 0 && (!r.is_wholesale || isWholesale));
+    return defaultRule ? Number(defaultRule.shipping_cost) : 3.99;
+  };
+
+  const shipping = calculateShipping();
   const grandTotal = totalPrice + shipping;
 
   useEffect(() => {
@@ -50,27 +71,6 @@ const Checkout = () => {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
-
-  // Block pending wholesale users
-  if (!authLoading && !wholesaleLoading && wholesaleStatus === "pending") {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="pt-32 pb-20 px-4 sm:px-6 max-w-lg mx-auto text-center space-y-5">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
-            <Clock className="h-16 w-16 text-amber-500 mx-auto" />
-          </motion.div>
-          <h1 className="font-serif text-2xl text-foreground">Wholesale Account Under Review</h1>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-left space-y-2">
-            <p className="text-sm text-amber-800 font-medium">Your account has been created successfully.</p>
-            <p className="text-sm text-amber-700">Your wholesale account is currently under review by an admin. You will be able to place orders after approval.</p>
-          </div>
-          <Button onClick={() => navigate("/")} variant="outline">Back to Home</Button>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   useEffect(() => {
     if (!user) return;
@@ -93,6 +93,27 @@ const Checkout = () => {
       navigate("/cart");
     }
   }, [items, navigate, submitting]);
+
+  // Block pending wholesale users (after all hooks)
+  if (!authLoading && !wholesaleLoading && wholesaleStatus === "pending") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-32 pb-20 px-4 sm:px-6 max-w-lg mx-auto text-center space-y-5">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
+            <Clock className="h-16 w-16 text-amber-500 mx-auto" />
+          </motion.div>
+          <h1 className="font-serif text-2xl text-foreground">Wholesale Account Under Review</h1>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-left space-y-2">
+            <p className="text-sm text-amber-800 font-medium">Your account has been created successfully.</p>
+            <p className="text-sm text-amber-700">Your wholesale account is currently under review by an admin. You will be able to place orders after approval.</p>
+          </div>
+          <Button onClick={() => navigate("/")} variant="outline">Back to Home</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const currentAddress = useSaved && savedAddress
     ? {

@@ -6,12 +6,15 @@ import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategor
 import { usePublishers } from "@/hooks/usePublishers";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image, Layers, Ticket, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
 import WholesaleDiscountsTab from "@/components/admin/WholesaleDiscountsTab";
 import PublishersTab from "@/components/admin/PublishersTab";
+import QuantityTiersTab from "@/components/admin/QuantityTiersTab";
+import CouponsTab from "@/components/admin/CouponsTab";
+import ShippingRulesTab from "@/components/admin/ShippingRulesTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -646,6 +649,15 @@ const Admin = () => {
             <TabsTrigger value="discounts" className="text-xs sm:text-sm gap-1.5">
               <Percent className="h-3.5 w-3.5" /> Discounts
             </TabsTrigger>
+            <TabsTrigger value="quantity-tiers" className="text-xs sm:text-sm gap-1.5">
+              <Layers className="h-3.5 w-3.5" /> Qty Tiers
+            </TabsTrigger>
+            <TabsTrigger value="coupons" className="text-xs sm:text-sm gap-1.5">
+              <Ticket className="h-3.5 w-3.5" /> Coupons
+            </TabsTrigger>
+            <TabsTrigger value="shipping" className="text-xs sm:text-sm gap-1.5">
+              <Truck className="h-3.5 w-3.5" /> Shipping
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
@@ -866,6 +878,9 @@ const Admin = () => {
           <TabsContent value="wholesale-requests"><WholesaleRequestsTab /></TabsContent>
           <TabsContent value="form-builder"><FormBuilderTab /></TabsContent>
           <TabsContent value="discounts"><WholesaleDiscountsTab /></TabsContent>
+          <TabsContent value="quantity-tiers"><QuantityTiersTab /></TabsContent>
+          <TabsContent value="coupons"><CouponsTab /></TabsContent>
+          <TabsContent value="shipping"><ShippingRulesTab /></TabsContent>
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
         </Tabs>
       </div>
