@@ -65,7 +65,7 @@ const Cart = () => {
               </Button>
             </motion.div>
           ) : (
-            <div className="space-y-4">
+            <div ref={cartContentRef} className="space-y-4">
               {items.map((item, i) => (
                 <motion.div
                   key={item.id}

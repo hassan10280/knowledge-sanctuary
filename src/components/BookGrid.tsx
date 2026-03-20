@@ -22,7 +22,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isInCart) {
-      navigate("/cart");
+      navigate("/cart", { state: { scrollToCart: true } });
       return;
     }
     addItem({
@@ -31,6 +31,10 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
       author: book.author,
       price: wholesalePrice ?? Number(book.price),
       cover_color: book.cover_color || "#1a5276",
+    });
+    toast({
+      title: "Added to cart successfully",
+      description: `"${book.title}" has been added to your cart.`,
     });
   };
 
