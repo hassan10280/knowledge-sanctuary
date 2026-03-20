@@ -826,8 +826,12 @@ const Admin = () => {
 const UsersManagement = () => {
   const [adminEmail, setAdminEmail] = useState("");
   const [admins, setAdmins] = useState<Array<{ id: string; user_id: string; email?: string }>>([]);
+  const [allUsers, setAllUsers] = useState<Array<{ id: string; email: string; created_at: string; last_sign_in_at: string | null; role: string; roles: any[] }>>([]);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [searchUser, setSearchUser] = useState("");
 
   const fetchAdmins = async () => {
     setLoadingAdmins(true);
@@ -843,7 +847,21 @@ const UsersManagement = () => {
     setLoadingAdmins(false);
   };
 
-  useEffect(() => { fetchAdmins(); }, []);
+  const fetchAllUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "list_all_users" },
+      });
+      if (error) throw error;
+      setAllUsers(data?.users || []);
+    } catch (e) {
+      console.error("Failed to fetch users", e);
+    }
+    setLoadingUsers(false);
+  };
+
+  useEffect(() => { fetchAdmins(); fetchAllUsers(); }, []);
 
   const handleMakeAdmin = async () => {
     if (!adminEmail.trim()) return;
@@ -854,7 +872,7 @@ const UsersManagement = () => {
       });
       if (error) throw error;
       if (data?.error) { toast.error(data.error); }
-      else { toast.success(`${adminEmail} is now an admin!`); setAdminEmail(""); fetchAdmins(); }
+      else { toast.success(`${adminEmail} is now an admin!`); setAdminEmail(""); fetchAdmins(); fetchAllUsers(); }
     } catch (e: any) { toast.error(e.message || "Failed to add admin"); }
     setAdding(false);
   };
@@ -867,8 +885,27 @@ const UsersManagement = () => {
       });
       if (error) throw error;
       if (data?.error) { toast.error(data.error); }
-      else { toast.success("Admin removed!"); fetchAdmins(); }
+      else { toast.success("Admin removed!"); fetchAdmins(); fetchAllUsers(); }
     } catch (e: any) { toast.error(e.message || "Failed to remove admin"); }
+  };
+
+  const roleColors: Record<string, string> = {
+    admin: "bg-primary/10 text-primary border-primary/20",
+    wholesale: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    retail: "bg-muted text-muted-foreground border-border/50",
+  };
+
+  const filteredUsers = allUsers.filter(u => {
+    const matchesRole = roleFilter === "all" || u.role === roleFilter;
+    const matchesSearch = !searchUser || u.email.toLowerCase().includes(searchUser.toLowerCase());
+    return matchesRole && matchesSearch;
+  });
+
+  const roleCounts = {
+    all: allUsers.length,
+    admin: allUsers.filter(u => u.role === "admin").length,
+    wholesale: allUsers.filter(u => u.role === "wholesale").length,
+    retail: allUsers.filter(u => u.role === "retail").length,
   };
 
   return (
@@ -877,6 +914,7 @@ const UsersManagement = () => {
         <CardTitle className="font-serif">User Role Management</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Make Admin */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Make someone Admin</label>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -889,6 +927,7 @@ const UsersManagement = () => {
           <p className="text-xs text-muted-foreground">The user must have an account (signed up) before you can make them admin.</p>
         </div>
 
+        {/* Current Admins */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-foreground">Current Admins</h3>
           {loadingAdmins ? (
@@ -907,6 +946,56 @@ const UsersManagement = () => {
                     <ShieldOff className="h-3.5 w-3.5" />
                     Remove
                   </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* All Users Overview */}
+        <div className="space-y-3 pt-4 border-t border-border">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-sm font-semibold text-foreground">All Registered Users ({allUsers.length})</h3>
+            <div className="flex gap-1.5 flex-wrap">
+              {(["all", "admin", "wholesale", "retail"] as const).map(r => (
+                <button
+                  key={r}
+                  onClick={() => setRoleFilter(r)}
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border transition-colors ${
+                    roleFilter === r ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted"
+                  }`}
+                >
+                  {r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)} ({roleCounts[r]})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Input
+            placeholder="Search by email..."
+            value={searchUser}
+            onChange={e => setSearchUser(e.target.value)}
+            className="h-9 bg-muted/30 border-border/50"
+          />
+
+          {loadingUsers ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Loading users...</p>
+          ) : filteredUsers.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No users found.</p>
+          ) : (
+            <div className="space-y-1.5 max-h-[400px] overflow-auto">
+              {filteredUsers.map(u => (
+                <div key={u.id} className="flex items-center justify-between p-3 bg-card border border-border/30 rounded-lg hover:border-border/60 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{u.email}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Joined {new Date(u.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      {u.last_sign_in_at && ` • Last login ${new Date(u.last_sign_in_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
+                    </p>
+                  </div>
+                  <span className={`ml-3 px-2.5 py-1 text-[11px] font-semibold rounded-full border shrink-0 ${roleColors[u.role] || roleColors.retail}`}>
+                    {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                  </span>
                 </div>
               ))}
             </div>
