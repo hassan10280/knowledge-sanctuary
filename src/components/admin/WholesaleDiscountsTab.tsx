@@ -29,6 +29,12 @@ const WholesaleDiscountsTab = () => {
       if (toSave.discount_type === "publisher" || toSave.discount_type === "category") {
         toSave.book_id = null;
       }
+      // If fixed_price is set, discount_percent becomes 0
+      if (toSave.fixed_price && Number(toSave.fixed_price) > 0) {
+        toSave.discount_percent = 0;
+      } else {
+        toSave.fixed_price = null;
+      }
       await upsertDiscount.mutateAsync(toSave);
       toast.success("Discount saved!");
       setEditing(null);
