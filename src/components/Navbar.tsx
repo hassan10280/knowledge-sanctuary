@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Menu, X, User, LogOut, Shield, ShoppingCart, Building2 } from "lucide-react";
+import { Menu, X, LogOut, User, Shield, ShoppingCart, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import ProfileDropdown from "@/components/ProfileDropdown";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/contexts/CartContext";
