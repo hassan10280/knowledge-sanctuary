@@ -174,10 +174,13 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
 
   const getWholesalePrice = (book: any): number | undefined => {
     if (userRole !== "wholesale") return undefined;
+    // Priority: Product > Publisher > Category
     const productDiscount = discounts?.find(d => d.discount_type === "product" && d.book_id === book.id);
     if (productDiscount) return Number(book.price) * (1 - Number(productDiscount.discount_percent) / 100);
     const pubDiscount = discounts?.find(d => d.discount_type === "publisher" && d.reference_value === (book as any).publisher);
     if (pubDiscount) return Number(book.price) * (1 - Number(pubDiscount.discount_percent) / 100);
+    const catDiscount = discounts?.find(d => d.discount_type === "category" && d.reference_value === book.category);
+    if (catDiscount) return Number(book.price) * (1 - Number(catDiscount.discount_percent) / 100);
     return undefined;
   };
 
