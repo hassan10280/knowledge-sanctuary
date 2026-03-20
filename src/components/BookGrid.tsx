@@ -8,7 +8,7 @@ import { useUserRole, useWholesaleDiscounts } from "@/hooks/useWholesale";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 
-const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void }) => {
+const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number }) => {
   const { items } = useCart();
   const navigate = useNavigate();
   const isInCart = items.some((i) => i.id === book.id);
