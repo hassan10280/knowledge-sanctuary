@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight } from "lucide-react";
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { useCart } from "@/contexts/CartContext";
+import { useUserRole, useWholesaleDiscounts } from "@/hooks/useWholesale";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 
