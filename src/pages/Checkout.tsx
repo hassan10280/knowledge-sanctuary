@@ -4,6 +4,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import { useShippingRules } from "@/hooks/useAdvancedDiscounts";
+import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
+import { useBooks } from "@/hooks/useBooks";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -26,6 +28,8 @@ const Checkout = () => {
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const { data: shippingRules } = useShippingRules();
+  const { data: books } = useBooks();
+  const { getCartDiscounts } = useDiscountCalculator();
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(1);
@@ -46,13 +50,23 @@ const Checkout = () => {
 
   const isWholesale = wholesaleStatus === "approved";
 
+  const bookDetails = (books || []).map((b: any) => ({
+    id: b.id,
+    price: Number(b.price),
+    publisher: b.publisher || "",
+    category: b.category || "",
+  }));
+
+  const cartDiscounts = getCartDiscounts(items, bookDetails);
+
   // Dynamic shipping calculation
   const calculateShipping = () => {
+    const baseAmount = cartDiscounts.discountedSubtotal;
     if (!shippingRules || shippingRules.length === 0) {
-      return totalPrice >= 25 ? 0 : 3.99;
+      return baseAmount >= 25 ? 0 : 3.99;
     }
     const applicableRules = shippingRules
-      .filter(r => r.is_active && totalPrice >= Number(r.min_amount))
+      .filter(r => r.is_active && baseAmount >= Number(r.min_amount))
       .filter(r => !r.is_wholesale || isWholesale)
       .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
     if (applicableRules.length > 0) {
@@ -63,7 +77,7 @@ const Checkout = () => {
   };
 
   const shipping = calculateShipping();
-  const grandTotal = totalPrice + shipping;
+  const grandTotal = cartDiscounts.discountedSubtotal + shipping;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -308,12 +322,16 @@ const Checkout = () => {
               {/* Order Summary */}
               <div className="bg-card border border-border rounded-xl p-6 space-y-3">
                 <h2 className="font-serif text-xl text-foreground mb-4">Order Summary</h2>
-                {items.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-foreground">{item.title} × {item.quantity}</span>
-                    <span className="font-medium text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
+                {items.map((item) => {
+                  const disc = cartDiscounts.itemPrices.get(item.id);
+                  const unitPrice = disc ? disc.finalPrice : item.price;
+                  return (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span className="text-foreground">{item.title} × {item.quantity}</span>
+                      <span className="font-medium text-foreground">£{(unitPrice * item.quantity).toFixed(2)}</span>
+                    </div>
+                  );
+                })}
                 <div className="border-t border-border pt-3 space-y-2">
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Shipping</span>

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight } from "lucide-react";
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { useCart } from "@/contexts/CartContext";
-import { useUserRole, useWholesaleDiscounts } from "@/hooks/useWholesale";
+import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 
@@ -173,21 +173,14 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
 const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   const { data: books, isLoading: booksLoading } = useBooks();
   const { data: categories, isLoading: catsLoading } = useCategories();
-  const { data: userRole } = useUserRole();
-  const { data: discounts } = useWholesaleDiscounts();
+  const { getBookDiscount } = useDiscountCalculator();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [sampleBook, setSampleBook] = useState<any>(null);
 
-  const getWholesalePrice = (book: any): number | undefined => {
-    if (userRole !== "wholesale") return undefined;
-    // Priority: Product > Publisher > Category
-    const productDiscount = discounts?.find(d => d.discount_type === "product" && d.book_id === book.id);
-    if (productDiscount) return Number(book.price) * (1 - Number(productDiscount.discount_percent) / 100);
-    const pubDiscount = discounts?.find(d => d.discount_type === "publisher" && d.reference_value === (book as any).publisher);
-    if (pubDiscount) return Number(book.price) * (1 - Number(pubDiscount.discount_percent) / 100);
-    const catDiscount = discounts?.find(d => d.discount_type === "category" && d.reference_value === book.category);
-    if (catDiscount) return Number(book.price) * (1 - Number(catDiscount.discount_percent) / 100);
-    return undefined;
+  const getDiscountedPrice = (book: any): number | undefined => {
+    const result = getBookDiscount(book);
+    if (result.discountSource === "none") return undefined;
+    return Math.round(result.finalPrice * 100) / 100;
   };
 
   if (booksLoading || catsLoading) {
@@ -257,7 +250,7 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
               {category.books.map((book: any, i: number) => (
-                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} wholesalePrice={getWholesalePrice(book)} />
+                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} wholesalePrice={getDiscountedPrice(book)} />
               ))}
             </div>
           </div>
