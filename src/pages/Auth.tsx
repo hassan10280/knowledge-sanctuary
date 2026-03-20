@@ -21,7 +21,7 @@ type CustomerType = "retail" | "wholesale" | null;
 type SignupStep = "type" | "form";
 
 const Auth = () => {
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode>("signup");
   const [customerType, setCustomerType] = useState<CustomerType>(null);
   const [signupStep, setSignupStep] = useState<SignupStep>("type");
   const [email, setEmail] = useState("");
