@@ -108,8 +108,14 @@ const Auth = () => {
         return;
       }
 
-      // Step 2: For wholesale, submit the application
+      // Step 2: For wholesale, sign in to get a session then submit the application
       if (customerType === "wholesale" && signUpData.user) {
+        // Sign in immediately to establish a session for the RLS insert
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) {
+          console.error("Auto sign-in after signup failed:", signInError);
+        }
+
         const { error: appError } = await supabase.from("wholesale_applications").insert({
           user_id: signUpData.user.id,
           form_data: wholesaleFormData,
