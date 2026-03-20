@@ -134,7 +134,17 @@ const Cart = () => {
                     Add £{(25 - totalPrice).toFixed(2)} more to qualify for free shipping.
                   </p>
                 )}
-                {user ? (
+                {user && wholesaleStatus === "pending" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                      <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                      <p className="text-xs text-amber-700">Your wholesale account is under review. You can place orders after admin approval.</p>
+                    </div>
+                    <Button disabled className="w-full h-12 text-base font-semibold gap-2 opacity-50">
+                      Checkout Unavailable
+                    </Button>
+                  </div>
+                ) : user ? (
                   <Button asChild className="w-full h-12 text-base font-semibold gap-2">
                     <Link to="/checkout">
                       Proceed to Checkout
