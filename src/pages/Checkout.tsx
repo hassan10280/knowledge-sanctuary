@@ -72,27 +72,6 @@ const Checkout = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Block pending wholesale users
-  if (!authLoading && !wholesaleLoading && wholesaleStatus === "pending") {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="pt-32 pb-20 px-4 sm:px-6 max-w-lg mx-auto text-center space-y-5">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
-            <Clock className="h-16 w-16 text-amber-500 mx-auto" />
-          </motion.div>
-          <h1 className="font-serif text-2xl text-foreground">Wholesale Account Under Review</h1>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-left space-y-2">
-            <p className="text-sm text-amber-800 font-medium">Your account has been created successfully.</p>
-            <p className="text-sm text-amber-700">Your wholesale account is currently under review by an admin. You will be able to place orders after approval.</p>
-          </div>
-          <Button onClick={() => navigate("/")} variant="outline">Back to Home</Button>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   useEffect(() => {
     if (!user) return;
     supabase
