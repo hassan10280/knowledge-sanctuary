@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Menu, X, User, LogOut, Shield, ShoppingCart, Building2 } from "lucide-react";
+import { Menu, X, LogOut, User, Shield, ShoppingCart, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import ProfileDropdown from "@/components/ProfileDropdown";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/contexts/CartContext";
@@ -98,26 +99,8 @@ const Navbar = () => {
             {!loading && (
               <>
                 {user ? (
-                  <div className="hidden sm:flex items-center gap-2">
-                    {isAdmin && (
-                      <Link
-                        to="/admin"
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/30 rounded-lg hover:bg-[hsl(var(--gold))]/30 transition-all"
-                      >
-                        <Shield className="h-3.5 w-3.5" />
-                        Admin
-                      </Link>
-                    )}
-                    <span className="text-xs text-white/50 max-w-[120px] truncate hidden lg:block">
-                      {user.email}
-                    </span>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-white/10 text-white border border-white/20 rounded-lg hover:bg-white/20 transition-all"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      Logout
-                    </button>
+                  <div className="hidden sm:flex items-center">
+                    <ProfileDropdown />
                   </div>
                 ) : (
                   <div className="hidden sm:flex items-center gap-2">
@@ -185,6 +168,14 @@ const Navbar = () => {
                     {user ? (
                       <>
                         <p className="text-xs text-white/40 truncate">{user.email}</p>
+                        <Link
+                          to="/profile"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <User className="h-4 w-4" />
+                          My Profile
+                        </Link>
                         {isAdmin && (
                           <Link
                             to="/admin"

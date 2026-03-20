@@ -14,6 +14,7 @@ const Auth = lazy(() => import("./pages/Auth.tsx"));
 const Cart = lazy(() => import("./pages/Cart.tsx"));
 const Checkout = lazy(() => import("./pages/Checkout.tsx"));
 const WholesaleApply = lazy(() => import("./pages/WholesaleApply.tsx"));
+const Profile = lazy(() => import("./pages/Profile.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/wholesale/apply" element={<WholesaleApply />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/profile" element={<Profile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
