@@ -671,6 +671,7 @@ const Admin = () => {
                         <input type="color" value={editingBook.cover_color || "#1a5276"} onChange={(e) => setEditingBook({ ...editingBook, cover_color: e.target.value })} className="w-10 h-8 rounded border cursor-pointer" />
                       </div>
                       <Input type="number" step="0.1" placeholder="Rating" value={editingBook.rating || ""} onChange={(e) => setEditingBook({ ...editingBook, rating: parseFloat(e.target.value) || null })} />
+                      <Input placeholder="Publisher" value={editingBook.publisher || ""} onChange={(e) => setEditingBook({ ...editingBook, publisher: e.target.value })} />
                       <Input type="number" placeholder="Sort Order" value={editingBook.sort_order || 0} onChange={(e) => setEditingBook({ ...editingBook, sort_order: parseInt(e.target.value) || 0 })} />
                     </div>
                     <Textarea placeholder="Description" value={editingBook.description || ""} onChange={(e) => setEditingBook({ ...editingBook, description: e.target.value })} />
