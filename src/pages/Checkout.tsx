@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, CreditCard, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
@@ -22,6 +23,7 @@ const BANK_DETAILS = {
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { user, loading: authLoading } = useAuth();
+  const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [savedAddress, setSavedAddress] = useState<any>(null);
@@ -48,6 +50,27 @@ const Checkout = () => {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
+
+  // Block pending wholesale users
+  if (!authLoading && !wholesaleLoading && wholesaleStatus === "pending") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-32 pb-20 px-4 sm:px-6 max-w-lg mx-auto text-center space-y-5">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
+            <Clock className="h-16 w-16 text-amber-500 mx-auto" />
+          </motion.div>
+          <h1 className="font-serif text-2xl text-foreground">Wholesale Account Under Review</h1>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-left space-y-2">
+            <p className="text-sm text-amber-800 font-medium">Your account has been created successfully.</p>
+            <p className="text-sm text-amber-700">Your wholesale account is currently under review by an admin. You will be able to place orders after approval.</p>
+          </div>
+          <Button onClick={() => navigate("/")} variant="outline">Back to Home</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!user) return;
