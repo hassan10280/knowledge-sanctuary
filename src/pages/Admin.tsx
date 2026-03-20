@@ -34,6 +34,7 @@ const Admin = () => {
   const { data: settings, isLoading: settingsLoading } = useSiteSettings();
   const { data: books } = useBooks();
   const { data: categories } = useCategories();
+  const { data: publishers } = usePublishers();
   const updateSetting = useUpdateSetting();
   const upsertBook = useUpsertBook();
   const deleteBook = useDeleteBook();
