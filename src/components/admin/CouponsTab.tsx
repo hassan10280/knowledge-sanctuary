@@ -9,8 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCoupons, useUpsertCoupon, useDeleteCoupon } from "@/hooks/useAdvancedDiscounts";
 import { toast } from "sonner";
 
-const CouponsTab = () => {
-  const { data: coupons, isLoading } = useCoupons();
+interface CouponsTabProps {
+  wholesaleOnly?: boolean;
+  retailOnly?: boolean;
+}
+
+const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
+  const { data: allCoupons, isLoading } = useCoupons();
+  const coupons = allCoupons?.filter(c => {
+    if (wholesaleOnly) return c.wholesale_only;
+    if (retailOnly) return !c.wholesale_only;
+    return true;
+  });
   const upsert = useUpsertCoupon();
   const deleteCoupon = useDeleteCoupon();
   const [editing, setEditing] = useState<any>(null);
