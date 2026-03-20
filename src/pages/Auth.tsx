@@ -21,9 +21,20 @@ type CustomerType = "retail" | "wholesale" | null;
 type SignupStep = "type" | "form";
 
 const Auth = () => {
-  const [mode, setMode] = useState<AuthMode>("login");
-  const [customerType, setCustomerType] = useState<CustomerType>(null);
-  const [signupStep, setSignupStep] = useState<SignupStep>("type");
+  const navigateRef = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialIntent = searchParams.get("intent");
+
+  const [mode, setMode] = useState<AuthMode>(
+    initialIntent === "signup" || initialIntent === "wholesale" ? "signup" : "login"
+  );
+  const [customerType, setCustomerType] = useState<CustomerType>(
+    initialIntent === "wholesale" ? "wholesale" : null
+  );
+  const [signupStep, setSignupStep] = useState<SignupStep>(
+    initialIntent === "wholesale" ? "form" : initialIntent === "signup" ? "type" : "type"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,8 +42,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [wholesaleFormData, setWholesaleFormData] = useState<Record<string, string>>({});
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = navigateRef;
   const { data: wholesaleFields } = useWholesaleFormFields();
 
   const from = (location.state as any)?.from || "/";

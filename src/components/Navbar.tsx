@@ -214,7 +214,7 @@ const Navbar = () => {
                           Log In
                         </Link>
                         <Link
-                          to="/auth"
+                          to="/auth?intent=signup"
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-white text-[hsl(var(--sky-deep))] rounded-lg hover:bg-white/90 transition-all"
                           onClick={() => setMobileOpen(false)}
                         >
