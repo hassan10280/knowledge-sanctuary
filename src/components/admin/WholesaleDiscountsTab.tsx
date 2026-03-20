@@ -6,17 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWholesaleDiscounts, useUpsertDiscount, useDeleteDiscount } from "@/hooks/useWholesale";
-import { useBooks } from "@/hooks/useBooks";
+import { useBooks, useCategories } from "@/hooks/useBooks";
+import { usePublishers } from "@/hooks/usePublishers";
 import { toast } from "sonner";
 
 const WholesaleDiscountsTab = () => {
   const { data: discounts, isLoading } = useWholesaleDiscounts();
   const { data: books } = useBooks();
+  const { data: categories } = useCategories();
+  const { data: publishers } = usePublishers();
   const upsertDiscount = useUpsertDiscount();
   const deleteDiscount = useDeleteDiscount();
   const [editing, setEditing] = useState<any>(null);
-
-  const publishers = [...new Set(books?.map(b => (b as any).publisher).filter(Boolean) || [])];
 
   const handleSave = async () => {
     if (!editing?.reference_value?.trim()) {
@@ -25,7 +26,7 @@ const WholesaleDiscountsTab = () => {
     }
     try {
       const toSave = { ...editing };
-      if (toSave.discount_type === "publisher") {
+      if (toSave.discount_type === "publisher" || toSave.discount_type === "category") {
         toSave.book_id = null;
       }
       await upsertDiscount.mutateAsync(toSave);
@@ -44,6 +45,12 @@ const WholesaleDiscountsTab = () => {
     } catch (e: any) {
       toast.error(e.message);
     }
+  };
+
+  const typeColors: Record<string, string> = {
+    product: "bg-primary/10 text-primary",
+    publisher: "bg-amber-100 text-amber-800",
+    category: "bg-emerald-100 text-emerald-800",
   };
 
   if (isLoading) return <div className="text-sm text-muted-foreground p-4">Loading...</div>;
@@ -65,7 +72,7 @@ const WholesaleDiscountsTab = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-          <strong>Priority Rule:</strong> Product-specific discounts take priority over publisher discounts. If a book has its own discount, it will be used instead of the publisher discount.
+          <strong>Priority Rule:</strong> Product-specific → Publisher-based → Category-based. Higher priority discounts override lower ones.
         </div>
 
         {editing && (
@@ -77,30 +84,32 @@ const WholesaleDiscountsTab = () => {
                 <Select value={editing.discount_type} onValueChange={v => setEditing({ ...editing, discount_type: v, reference_value: "", book_id: null })}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="product" className="text-xs">Product-based (Highest Priority)</SelectItem>
                     <SelectItem value="publisher" className="text-xs">Publisher-based</SelectItem>
-                    <SelectItem value="product" className="text-xs">Product-based</SelectItem>
+                    <SelectItem value="category" className="text-xs">Category-based (Lowest Priority)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {editing.discount_type === "publisher" ? (
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Publisher Name</Label>
-                  {publishers.length > 0 ? (
-                    <Select value={editing.reference_value} onValueChange={v => setEditing({ ...editing, reference_value: v })}>
-                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select publisher..." /></SelectTrigger>
-                      <SelectContent>
-                        {publishers.map(p => <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      value={editing.reference_value}
-                      onChange={e => setEditing({ ...editing, reference_value: e.target.value })}
-                      placeholder="Enter publisher name"
-                      className="h-9 text-xs"
-                    />
-                  )}
+                  <Label className="text-xs">Publisher</Label>
+                  <Select value={editing.reference_value} onValueChange={v => setEditing({ ...editing, reference_value: v })}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select publisher..." /></SelectTrigger>
+                    <SelectContent>
+                      {publishers?.map(p => <SelectItem key={p.id} value={p.name} className="text-xs">{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : editing.discount_type === "category" ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Category</Label>
+                  <Select value={editing.reference_value} onValueChange={v => setEditing({ ...editing, reference_value: v })}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select category..." /></SelectTrigger>
+                    <SelectContent>
+                      {categories?.map(c => <SelectItem key={c.id} value={c.name} className="text-xs">{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -143,7 +152,7 @@ const WholesaleDiscountsTab = () => {
           {discounts?.map(d => (
             <div key={d.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
               <div className="flex items-center gap-3">
-                <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${d.discount_type === 'product' ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-800'}`}>
+                <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${typeColors[d.discount_type] || typeColors.publisher}`}>
                   {d.discount_type}
                 </div>
                 <div>
