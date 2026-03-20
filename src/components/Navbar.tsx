@@ -79,7 +79,7 @@ const Navbar = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Wholesale button */}
             <Link
-              to="/wholesale/apply"
+              to="/auth?intent=wholesale"
               className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-lg hover:bg-[hsl(var(--gold))]/25 transition-all"
             >
               <Building2 className="h-3.5 w-3.5" />
