@@ -140,8 +140,21 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
 const BookGrid = () => {
   const { data: books, isLoading: booksLoading } = useBooks();
   const { data: categories, isLoading: catsLoading } = useCategories();
+  const { data: userRole } = useUserRole();
+  const { data: discounts } = useWholesaleDiscounts();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [sampleBook, setSampleBook] = useState<any>(null);
+
+  const getWholesalePrice = (book: any): number | undefined => {
+    if (userRole !== "wholesale") return undefined;
+    // Product-specific discount first
+    const productDiscount = discounts?.find(d => d.discount_type === "product" && d.book_id === book.id);
+    if (productDiscount) return Number(book.price) * (1 - Number(productDiscount.discount_percent) / 100);
+    // Publisher discount
+    const pubDiscount = discounts?.find(d => d.discount_type === "publisher" && d.reference_value === (book as any).publisher);
+    if (pubDiscount) return Number(book.price) * (1 - Number(pubDiscount.discount_percent) / 100);
+    return undefined;
+  };
 
   if (booksLoading || catsLoading) {
     return (
