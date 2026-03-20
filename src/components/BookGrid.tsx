@@ -250,7 +250,7 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
               {category.books.map((book: any, i: number) => (
-                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} wholesalePrice={getWholesalePrice(book)} />
+                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} wholesalePrice={getDiscountedPrice(book)} />
               ))}
             </div>
           </div>
