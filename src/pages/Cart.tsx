@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
@@ -11,6 +12,14 @@ const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const cartContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (location.state?.scrollToCart && cartContentRef.current) {
+      cartContentRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location.state]);
 
   return (
     <div className="min-h-screen bg-background">
