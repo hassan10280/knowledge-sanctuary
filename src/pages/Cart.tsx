@@ -1,13 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,6 +25,21 @@ const Cart = () => {
             <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Your Cart</h1>
             <p className="text-muted-foreground mt-1">{totalItems} {totalItems === 1 ? "item" : "items"}</p>
           </motion.div>
+
+          {/* Login prompt if not authenticated */}
+          {!loading && !user && items.length > 0 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 p-4 bg-[hsl(var(--gold))]/10 border border-[hsl(var(--gold))]/30 rounded-xl flex items-center justify-between gap-4">
+              <p className="text-sm text-foreground">Please log in to proceed with checkout.</p>
+              <Button
+                onClick={() => navigate("/auth", { state: { from: "/cart" } })}
+                size="sm"
+                className="gap-1.5 shrink-0"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                Log In
+              </Button>
+            </motion.div>
+          )}
 
           {items.length === 0 ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
@@ -85,7 +103,6 @@ const Cart = () => {
                 </motion.div>
               ))}
 
-              {/* Summary */}
               <div className="mt-8 bg-card border border-border rounded-xl p-6 space-y-4">
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal</span>
@@ -106,12 +123,22 @@ const Cart = () => {
                     Add £{(25 - totalPrice).toFixed(2)} more to qualify for free shipping.
                   </p>
                 )}
-                <Button asChild className="w-full h-12 text-base font-semibold gap-2">
-                  <Link to="/checkout">
-                    Proceed to Checkout
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
+                {user ? (
+                  <Button asChild className="w-full h-12 text-base font-semibold gap-2">
+                    <Link to="/checkout">
+                      Proceed to Checkout
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate("/auth", { state: { from: "/cart" } })}
+                    className="w-full h-12 text-base font-semibold gap-2"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Log In to Checkout
+                  </Button>
+                )}
               </div>
             </div>
           )}

@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { motion } from "framer-motion";
 import GeometricPattern from "./GeometricPattern";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
-const HeroSection = () => {
+interface HeroSectionProps {
+  onSearch?: (query: string) => void;
+}
+
+const HeroSection = ({ onSearch }: HeroSectionProps) => {
   const { data: settings } = useSiteSettings("hero");
+  const [query, setQuery] = useState("");
 
   const get = (key: string, fallback: string) => {
     const s = settings?.find((s) => s.key === key);
@@ -22,6 +28,14 @@ const HeroSection = () => {
   const description = get("description", "The ink of the scholar is holier than the blood of the martyr. Discover curated collections spanning centuries of Islamic thought, available for reading and UK-wide delivery.");
   const searchPlaceholder = get("search_placeholder", "Search by title, author, or category...");
   const cats = getArr("categories", ["Quran", "Hadith", "Fiqh", "History", "Kids"]);
+
+  const handleSearch = () => {
+    onSearch?.(query);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
+  };
 
   return (
     <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden gradient-hero">
@@ -91,10 +105,16 @@ const HeroSection = () => {
                 <Search className="absolute left-5 h-5 w-5 text-white/50" />
                 <input
                   type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder={searchPlaceholder}
                   className="w-full bg-transparent text-white placeholder:text-white/40 pl-14 pr-36 py-5 text-base focus:outline-none"
                 />
-                <button className="absolute right-3 px-6 py-2.5 bg-white text-[hsl(var(--sky-deep))] font-semibold text-sm rounded-lg hover:bg-white/90 hover:shadow-lg transition-all duration-300">
+                <button
+                  onClick={handleSearch}
+                  className="absolute right-3 px-6 py-2.5 bg-white text-[hsl(var(--sky-deep))] font-semibold text-sm rounded-lg hover:bg-white/90 hover:shadow-lg transition-all duration-300"
+                >
                   Search
                 </button>
               </div>
@@ -114,6 +134,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.6 + i * 0.05 }}
+              onClick={() => { setQuery(cat); onSearch?.(cat); }}
               className="px-5 py-2 text-xs tracking-wide font-medium border border-white/20 text-white/70 rounded-full hover:bg-white/15 hover:text-white hover:border-white/40 cursor-pointer transition-all duration-300 backdrop-blur-sm"
             >
               {cat}
