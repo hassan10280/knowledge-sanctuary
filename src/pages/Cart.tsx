@@ -166,25 +166,57 @@ const Cart = () => {
               ))}
 
               <div className="mt-8 bg-card border border-border rounded-xl p-6 space-y-4">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>£{totalPrice.toFixed(2)}</span>
+                {/* Coupon Code */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Promo Code</p>
+                  {appliedCoupon ? (
+                    <div className="flex items-center gap-2 p-2.5 bg-primary/5 border border-primary/20 rounded-lg">
+                      <Ticket className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-mono font-semibold text-primary">{appliedCoupon.code}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({appliedCoupon.discount_type === "percentage" ? `${appliedCoupon.discount_value}% off` : `£${Number(appliedCoupon.discount_value).toFixed(2)} off`})
+                      </span>
+                      <button onClick={() => setAppliedCoupon(null)} className="ml-auto text-muted-foreground hover:text-destructive">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        value={couponCode}
+                        onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter code..."
+                        className="font-mono uppercase text-sm"
+                      />
+                      <Button variant="outline" size="sm" onClick={handleApplyCoupon} disabled={validateCoupon.isPending} className="shrink-0">
+                        Apply
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Shipping</span>
-                  <span>{totalPrice >= 25 ? "Free" : "£3.99"}</span>
+
+                <div className="border-t border-border pt-4 space-y-2">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>£{totalPrice.toFixed(2)}</span>
+                  </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Coupon Discount</span>
+                      <span>-£{couponDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Shipping</span>
+                    <span>{shipping === 0 ? "Free" : `£${shipping.toFixed(2)}`}</span>
+                  </div>
+                  <div className="border-t border-border pt-3 flex justify-between">
+                    <span className="font-semibold text-foreground">Total</span>
+                    <span className="text-xl font-bold text-primary">
+                      £{grandTotal.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div className="border-t border-border pt-4 flex justify-between">
-                  <span className="font-semibold text-foreground">Total</span>
-                  <span className="text-xl font-bold text-primary">
-                    £{(totalPrice + (totalPrice >= 25 ? 0 : 3.99)).toFixed(2)}
-                  </span>
-                </div>
-                {totalPrice < 25 && (
-                  <p className="text-xs text-muted-foreground">
-                    Add £{(25 - totalPrice).toFixed(2)} more to qualify for free shipping.
-                  </p>
-                )}
                 {user && wholesaleStatus === "pending" ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
