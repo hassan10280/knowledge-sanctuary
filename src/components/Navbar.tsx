@@ -99,26 +99,8 @@ const Navbar = () => {
             {!loading && (
               <>
                 {user ? (
-                  <div className="hidden sm:flex items-center gap-2">
-                    {isAdmin && (
-                      <Link
-                        to="/admin"
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/30 rounded-lg hover:bg-[hsl(var(--gold))]/30 transition-all"
-                      >
-                        <Shield className="h-3.5 w-3.5" />
-                        Admin
-                      </Link>
-                    )}
-                    <span className="text-xs text-white/50 max-w-[120px] truncate hidden lg:block">
-                      {user.email}
-                    </span>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-white/10 text-white border border-white/20 rounded-lg hover:bg-white/20 transition-all"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      Logout
-                    </button>
+                  <div className="hidden sm:flex items-center">
+                    <ProfileDropdown />
                   </div>
                 ) : (
                   <div className="hidden sm:flex items-center gap-2">
