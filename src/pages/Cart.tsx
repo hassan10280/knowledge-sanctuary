@@ -228,6 +228,24 @@ const Cart = () => {
                     <span>Subtotal</span>
                     <span>£{totalPrice.toFixed(2)}</span>
                   </div>
+                  {totalItemSavings > 0.01 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        {role === "wholesale" ? "Wholesale" : "Retail"} Discount
+                      </span>
+                      <span>-£{totalItemSavings.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cartDiscounts.quantityTierAmount > 0.01 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        Qty Tier ({cartDiscounts.quantityTierName}) {cartDiscounts.quantityTierPercent}%
+                      </span>
+                      <span>-£{cartDiscounts.quantityTierAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   {couponDiscount > 0 && (
                     <div className="flex justify-between text-sm text-primary">
                       <span>Coupon Discount</span>
