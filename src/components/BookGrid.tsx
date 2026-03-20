@@ -80,9 +80,19 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
           </div>
         )}
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-primary">£{Number(book.price).toFixed(2)}</span>
-          {book.original_price && (
-            <span className="text-xs text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
+          {wholesalePrice !== undefined ? (
+            <>
+              <span className="text-sm font-bold text-primary">£{wholesalePrice.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground line-through">£{Number(book.price).toFixed(2)}</span>
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Wholesale</span>
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-bold text-primary">£{Number(book.price).toFixed(2)}</span>
+              {book.original_price && (
+                <span className="text-xs text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
+              )}
+            </>
           )}
         </div>
 
