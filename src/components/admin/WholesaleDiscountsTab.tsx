@@ -70,7 +70,7 @@ const WholesaleDiscountsTab = () => {
         </CardTitle>
         <Button
           size="sm"
-          onClick={() => setEditing({ discount_type: "publisher", reference_value: "", discount_percent: 10, book_id: null })}
+          onClick={() => setEditing({ discount_type: "publisher", reference_value: "", discount_percent: 10, book_id: null, fixed_price: null })}
           className="gap-1.5"
         >
           <Plus className="h-4 w-4" /> Add Discount
