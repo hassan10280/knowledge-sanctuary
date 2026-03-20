@@ -3,9 +3,12 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BookOpen, ShoppingCart, Star, Check, ArrowRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useBookRatings, useUserRating, useHasPurchased, useSubmitRating } from "@/hooks/useRatings";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 interface BookDetailModalProps {
   book: any;
