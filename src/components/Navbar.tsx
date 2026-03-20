@@ -79,7 +79,7 @@ const Navbar = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Wholesale button */}
             <Link
-              to="/wholesale/apply"
+              to="/auth?intent=wholesale"
               className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-lg hover:bg-[hsl(var(--gold))]/25 transition-all"
             >
               <Building2 className="h-3.5 w-3.5" />
@@ -129,7 +129,7 @@ const Navbar = () => {
                       Log In
                     </Link>
                     <Link
-                      to="/auth"
+                      to="/auth?intent=signup"
                       className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-white/15 text-white border border-white/25 rounded-lg hover:bg-white/25 transition-all duration-300 backdrop-blur-sm"
                     >
                       <User className="h-4 w-4" />
@@ -171,7 +171,7 @@ const Navbar = () => {
               ))}
 
               <Link
-                to="/wholesale/apply"
+                to="/auth?intent=wholesale"
                 className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--gold))] py-2 transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
@@ -214,7 +214,7 @@ const Navbar = () => {
                           Log In
                         </Link>
                         <Link
-                          to="/auth"
+                          to="/auth?intent=signup"
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-white text-[hsl(var(--sky-deep))] rounded-lg hover:bg-white/90 transition-all"
                           onClick={() => setMobileOpen(false)}
                         >
