@@ -8,8 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShippingRules, useUpsertShippingRule, useDeleteShippingRule } from "@/hooks/useAdvancedDiscounts";
 import { toast } from "sonner";
 
-const ShippingRulesTab = () => {
-  const { data: rules, isLoading } = useShippingRules();
+interface ShippingRulesTabProps {
+  wholesaleOnly?: boolean;
+  retailOnly?: boolean;
+}
+
+const ShippingRulesTab = ({ wholesaleOnly, retailOnly }: ShippingRulesTabProps) => {
+  const { data: allRules, isLoading } = useShippingRules();
+  const rules = allRules?.filter(r => {
+    if (wholesaleOnly) return r.is_wholesale;
+    if (retailOnly) return !r.is_wholesale;
+    return true;
+  });
   const upsert = useUpsertShippingRule();
   const deleteRule = useDeleteShippingRule();
   const [editing, setEditing] = useState<any>(null);
