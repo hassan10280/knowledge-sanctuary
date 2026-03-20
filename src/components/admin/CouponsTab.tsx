@@ -9,8 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCoupons, useUpsertCoupon, useDeleteCoupon } from "@/hooks/useAdvancedDiscounts";
 import { toast } from "sonner";
 
-const CouponsTab = () => {
-  const { data: coupons, isLoading } = useCoupons();
+interface CouponsTabProps {
+  wholesaleOnly?: boolean;
+  retailOnly?: boolean;
+}
+
+const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
+  const { data: allCoupons, isLoading } = useCoupons();
+  const coupons = allCoupons?.filter(c => {
+    if (wholesaleOnly) return c.wholesale_only;
+    if (retailOnly) return !c.wholesale_only;
+    return true;
+  });
   const upsert = useUpsertCoupon();
   const deleteCoupon = useDeleteCoupon();
   const [editing, setEditing] = useState<any>(null);
@@ -65,7 +75,7 @@ const CouponsTab = () => {
             usage_limit: null,
             used_count: 0,
             is_active: true,
-            wholesale_only: false,
+            wholesale_only: !!wholesaleOnly,
           })}
           className="gap-1.5"
         >
@@ -146,13 +156,15 @@ const CouponsTab = () => {
                 />
                 <Label className="text-xs">Active</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={editing.wholesale_only}
-                  onCheckedChange={v => setEditing({ ...editing, wholesale_only: v })}
-                />
-                <Label className="text-xs">Wholesale Only</Label>
-              </div>
+              {!wholesaleOnly && !retailOnly && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={editing.wholesale_only}
+                    onCheckedChange={v => setEditing({ ...editing, wholesale_only: v })}
+                  />
+                  <Label className="text-xs">Wholesale Only</Label>
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">

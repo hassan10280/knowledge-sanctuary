@@ -8,8 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShippingRules, useUpsertShippingRule, useDeleteShippingRule } from "@/hooks/useAdvancedDiscounts";
 import { toast } from "sonner";
 
-const ShippingRulesTab = () => {
-  const { data: rules, isLoading } = useShippingRules();
+interface ShippingRulesTabProps {
+  wholesaleOnly?: boolean;
+  retailOnly?: boolean;
+}
+
+const ShippingRulesTab = ({ wholesaleOnly, retailOnly }: ShippingRulesTabProps) => {
+  const { data: allRules, isLoading } = useShippingRules();
+  const rules = allRules?.filter(r => {
+    if (wholesaleOnly) return r.is_wholesale;
+    if (retailOnly) return !r.is_wholesale;
+    return true;
+  });
   const upsert = useUpsertShippingRule();
   const deleteRule = useDeleteShippingRule();
   const [editing, setEditing] = useState<any>(null);
@@ -49,7 +59,7 @@ const ShippingRulesTab = () => {
         </CardTitle>
         <Button
           size="sm"
-          onClick={() => setEditing({ rule_name: "", min_amount: 25, shipping_cost: 0, is_wholesale: false, is_active: true })}
+          onClick={() => setEditing({ rule_name: "", min_amount: 25, shipping_cost: 0, is_wholesale: !!wholesaleOnly, is_active: true })}
           className="gap-1.5"
         >
           <Plus className="h-4 w-4" /> Add Rule
@@ -97,13 +107,15 @@ const ShippingRulesTab = () => {
               </div>
             </div>
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={editing.is_wholesale}
-                  onCheckedChange={v => setEditing({ ...editing, is_wholesale: v })}
-                />
-                <Label className="text-xs">Wholesale Only</Label>
-              </div>
+              {!wholesaleOnly && !retailOnly && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={editing.is_wholesale}
+                    onCheckedChange={v => setEditing({ ...editing, is_wholesale: v })}
+                  />
+                  <Label className="text-xs">Wholesale Only</Label>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Switch
                   checked={editing.is_active}

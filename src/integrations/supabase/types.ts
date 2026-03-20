@@ -346,6 +346,45 @@ export type Database = {
         }
         Relationships: []
       }
+      retail_discounts: {
+        Row: {
+          book_id: string | null
+          created_at: string
+          discount_percent: number
+          discount_type: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          reference_value: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          book_id?: string | null
+          created_at?: string
+          discount_percent?: number
+          discount_type?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          reference_value: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string | null
+          created_at?: string
+          discount_percent?: number
+          discount_type?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          reference_value?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shipping_rules: {
         Row: {
           created_at: string
