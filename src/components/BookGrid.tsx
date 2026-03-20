@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight } from "lucide-react";
