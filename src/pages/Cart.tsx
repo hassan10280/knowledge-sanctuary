@@ -151,7 +151,20 @@ const Cart = () => {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-foreground truncate">{item.title}</h3>
                     <p className="text-xs text-muted-foreground">{item.author}</p>
-                    <p className="text-sm font-bold text-primary mt-1">£{item.price.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-primary mt-1">
+                      {(() => {
+                        const disc = cartDiscounts.itemPrices.get(item.id);
+                        if (disc && disc.discountSource !== "none") {
+                          return (
+                            <span className="flex items-center gap-1.5">
+                              <span>£{disc.finalPrice.toFixed(2)}</span>
+                              <span className="text-xs line-through text-muted-foreground">£{item.price.toFixed(2)}</span>
+                            </span>
+                          );
+                        }
+                        return `£${item.price.toFixed(2)}`;
+                      })()}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -169,7 +182,7 @@ const Cart = () => {
                     </button>
                   </div>
                   <p className="text-sm font-bold text-foreground w-16 text-right hidden sm:block">
-                    £{(item.price * item.quantity).toFixed(2)}
+                    £{((cartDiscounts.itemPrices.get(item.id)?.finalPrice ?? item.price) * item.quantity).toFixed(2)}
                   </p>
                   <button
                     onClick={() => removeItem(item.id)}
