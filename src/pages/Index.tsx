@@ -4,6 +4,7 @@ import FeaturesBar from "@/components/FeaturesBar";
 import BookGrid from "@/components/BookGrid";
 import LocalEvents from "@/components/LocalEvents";
 import Footer from "@/components/Footer";
+import FloatingButtons from "@/components/FloatingButtons";
 
 const Index = () => {
   return (
@@ -14,6 +15,7 @@ const Index = () => {
       <BookGrid />
       <LocalEvents />
       <Footer />
+      <FloatingButtons />
     </div>
   );
 };

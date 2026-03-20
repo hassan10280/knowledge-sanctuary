@@ -1,19 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategory, useDeleteCategory } from "@/hooks/useBooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 const FONT_FAMILIES = [
   "Instrument Serif", "Georgia", "Geist", "system-ui", "Inter", "Roboto", "Open Sans",
@@ -57,18 +57,18 @@ const Admin = () => {
     }
   }, [settings]);
 
-  const getSetting = (section: string, key: string) => localSettings[section]?.[key] ?? "";
-  const getSettingNum = (section: string, key: string, fallback = 0) => {
+  const getSetting = useCallback((section: string, key: string) => localSettings[section]?.[key] ?? "", [localSettings]);
+  const getSettingNum = useCallback((section: string, key: string, fallback = 0) => {
     const v = localSettings[section]?.[key];
     return typeof v === "number" ? v : fallback;
-  };
+  }, [localSettings]);
 
-  const setSetting = (section: string, key: string, value: any) => {
+  const setSetting = useCallback((section: string, key: string, value: any) => {
     setLocalSettings((prev) => ({
       ...prev,
       [section]: { ...prev[section], [key]: value },
     }));
-  };
+  }, []);
 
   const saveAllSection = async (section: string) => {
     const sectionData = localSettings[section];
@@ -131,41 +131,37 @@ const Admin = () => {
     );
   }
 
-  const SettingField = ({ section, keyName, label, multiline = false, type = "text" }: { section: string; keyName: string; label: string; multiline?: boolean; type?: string }) => {
-    const val = getSetting(section, keyName);
-    const displayVal = typeof val === "string" ? val : JSON.stringify(val, null, 2);
-    return (
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">{label}</label>
-        {multiline ? (
-          <Textarea
-            value={displayVal}
-            onChange={(e) => {
-              try { setSetting(section, keyName, JSON.parse(e.target.value)); }
-              catch { setSetting(section, keyName, e.target.value); }
-            }}
-            rows={4}
-          />
-        ) : type === "color" ? (
-          <div className="flex items-center gap-2">
-            <Input type="color" value={displayVal || "#000000"} onChange={(e) => setSetting(section, keyName, e.target.value)} className="w-12 h-10 p-1 cursor-pointer" />
-            <Input value={displayVal} onChange={(e) => setSetting(section, keyName, e.target.value)} placeholder="#000000" className="flex-1" />
-          </div>
-        ) : (
-          <Input
-            type={type}
-            value={displayVal}
-            onChange={(e) => {
-              try { setSetting(section, keyName, JSON.parse(e.target.value)); }
-              catch { setSetting(section, keyName, e.target.value); }
-            }}
-          />
-        )}
+  /* ─── PxControl: Number input with +/- buttons ─── */
+  const PxControl = ({ value, onChange, label, min = 0, max = 200 }: { value: number; onChange: (v: number) => void; label: string; min?: number; max?: number }) => (
+    <div className="space-y-1">
+      <span className="text-[10px] text-muted-foreground capitalize">{label}</span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(Math.max(min, value - 1)); }}
+          className="w-7 h-7 rounded-md bg-muted hover:bg-muted-foreground/20 flex items-center justify-center text-foreground transition-colors shrink-0"
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Math.min(max, Math.max(min, parseInt(e.target.value) || 0)))}
+          className="h-7 text-xs text-center font-mono px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(Math.min(max, value + 1)); }}
+          className="w-7 h-7 rounded-md bg-muted hover:bg-muted-foreground/20 flex items-center justify-center text-foreground transition-colors shrink-0"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+        <span className="text-[10px] text-muted-foreground ml-0.5">px</span>
       </div>
-    );
-  };
+    </div>
+  );
 
-  /* ─── Visual Spacing Control (4-side slider + px input) ─── */
+  /* ─── Visual Spacing Control (4-side with +/- buttons) ─── */
   const SpacingControl = ({ section, keyName, label }: { section: string; keyName: string; label: string }) => {
     const sides = ["top", "right", "bottom", "left"] as const;
     return (
@@ -176,18 +172,12 @@ const Admin = () => {
             const k = `${keyName}_${side}`;
             const v = getSettingNum(section, k, 0);
             return (
-              <div key={side} className="space-y-1">
-                <span className="text-[10px] text-muted-foreground capitalize">{side}</span>
-                <div className="flex items-center gap-2">
-                  <Slider
-                    min={0} max={100} step={1}
-                    value={[v]}
-                    onValueChange={([val]) => setSetting(section, k, val)}
-                    className="flex-1"
-                  />
-                  <span className="text-xs font-mono text-foreground w-10 text-right">{v}px</span>
-                </div>
-              </div>
+              <PxControl
+                key={side}
+                label={side}
+                value={v}
+                onChange={(val) => setSetting(section, k, val)}
+              />
             );
           })}
         </div>
@@ -256,18 +246,13 @@ const Admin = () => {
           </Select>
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-foreground">Line Height</Label>
-        <div className="flex items-center gap-2">
-          <Slider
-            min={100} max={250} step={5}
-            value={[getSettingNum(section, "line_height", 150)]}
-            onValueChange={([v]) => setSetting(section, "line_height", v)}
-            className="flex-1"
-          />
-          <span className="text-xs font-mono text-foreground w-12 text-right">{(getSettingNum(section, "line_height", 150) / 100).toFixed(2)}</span>
-        </div>
-      </div>
+      <PxControl
+        label="Line Height %"
+        value={getSettingNum(section, "line_height", 150)}
+        onChange={(v) => setSetting(section, "line_height", v)}
+        min={100}
+        max={300}
+      />
     </div>
   );
 
@@ -276,18 +261,12 @@ const Admin = () => {
     <div className="space-y-3">
       <ColorControl section={section} keyName="button_bg" label="Button Background" />
       <ColorControl section={section} keyName="button_text" label="Button Text Colour" />
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-foreground">Button Radius</Label>
-        <div className="flex items-center gap-2">
-          <Slider
-            min={0} max={24} step={1}
-            value={[getSettingNum(section, "button_radius", 8)]}
-            onValueChange={([v]) => setSetting(section, "button_radius", v)}
-            className="flex-1"
-          />
-          <span className="text-xs font-mono text-foreground w-10 text-right">{getSettingNum(section, "button_radius", 8)}px</span>
-        </div>
-      </div>
+      <PxControl
+        label="Button Radius"
+        value={getSettingNum(section, "button_radius", 8)}
+        onChange={(v) => setSetting(section, "button_radius", v)}
+        max={50}
+      />
       <div className="space-y-1.5">
         <Label className="text-xs font-medium text-foreground">Layout</Label>
         <Select value={(getSetting(section, "layout") as string) || "default"} onValueChange={(v) => setSetting(section, "layout", v)}>
@@ -306,7 +285,8 @@ const Admin = () => {
     return (
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
         <button
-          onClick={() => setOpen(!open)}
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
           className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2.5">
@@ -318,7 +298,7 @@ const Admin = () => {
           {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
         {open && (
-          <div className="px-5 pb-5 pt-2 space-y-5 border-t border-border">
+          <div className="px-5 pb-5 pt-2 space-y-5 border-t border-border" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Spacing */}
               <div className="p-4 bg-muted/30 rounded-xl space-y-4 border border-border/50">
@@ -327,18 +307,12 @@ const Admin = () => {
                 </h4>
                 <SpacingControl section={section} keyName="padding" label="Padding" />
                 <SpacingControl section={section} keyName="margin" label="Margin" />
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gap</Label>
-                  <div className="flex items-center gap-2">
-                    <Slider
-                      min={0} max={64} step={2}
-                      value={[getSettingNum(section, "gap", 16)]}
-                      onValueChange={([v]) => setSetting(section, "gap", v)}
-                      className="flex-1"
-                    />
-                    <span className="text-xs font-mono text-foreground w-10 text-right">{getSettingNum(section, "gap", 16)}px</span>
-                  </div>
-                </div>
+                <PxControl
+                  label="Gap"
+                  value={getSettingNum(section, "gap", 16)}
+                  onChange={(v) => setSetting(section, "gap", v)}
+                  max={100}
+                />
               </div>
 
               {/* Colours */}
@@ -368,7 +342,7 @@ const Admin = () => {
               </div>
             </div>
 
-            {/* Preview bar */}
+            {/* Preview + Save */}
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-3">
                 <div
@@ -403,6 +377,191 @@ const Admin = () => {
       </div>
     );
   };
+
+  /* ─── Header Settings (Visual) ─── */
+  const HeaderSettings = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif">Header & Navigation</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Upload Logo</label>
+          <div className="flex items-center gap-4">
+            <Input type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-xs" />
+            {getSetting("header", "logo_url") && (
+              <img src={getSetting("header", "logo_url") as string} alt="Logo" className="h-12 rounded" />
+            )}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Logo Size</Label>
+          <Select value={(getSetting("header", "logo_size") as string) || "h-14 sm:h-16"} onValueChange={(v) => setSetting("header", "logo_size", v)}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="h-10 sm:h-12" className="text-xs">Small</SelectItem>
+              <SelectItem value="h-14 sm:h-16" className="text-xs">Medium</SelectItem>
+              <SelectItem value="h-18 sm:h-20" className="text-xs">Large</SelectItem>
+              <SelectItem value="h-22 sm:h-24" className="text-xs">Extra Large</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Navigation Links</Label>
+          <p className="text-xs text-muted-foreground mb-2">Edit labels and URLs for nav links</p>
+          {(() => {
+            const links = (getSetting("header", "nav_links") || []) as Array<{ label: string; href: string }>;
+            return (
+              <div className="space-y-2">
+                {links.map((link, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <Input
+                      value={link.label}
+                      placeholder="Label"
+                      className="flex-1 h-8 text-xs"
+                      onChange={(e) => {
+                        const updated = [...links];
+                        updated[i] = { ...updated[i], label: e.target.value };
+                        setSetting("header", "nav_links", updated);
+                      }}
+                    />
+                    <Input
+                      value={link.href}
+                      placeholder="/path"
+                      className="flex-1 h-8 text-xs"
+                      onChange={(e) => {
+                        const updated = [...links];
+                        updated[i] = { ...updated[i], href: e.target.value };
+                        setSetting("header", "nav_links", updated);
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive shrink-0"
+                      onClick={() => {
+                        const updated = links.filter((_, idx) => idx !== i);
+                        setSetting("header", "nav_links", updated);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs"
+                  onClick={() => setSetting("header", "nav_links", [...links, { label: "", href: "/" }])}
+                >
+                  <Plus className="h-3 w-3" /> Add Link
+                </Button>
+              </div>
+            );
+          })()}
+        </div>
+        <Button onClick={() => saveAllSection("header")} className="gap-2">
+          <Save className="h-4 w-4" /> Save Header
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
+  /* ─── Hero Settings (Visual) ─── */
+  const HeroSettings = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif">Hero Section</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Badge Text</Label>
+          <Input value={(getSetting("hero", "badge_text") as string) || ""} onChange={(e) => setSetting("hero", "badge_text", e.target.value)} className="h-9 text-xs" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Title</Label>
+          <Input value={(getSetting("hero", "title") as string) || ""} onChange={(e) => setSetting("hero", "title", e.target.value)} className="h-9 text-xs" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Title Accent (italic part)</Label>
+          <Input value={(getSetting("hero", "title_accent") as string) || ""} onChange={(e) => setSetting("hero", "title_accent", e.target.value)} className="h-9 text-xs" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Description</Label>
+          <Textarea value={(getSetting("hero", "description") as string) || ""} onChange={(e) => setSetting("hero", "description", e.target.value)} rows={3} className="text-xs" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Search Placeholder</Label>
+          <Input value={(getSetting("hero", "search_placeholder") as string) || ""} onChange={(e) => setSetting("hero", "search_placeholder", e.target.value)} className="h-9 text-xs" />
+        </div>
+        <Button onClick={() => saveAllSection("hero")} className="gap-2">
+          <Save className="h-4 w-4" /> Save Hero
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
+  /* ─── Footer Settings (Visual) ─── */
+  const FooterSettings = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif">Footer</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Description</Label>
+          <Textarea value={(getSetting("footer", "description") as string) || ""} onChange={(e) => setSetting("footer", "description", e.target.value)} rows={3} className="text-xs" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Copyright Text</Label>
+          <Input value={(getSetting("footer", "copyright") as string) || ""} onChange={(e) => setSetting("footer", "copyright", e.target.value)} className="h-9 text-xs" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Tagline</Label>
+          <Input value={(getSetting("footer", "tagline") as string) || ""} onChange={(e) => setSetting("footer", "tagline", e.target.value)} className="h-9 text-xs" />
+        </div>
+        <Button onClick={() => saveAllSection("footer")} className="gap-2">
+          <Save className="h-4 w-4" /> Save Footer
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
+  /* ─── WhatsApp Settings ─── */
+  const WhatsAppSettings = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-[#25D366]" />
+          WhatsApp Contact
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">WhatsApp Number</Label>
+          <Input
+            value={(getSetting("whatsapp", "number") as string) || "+8801703396108"}
+            onChange={(e) => setSetting("whatsapp", "number", e.target.value)}
+            className="h-9 text-xs"
+            placeholder="+8801703396108"
+          />
+          <p className="text-xs text-muted-foreground">Include country code (e.g. +44 for UK, +880 for BD)</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">Default Message</Label>
+          <Textarea
+            value={(getSetting("whatsapp", "message") as string) || "Hello! I have a question."}
+            onChange={(e) => setSetting("whatsapp", "message", e.target.value)}
+            rows={2}
+            className="text-xs"
+          />
+        </div>
+        <Button onClick={() => saveAllSection("whatsapp")} className="gap-2">
+          <Save className="h-4 w-4" /> Save WhatsApp
+        </Button>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -443,6 +602,9 @@ const Admin = () => {
             <TabsTrigger value="design" className="text-xs sm:text-sm gap-1.5">
               <Paintbrush className="h-3.5 w-3.5" /> Design
             </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="text-xs sm:text-sm gap-1.5">
+              <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+            </TabsTrigger>
             <TabsTrigger value="footer" className="text-xs sm:text-sm gap-1.5">
               <Layout className="h-3.5 w-3.5" /> Footer
             </TabsTrigger>
@@ -451,50 +613,8 @@ const Admin = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* HEADER TAB */}
-          <TabsContent value="header">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif">Header & Navigation</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">Upload Logo</label>
-                  <div className="flex items-center gap-4">
-                    <Input type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-xs" />
-                    {getSetting("header", "logo_url") && (
-                      <img src={getSetting("header", "logo_url") as string} alt="Logo" className="h-12 rounded" />
-                    )}
-                  </div>
-                </div>
-                <SettingField section="header" keyName="logo_size" label="Logo Size (CSS classes)" />
-                <SettingField section="header" keyName="nav_links" label="Navigation Links (JSON)" multiline />
-                <Button onClick={() => saveAllSection("header")} className="gap-2">
-                  <Save className="h-4 w-4" /> Save Header
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* HERO TAB */}
-          <TabsContent value="hero">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif">Hero Section</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <SettingField section="hero" keyName="badge_text" label="Badge Text" />
-                <SettingField section="hero" keyName="title" label="Title" />
-                <SettingField section="hero" keyName="title_accent" label="Title Accent (italic part)" />
-                <SettingField section="hero" keyName="description" label="Description" multiline />
-                <SettingField section="hero" keyName="search_placeholder" label="Search Placeholder" />
-                <SettingField section="hero" keyName="categories" label="Category Tags (JSON array)" multiline />
-                <Button onClick={() => saveAllSection("hero")} className="gap-2">
-                  <Save className="h-4 w-4" /> Save Hero
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="header"><HeaderSettings /></TabsContent>
+          <TabsContent value="hero"><HeroSettings /></TabsContent>
 
           {/* BOOKS TAB */}
           <TabsContent value="books">
@@ -503,7 +623,7 @@ const Admin = () => {
                 <CardTitle className="font-serif">Books Management</CardTitle>
                 <Button
                   size="sm"
-                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", rating: 4.5, sort_order: 0, sample_url: "" })}
+                  onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", rating: 4.5, sort_order: 0, sample_url: "", show_ratings: true })}
                   className="gap-1.5"
                 >
                   <Plus className="h-4 w-4" /> Add Book
@@ -528,12 +648,27 @@ const Admin = () => {
                       <Input type="number" step="0.01" placeholder="Price" value={editingBook.price || ""} onChange={(e) => setEditingBook({ ...editingBook, price: parseFloat(e.target.value) || null })} />
                       <Input type="number" step="0.01" placeholder="Original Price" value={editingBook.original_price || ""} onChange={(e) => setEditingBook({ ...editingBook, original_price: parseFloat(e.target.value) || null })} />
                       <Input type="number" placeholder="Discount %" value={editingBook.discount_percent || ""} onChange={(e) => setEditingBook({ ...editingBook, discount_percent: parseInt(e.target.value) || 0 })} />
-                      <Input type="color" value={editingBook.cover_color || "#1a5276"} onChange={(e) => setEditingBook({ ...editingBook, cover_color: e.target.value })} />
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs">Cover Color</Label>
+                        <input type="color" value={editingBook.cover_color || "#1a5276"} onChange={(e) => setEditingBook({ ...editingBook, cover_color: e.target.value })} className="w-10 h-8 rounded border cursor-pointer" />
+                      </div>
                       <Input type="number" step="0.1" placeholder="Rating" value={editingBook.rating || ""} onChange={(e) => setEditingBook({ ...editingBook, rating: parseFloat(e.target.value) || null })} />
                       <Input type="number" placeholder="Sort Order" value={editingBook.sort_order || 0} onChange={(e) => setEditingBook({ ...editingBook, sort_order: parseInt(e.target.value) || 0 })} />
                     </div>
                     <Textarea placeholder="Description" value={editingBook.description || ""} onChange={(e) => setEditingBook({ ...editingBook, description: e.target.value })} />
-                    
+
+                    {/* Show Ratings Toggle */}
+                    <div className="flex items-center gap-3 py-2">
+                      <Switch
+                        checked={editingBook.show_ratings !== false}
+                        onCheckedChange={(checked) => setEditingBook({ ...editingBook, show_ratings: checked })}
+                      />
+                      <Label className="text-sm font-medium flex items-center gap-1.5">
+                        <Star className="h-3.5 w-3.5 text-[hsl(var(--gold))]" />
+                        Show Ratings
+                      </Label>
+                    </div>
+
                     {/* Sample URL */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Sample Preview (PDF or Image)</label>
@@ -623,7 +758,7 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          {/* DESIGN TAB — Fully Visual Controls */}
+          {/* DESIGN TAB */}
           <TabsContent value="design">
             <Card>
               <CardHeader>
@@ -651,25 +786,8 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          {/* FOOTER TAB */}
-          <TabsContent value="footer">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif">Footer</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <SettingField section="footer" keyName="description" label="Description" multiline />
-                <SettingField section="footer" keyName="copyright" label="Copyright Text" />
-                <SettingField section="footer" keyName="tagline" label="Tagline" />
-                <SettingField section="footer" keyName="library_links" label="Library Links (JSON)" multiline />
-                <SettingField section="footer" keyName="community_links" label="Community Links (JSON)" multiline />
-                <SettingField section="footer" keyName="support_links" label="Support Links (JSON)" multiline />
-                <Button onClick={() => saveAllSection("footer")} className="gap-2">
-                  <Save className="h-4 w-4" /> Save Footer
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="whatsapp"><WhatsAppSettings /></TabsContent>
+          <TabsContent value="footer"><FooterSettings /></TabsContent>
 
           {/* USERS TAB */}
           <TabsContent value="users">

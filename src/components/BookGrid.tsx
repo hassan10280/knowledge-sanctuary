@@ -47,7 +47,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
             <div className="w-12 h-[1px] bg-white/30 mx-auto mt-4" />
           </div>
 
-          {/* Hover overlay */}
+          {/* Hover overlay with buttons */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500 flex flex-col items-center justify-center gap-3 p-4">
             <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 flex flex-col gap-2.5 w-full max-w-[180px]">
               <button
@@ -83,6 +83,24 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
           {book.original_price && (
             <span className="text-xs text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
           )}
+        </div>
+
+        {/* Visible action buttons below card */}
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => onViewDetails(book)}
+            className="flex-1 flex items-center justify-center gap-1 px-2 py-2 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-all"
+          >
+            <Eye className="h-3 w-3" />
+            Details
+          </button>
+          <button
+            onClick={() => onReadSample(book)}
+            className="flex-1 flex items-center justify-center gap-1 px-2 py-2 text-[11px] font-semibold bg-[hsl(var(--gold))]/10 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/20 rounded-lg hover:bg-[hsl(var(--gold))]/20 transition-all"
+          >
+            <BookText className="h-3 w-3" />
+            Sample
+          </button>
         </div>
 
         {/* Add to Cart / Go to Cart */}
