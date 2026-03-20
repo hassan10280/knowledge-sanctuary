@@ -865,10 +865,7 @@ const Admin = () => {
 
           <TabsContent value="wholesale-requests"><WholesaleRequestsTab /></TabsContent>
           <TabsContent value="form-builder"><FormBuilderTab /></TabsContent>
-          <TabsContent value="discounts"><WholesaleDiscountsTab /></TabsContent>
-          <TabsContent value="quantity-tiers"><QuantityTiersTab /></TabsContent>
-          <TabsContent value="coupons"><CouponsTab /></TabsContent>
-          <TabsContent value="shipping"><ShippingRulesTab /></TabsContent>
+          <TabsContent value="discounts"><DiscountsTab /></TabsContent>
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
         </Tabs>
       </div>
