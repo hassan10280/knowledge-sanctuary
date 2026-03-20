@@ -89,10 +89,13 @@ const BookDetailModal = ({ book, open, onOpenChange }: BookDetailModalProps) => 
               {/* Rating & Price */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {book.rating && (
+                  {book.show_ratings !== false && avgRating && (
                     <>
                       <Star className="h-4 w-4 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
-                      <span className="text-sm font-semibold text-foreground">{book.rating} / 5</span>
+                      <span className="text-sm font-semibold text-foreground">{avgRating} / 5</span>
+                      {ratingCount > 0 && (
+                        <span className="text-xs text-muted-foreground">({ratingCount} {ratingCount === 1 ? "rating" : "ratings"})</span>
+                      )}
                     </>
                   )}
                 </div>
@@ -103,6 +106,40 @@ const BookDetailModal = ({ book, open, onOpenChange }: BookDetailModalProps) => 
                   )}
                 </div>
               </div>
+
+              {/* Interactive Rating for verified buyers */}
+              {book.show_ratings !== false && user && hasPurchased && (
+                <div className="p-3.5 bg-muted/40 rounded-lg border border-border/40 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {userRating ? "Your Rating" : "Rate this book"}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onMouseEnter={() => setHoverStar(star)}
+                        onMouseLeave={() => setHoverStar(0)}
+                        onClick={() => {
+                          submitRating.mutate(
+                            { bookId: book.id, userId: user.id, rating: star },
+                            { onSuccess: () => toast.success("Rating submitted!") }
+                          );
+                        }}
+                        className="p-0.5 transition-transform hover:scale-110 active:scale-95"
+                      >
+                        <Star
+                          className={`h-5 w-5 transition-colors ${
+                            star <= (hoverStar || userRating?.rating || 0)
+                              ? "fill-[hsl(var(--gold))] text-[hsl(var(--gold))]"
+                              : "text-muted-foreground/30"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Description with scrollable area */}
               {book.description ? (

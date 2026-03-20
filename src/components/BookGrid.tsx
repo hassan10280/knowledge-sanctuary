@@ -97,7 +97,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
       <div className="mt-4 space-y-1.5">
         <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h4>
         <p className="text-xs text-muted-foreground">{book.author}</p>
-        {book.rating && (
+        {book.show_ratings !== false && book.rating && (
           <div className="flex items-center gap-1">
             <Star className="h-3 w-3 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
             <span className="text-xs font-medium text-foreground">{book.rating}</span>
