@@ -10,11 +10,8 @@ import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Us
 import { Button } from "@/components/ui/button";
 import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
-import WholesaleDiscountsTab from "@/components/admin/WholesaleDiscountsTab";
+import DiscountsTab from "@/components/admin/DiscountsTab";
 import PublishersTab from "@/components/admin/PublishersTab";
-import QuantityTiersTab from "@/components/admin/QuantityTiersTab";
-import CouponsTab from "@/components/admin/CouponsTab";
-import ShippingRulesTab from "@/components/admin/ShippingRulesTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
