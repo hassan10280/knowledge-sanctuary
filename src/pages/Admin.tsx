@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
 import WholesaleDiscountsTab from "@/components/admin/WholesaleDiscountsTab";
+import PublishersTab from "@/components/admin/PublishersTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
