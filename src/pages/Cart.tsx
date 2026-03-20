@@ -4,11 +4,13 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import { useShippingRules, useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
+import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
+import { useBooks } from "@/hooks/useBooks";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X, Tag } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -17,6 +19,8 @@ const Cart = () => {
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
   const { data: shippingRules } = useShippingRules();
+  const { data: books } = useBooks();
+  const { getCartDiscounts, role } = useDiscountCalculator();
   const validateCoupon = useValidateCoupon();
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,33 +29,44 @@ const Cart = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const isWholesale = wholesaleStatus === "approved";
 
+  // Build book details for discount calculator
+  const bookDetails = (books || []).map((b: any) => ({
+    id: b.id,
+    price: Number(b.price),
+    publisher: b.publisher || "",
+    category: b.category || "",
+  }));
+
+  const cartDiscounts = getCartDiscounts(items, bookDetails);
+
   // Calculate shipping based on rules
   const calculateShipping = () => {
+    const baseAmount = cartDiscounts.discountedSubtotal;
     if (!shippingRules || shippingRules.length === 0) {
-      return totalPrice >= 25 ? 0 : 3.99; // fallback
+      return baseAmount >= 25 ? 0 : 3.99;
     }
     const applicableRules = shippingRules
-      .filter(r => r.is_active && totalPrice >= Number(r.min_amount))
+      .filter(r => r.is_active && baseAmount >= Number(r.min_amount))
       .filter(r => !r.is_wholesale || isWholesale)
       .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
     if (applicableRules.length > 0) {
       return Number(applicableRules[0].shipping_cost);
     }
-    // No rule matched, find default (min_amount = 0)
     const defaultRule = shippingRules.find(r => r.is_active && Number(r.min_amount) === 0 && (!r.is_wholesale || isWholesale));
     return defaultRule ? Number(defaultRule.shipping_cost) : 3.99;
   };
 
   const shipping = calculateShipping();
 
-  // Calculate coupon discount
+  // Calculate coupon discount (Priority 6: Order Total - applied last)
   const couponDiscount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
-      ? totalPrice * (Number(appliedCoupon.discount_value) / 100)
-      : Math.min(Number(appliedCoupon.discount_value), totalPrice)
+      ? cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100)
+      : Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal)
     : 0;
 
-  const grandTotal = Math.max(0, totalPrice - couponDiscount + shipping);
+  const grandTotal = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount + shipping);
+  const totalItemSavings = totalPrice - cartDiscounts.subtotalAfterItemDiscounts;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
