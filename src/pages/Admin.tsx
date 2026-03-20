@@ -701,7 +701,25 @@ const Admin = () => {
                     </div>
                     <Textarea placeholder="Description" value={editingBook.description || ""} onChange={(e) => setEditingBook({ ...editingBook, description: e.target.value })} />
 
-                    {/* Show Ratings Toggle */}
+                    {/* Cover Image Upload */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                        <Image className="h-4 w-4" /> Cover Image
+                      </label>
+                      <div className="flex flex-col sm:flex-row gap-2 items-start">
+                        <Input type="file" accept="image/*" onChange={handleCoverImageUpload} className="max-w-xs" />
+                        {editingBook.cover_image && (
+                          <div className="flex items-center gap-2">
+                            <img src={editingBook.cover_image} alt="Cover" className="h-16 w-12 object-cover rounded border" />
+                            <Button size="sm" variant="ghost" className="text-destructive text-xs" onClick={() => setEditingBook({ ...editingBook, cover_image: "" })}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Upload a cover image. If not provided, the cover color will be used.</p>
+                    </div>
+
                     <div className="flex items-center gap-3 py-2">
                       <Switch
                         checked={editingBook.show_ratings !== false}
