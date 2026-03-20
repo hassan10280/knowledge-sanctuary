@@ -107,6 +107,7 @@ export type Database = {
           in_stock: boolean | null
           original_price: number | null
           price: number | null
+          publisher: string | null
           rating: number | null
           sample_url: string | null
           show_ratings: boolean | null
@@ -126,6 +127,7 @@ export type Database = {
           in_stock?: boolean | null
           original_price?: number | null
           price?: number | null
+          publisher?: string | null
           rating?: number | null
           sample_url?: string | null
           show_ratings?: boolean | null
@@ -145,6 +147,7 @@ export type Database = {
           in_stock?: boolean | null
           original_price?: number | null
           price?: number | null
+          publisher?: string | null
           rating?: number | null
           sample_url?: string | null
           show_ratings?: boolean | null
@@ -319,6 +322,116 @@ export type Database = {
         }
         Relationships: []
       }
+      wholesale_applications: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          form_data: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          form_data?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          form_data?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wholesale_discounts: {
+        Row: {
+          book_id: string | null
+          created_at: string
+          discount_percent: number
+          discount_type: string
+          id: string
+          reference_value: string
+          updated_at: string
+        }
+        Insert: {
+          book_id?: string | null
+          created_at?: string
+          discount_percent?: number
+          discount_type?: string
+          id?: string
+          reference_value: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string | null
+          created_at?: string
+          discount_percent?: number
+          discount_type?: string
+          id?: string
+          reference_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_discounts_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wholesale_form_fields: {
+        Row: {
+          created_at: string
+          field_type: string
+          id: string
+          label: string
+          options: Json | null
+          placeholder: string | null
+          required: boolean | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          field_type?: string
+          id?: string
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+          required?: boolean | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          field_type?: string
+          id?: string
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+          required?: boolean | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -333,7 +446,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "wholesale"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -461,7 +574,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "wholesale"],
     },
   },
 } as const

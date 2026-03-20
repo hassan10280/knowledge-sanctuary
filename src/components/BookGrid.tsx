@@ -4,10 +4,11 @@ import { motion } from "framer-motion";
 import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight } from "lucide-react";
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { useCart } from "@/contexts/CartContext";
+import { useUserRole, useWholesaleDiscounts } from "@/hooks/useWholesale";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 
-const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void }) => {
+const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number }) => {
   const { items } = useCart();
   const navigate = useNavigate();
   const isInCart = items.some((i) => i.id === book.id);
@@ -79,9 +80,19 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
           </div>
         )}
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-primary">£{Number(book.price).toFixed(2)}</span>
-          {book.original_price && (
-            <span className="text-xs text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
+          {wholesalePrice !== undefined ? (
+            <>
+              <span className="text-sm font-bold text-primary">£{wholesalePrice.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground line-through">£{Number(book.price).toFixed(2)}</span>
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Wholesale</span>
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-bold text-primary">£{Number(book.price).toFixed(2)}</span>
+              {book.original_price && (
+                <span className="text-xs text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
+              )}
+            </>
           )}
         </div>
 
@@ -129,8 +140,21 @@ const BookCard = ({ book, index, onViewDetails, onReadSample }: { book: any; ind
 const BookGrid = () => {
   const { data: books, isLoading: booksLoading } = useBooks();
   const { data: categories, isLoading: catsLoading } = useCategories();
+  const { data: userRole } = useUserRole();
+  const { data: discounts } = useWholesaleDiscounts();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [sampleBook, setSampleBook] = useState<any>(null);
+
+  const getWholesalePrice = (book: any): number | undefined => {
+    if (userRole !== "wholesale") return undefined;
+    // Product-specific discount first
+    const productDiscount = discounts?.find(d => d.discount_type === "product" && d.book_id === book.id);
+    if (productDiscount) return Number(book.price) * (1 - Number(productDiscount.discount_percent) / 100);
+    // Publisher discount
+    const pubDiscount = discounts?.find(d => d.discount_type === "publisher" && d.reference_value === (book as any).publisher);
+    if (pubDiscount) return Number(book.price) * (1 - Number(pubDiscount.discount_percent) / 100);
+    return undefined;
+  };
 
   if (booksLoading || catsLoading) {
     return (
@@ -169,7 +193,7 @@ const BookGrid = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
               {category.books.map((book: any, i: number) => (
-                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} />
+                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} wholesalePrice={getWholesalePrice(book)} />
               ))}
             </div>
           </div>

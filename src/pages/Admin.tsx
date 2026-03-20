@@ -5,8 +5,11 @@ import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategory, useDeleteCategory } from "@/hooks/useBooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import FormBuilderTab from "@/components/admin/FormBuilderTab";
+import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
+import WholesaleDiscountsTab from "@/components/admin/WholesaleDiscountsTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -611,6 +614,15 @@ const Admin = () => {
             <TabsTrigger value="users" className="text-xs sm:text-sm gap-1.5">
               <Users className="h-3.5 w-3.5" /> Users
             </TabsTrigger>
+            <TabsTrigger value="wholesale-requests" className="text-xs sm:text-sm gap-1.5">
+              <Building2 className="h-3.5 w-3.5" /> Wholesale
+            </TabsTrigger>
+            <TabsTrigger value="form-builder" className="text-xs sm:text-sm gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Form Builder
+            </TabsTrigger>
+            <TabsTrigger value="discounts" className="text-xs sm:text-sm gap-1.5">
+              <Percent className="h-3.5 w-3.5" /> Discounts
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
@@ -793,6 +805,10 @@ const Admin = () => {
           <TabsContent value="users">
             <UsersManagement />
           </TabsContent>
+
+          <TabsContent value="wholesale-requests"><WholesaleRequestsTab /></TabsContent>
+          <TabsContent value="form-builder"><FormBuilderTab /></TabsContent>
+          <TabsContent value="discounts"><WholesaleDiscountsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
