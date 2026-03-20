@@ -8,11 +8,30 @@ import { useUserRole, useWholesaleDiscounts } from "@/hooks/useWholesale";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 
+interface BookGridProps {
+  searchQuery?: string;
+}
+
 const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number }) => {
-  const { items } = useCart();
+  const { items, addItem } = useCart();
   const navigate = useNavigate();
   const isInCart = items.some((i) => i.id === book.id);
   const coverAccent = book.cover_color ? book.cover_color + "cc" : "#2980b9";
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInCart) {
+      navigate("/cart");
+      return;
+    }
+    addItem({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      price: wholesalePrice ?? Number(book.price),
+      cover_color: book.cover_color || "#1a5276",
+    });
+  };
 
   return (
     <motion.div
@@ -114,30 +133,33 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
           </button>
         </div>
 
-        {/* Add to Cart / Go to Cart */}
-        {isInCart ? (
-          <button
-            onClick={() => navigate("/cart")}
-            className="mt-1.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-[hsl(var(--mint))]/10 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 rounded-lg hover:bg-[hsl(var(--mint))]/20 transition-all"
-          >
-            <ArrowRight className="h-3.5 w-3.5" />
-            Go to Cart
-          </button>
-        ) : (
-          <button
-            onClick={() => onViewDetails(book)}
-            className="mt-1.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-all"
-          >
-            <ShoppingCart className="h-3.5 w-3.5" />
-            Add to Cart
-          </button>
-        )}
+        {/* Add to Cart / Go to Cart — instant, no modal */}
+        <button
+          onClick={handleAddToCart}
+          className={`mt-1.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+            isInCart
+              ? "bg-[hsl(var(--mint))]/10 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 hover:bg-[hsl(var(--mint))]/20"
+              : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+          }`}
+        >
+          {isInCart ? (
+            <>
+              <ArrowRight className="h-3.5 w-3.5" />
+              Go to Cart
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="h-3.5 w-3.5" />
+              Add to Cart
+            </>
+          )}
+        </button>
       </div>
     </motion.div>
   );
 };
 
-const BookGrid = () => {
+const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   const { data: books, isLoading: booksLoading } = useBooks();
   const { data: categories, isLoading: catsLoading } = useCategories();
   const { data: userRole } = useUserRole();
@@ -147,10 +169,8 @@ const BookGrid = () => {
 
   const getWholesalePrice = (book: any): number | undefined => {
     if (userRole !== "wholesale") return undefined;
-    // Product-specific discount first
     const productDiscount = discounts?.find(d => d.discount_type === "product" && d.book_id === book.id);
     if (productDiscount) return Number(book.price) * (1 - Number(productDiscount.discount_percent) / 100);
-    // Publisher discount
     const pubDiscount = discounts?.find(d => d.discount_type === "publisher" && d.reference_value === (book as any).publisher);
     if (pubDiscount) return Number(book.price) * (1 - Number(pubDiscount.discount_percent) / 100);
     return undefined;
@@ -164,14 +184,29 @@ const BookGrid = () => {
     );
   }
 
+  const query = searchQuery.trim().toLowerCase();
+  const filteredBooks = query
+    ? books?.filter(b =>
+        b.title.toLowerCase().includes(query) ||
+        b.author.toLowerCase().includes(query) ||
+        b.category.toLowerCase().includes(query)
+      )
+    : books;
+
   const groupedBooks = categories?.map((cat) => ({
     ...cat,
-    books: books?.filter((b) => b.category === cat.name) || [],
+    books: filteredBooks?.filter((b) => b.category === cat.name) || [],
   })).filter((cat) => cat.books.length > 0);
 
   return (
-    <section className="py-20 px-6 lg:px-8">
+    <section id="book-grid" className="py-20 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {query && (!groupedBooks || groupedBooks.length === 0) && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground text-lg">No books found for "{searchQuery}"</p>
+          </div>
+        )}
+
         {groupedBooks?.map((category, idx) => (
           <div key={category.id} className={`${idx > 0 ? "mt-20" : ""}`}>
             <motion.div
@@ -199,19 +234,21 @@ const BookGrid = () => {
           </div>
         ))}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mt-24"
-        >
-          <button className="group relative px-10 py-4 bg-primary text-primary-foreground font-medium rounded-xl hover:shadow-glow transition-all duration-500 font-serif text-lg inline-flex items-center gap-3 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--sky-deep))] to-[hsl(var(--sky))] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <BookOpen className="h-5 w-5 relative z-10" />
-            <span className="relative z-10">Browse the Full Archive</span>
-            <ChevronRight className="h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </motion.div>
+        {!query && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-24"
+          >
+            <button className="group relative px-10 py-4 bg-primary text-primary-foreground font-medium rounded-xl hover:shadow-glow transition-all duration-500 font-serif text-lg inline-flex items-center gap-3 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--sky-deep))] to-[hsl(var(--sky))] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <BookOpen className="h-5 w-5 relative z-10" />
+              <span className="relative z-10">Browse the Full Archive</span>
+              <ChevronRight className="h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </motion.div>
+        )}
       </div>
 
       <BookDetailModal

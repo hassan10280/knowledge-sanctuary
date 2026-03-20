@@ -42,6 +42,7 @@ const Admin = () => {
   const [editingBook, setEditingBook] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openPanels, setOpenPanels] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -284,12 +285,17 @@ const Admin = () => {
 
   /* ─── Full Visual Design Panel for one section ─── */
   const VisualDesignPanel = ({ section, label }: { section: string; label: string }) => {
-    const [open, setOpen] = useState(false);
+    const isOpen = openPanels[section] ?? false;
+    const toggleOpen = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpenPanels(prev => ({ ...prev, [section]: !prev[section] }));
+    };
     return (
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
         <button
           type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
+          onClick={toggleOpen}
           className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2.5">
@@ -298,9 +304,9 @@ const Admin = () => {
             </div>
             <span className="text-sm font-semibold text-foreground">{label}</span>
           </div>
-          {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
-        {open && (
+        {isOpen && (
           <div className="px-5 pb-5 pt-2 space-y-5 border-t border-border" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Spacing */}

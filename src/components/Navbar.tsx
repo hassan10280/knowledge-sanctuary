@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, X, User, LogOut, Shield, ShoppingCart } from "lucide-react";
+import { Search, Menu, X, User, LogOut, Shield, ShoppingCart, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/useAuth";
@@ -74,10 +74,15 @@ const Navbar = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <button className="p-2 text-white/80 hover:text-white transition-colors duration-200">
-              <Search className="h-5 w-5" />
-            </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Wholesale button */}
+            <Link
+              to="/wholesale/apply"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-lg hover:bg-[hsl(var(--gold))]/25 transition-all"
+            >
+              <Building2 className="h-3.5 w-3.5" />
+              Wholesale
+            </Link>
 
             <Link to="/cart" className="relative p-2 text-white/80 hover:text-white transition-colors duration-200">
               <ShoppingCart className="h-5 w-5" />
@@ -162,6 +167,15 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
+
+              <Link
+                to="/wholesale/apply"
+                className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--gold))] py-2 transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                <Building2 className="h-4 w-4" />
+                Register as Wholesale
+              </Link>
 
               <div className="border-t border-white/10 pt-3 space-y-2">
                 {!loading && (
