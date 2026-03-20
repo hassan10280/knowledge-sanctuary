@@ -112,6 +112,17 @@ const Admin = () => {
     toast.success("Sample uploaded!");
   };
 
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingBook) return;
+    const path = `covers/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("site-assets").upload(path, file);
+    if (error) { toast.error("Upload failed: " + error.message); return; }
+    const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(path);
+    setEditingBook({ ...editingBook, cover_image: urlData.publicUrl });
+    toast.success("Cover image uploaded!");
+  };
+
   const handleSaveBook = async () => {
     if (!editingBook) return;
     try {
