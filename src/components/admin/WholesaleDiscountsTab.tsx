@@ -181,7 +181,11 @@ const WholesaleDiscountsTab = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium">{d.reference_value}</p>
-                  <p className="text-xs text-muted-foreground">{d.discount_percent}% discount</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(d as any).fixed_price && Number((d as any).fixed_price) > 0
+                      ? `Fixed Price: £${Number((d as any).fixed_price).toFixed(2)}`
+                      : `${d.discount_percent}% discount`}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-1">
