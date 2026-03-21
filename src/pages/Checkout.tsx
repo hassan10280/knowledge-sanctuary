@@ -4,6 +4,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import { useShippingRules } from "@/hooks/useAdvancedDiscounts";
+import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
 import { supabase } from "@/integrations/supabase/client";
