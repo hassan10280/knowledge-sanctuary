@@ -11,7 +11,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X, Tag, Truck } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X, Tag, Truck, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -161,8 +161,14 @@ const Cart = () => {
               ))}
 
               <div className="mt-8 bg-card border border-border rounded-xl p-6 space-y-4">
-                {/* Free shipping proximity message */}
-                {!shippingResult.isFreeShipping && shippingResult.amountToFreeShipping > 0 && (
+                {/* Smart suggestion / free shipping proximity */}
+                {shippingResult.smartSuggestion && (
+                  <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                    <p className="text-sm text-primary font-medium">{shippingResult.smartSuggestion}</p>
+                  </div>
+                )}
+                {!shippingResult.smartSuggestion && !shippingResult.isFreeShipping && shippingResult.amountToFreeShipping > 0 && (
                   <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                     <Truck className="h-4 w-4 text-primary shrink-0" />
                     <p className="text-sm text-primary font-medium">
