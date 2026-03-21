@@ -38,6 +38,13 @@ const Cart = () => {
   }));
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
+
+  // Use original prices from discount calculator for accurate subtotal display
+  const originalSubtotal = items.reduce((sum, item) => {
+    const disc = cartDiscounts.itemPrices.get(item.id);
+    return sum + (disc?.originalPrice ?? item.price) * item.quantity;
+  }, 0);
+
   // Cart page: no city known yet, use default zone calculation
   const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
   const shipping = shippingResult.shippingCost;
@@ -49,14 +56,14 @@ const Cart = () => {
     : 0;
 
   const grandTotal = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount + shipping);
-  const totalItemSavings = totalPrice - cartDiscounts.subtotalAfterItemDiscounts;
+  const totalItemSavings = originalSubtotal - cartDiscounts.subtotalAfterItemDiscounts;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     try {
       const coupon = await validateCoupon.mutateAsync({
         code: couponCode,
-        orderTotal: totalPrice,
+        orderTotal: cartDiscounts.discountedSubtotal,
         isWholesale,
       });
       setAppliedCoupon(coupon);
@@ -194,7 +201,7 @@ const Cart = () => {
                 <div className="border-t border-border pt-4 space-y-2">
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Subtotal</span>
-                    <span>£{totalPrice.toFixed(2)}</span>
+                    <span>£{originalSubtotal.toFixed(2)}</span>
                   </div>
                   {totalItemSavings > 0.01 && (
                     <div className="flex justify-between text-sm text-green-600">
