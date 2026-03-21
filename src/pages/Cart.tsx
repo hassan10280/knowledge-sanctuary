@@ -19,8 +19,9 @@ const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
-  const { data: shippingRulesOld } = useShippingRules();
+  const { data: shippingRules } = useShippingRules();
   const { calculateShipping: calcNewShipping, zones: shippingZones } = useShippingCalculator();
+  const { data: books } = useBooks();
   const { getCartDiscounts, role } = useDiscountCalculator();
   const validateCoupon = useValidateCoupon();
   const navigate = useNavigate();
