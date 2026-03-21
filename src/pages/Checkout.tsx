@@ -24,7 +24,7 @@ const BANK_DETAILS = {
 };
 
 const Checkout = () => {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart, appliedCoupon } = useCart();
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
@@ -69,7 +69,15 @@ const Checkout = () => {
     selectedMethodId || undefined
   );
   const shipping = shippingResult.shippingCost;
-  const grandTotal = cartDiscounts.discountedSubtotal + shipping;
+
+  const couponDiscount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100)
+      : Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal)
+    : 0;
+
+  const subtotalAfterCoupon = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount);
+  const grandTotal = subtotalAfterCoupon + shipping;
 
   // Auto-select cheapest available method
   useEffect(() => {
@@ -434,6 +442,12 @@ const Checkout = () => {
                     <span>Subtotal</span>
                     <span>£{cartDiscounts.discountedSubtotal.toFixed(2)}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Coupon ({appliedCoupon?.code})</span>
+                      <span>-£{couponDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Shipping ({shippingResult.methodName})</span>
                     <span>{shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}</span>

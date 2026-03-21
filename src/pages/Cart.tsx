@@ -27,7 +27,7 @@ const Cart = () => {
   const location = useLocation();
   const cartContentRef = useRef<HTMLDivElement>(null);
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const { appliedCoupon, setAppliedCoupon } = useCart();
   const isWholesale = wholesaleStatus === "approved";
 
   const bookDetails = (books || []).map((b: any) => ({
