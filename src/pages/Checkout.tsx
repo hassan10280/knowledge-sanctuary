@@ -13,7 +13,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, Package, Sparkles, Info } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
