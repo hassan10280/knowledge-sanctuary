@@ -232,6 +232,50 @@ export type Database = {
         }
         Relationships: []
       }
+      free_shipping_rules: {
+        Row: {
+          always_free: boolean
+          created_at: string
+          id: string
+          is_active: boolean
+          is_wholesale: boolean
+          min_order_amount: number
+          name: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          always_free?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          min_order_amount?: number
+          name?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          always_free?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          min_order_amount?: number
+          name?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_shipping_rules_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           book_id: string
@@ -415,6 +459,90 @@ export type Database = {
         }
         Relationships: []
       }
+      shipping_methods: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shipping_rates: {
+        Row: {
+          created_at: string
+          flat_rate: number | null
+          id: string
+          is_active: boolean
+          is_wholesale: boolean
+          method_id: string
+          price_ranges: Json | null
+          rate_type: string
+          updated_at: string
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          flat_rate?: number | null
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          method_id: string
+          price_ranges?: Json | null
+          rate_type?: string
+          updated_at?: string
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          flat_rate?: number | null
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          method_id?: string
+          price_ranges?: Json | null
+          rate_type?: string
+          updated_at?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_rates_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipping_rates_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipping_rules: {
         Row: {
           created_at: string
@@ -444,6 +572,36 @@ export type Database = {
           min_amount?: number
           rule_name?: string
           shipping_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shipping_zones: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          locations: string[]
+          name: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          locations?: string[]
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          locations?: string[]
+          name?: string
+          sort_order?: number | null
           updated_at?: string
         }
         Relationships: []

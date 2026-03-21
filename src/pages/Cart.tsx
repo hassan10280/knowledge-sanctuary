@@ -4,6 +4,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import { useShippingRules, useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
+import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
 import Navbar from "@/components/Navbar";
@@ -19,6 +20,7 @@ const Cart = () => {
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
   const { data: shippingRules } = useShippingRules();
+  const { calculateShipping: calcNewShipping, zones: shippingZones } = useShippingCalculator();
   const { data: books } = useBooks();
   const { getCartDiscounts, role } = useDiscountCalculator();
   const validateCoupon = useValidateCoupon();
@@ -39,24 +41,9 @@ const Cart = () => {
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
 
-  // Calculate shipping based on rules
-  const calculateShipping = () => {
-    const baseAmount = cartDiscounts.discountedSubtotal;
-    if (!shippingRules || shippingRules.length === 0) {
-      return baseAmount >= 25 ? 0 : 3.99;
-    }
-    const applicableRules = shippingRules
-      .filter(r => r.is_active && baseAmount >= Number(r.min_amount))
-      .filter(r => !r.is_wholesale || isWholesale)
-      .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
-    if (applicableRules.length > 0) {
-      return Number(applicableRules[0].shipping_cost);
-    }
-    const defaultRule = shippingRules.find(r => r.is_active && Number(r.min_amount) === 0 && (!r.is_wholesale || isWholesale));
-    return defaultRule ? Number(defaultRule.shipping_cost) : 3.99;
-  };
-
-  const shipping = calculateShipping();
+  // Use new zone-based shipping calculator, fallback to old rules
+  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale);
+  const shipping = shippingResult.shippingCost;
 
   // Calculate coupon discount (Priority 6: Order Total - applied last)
   const couponDiscount = appliedCoupon

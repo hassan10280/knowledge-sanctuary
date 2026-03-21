@@ -12,6 +12,7 @@ import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
 import DiscountsTab from "@/components/admin/DiscountsTab";
 import PublishersTab from "@/components/admin/PublishersTab";
+import ShippingSettingsTab from "@/components/admin/ShippingSettingsTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -646,6 +647,9 @@ const Admin = () => {
             <TabsTrigger value="discounts" className="text-xs sm:text-sm gap-1.5">
               <Percent className="h-3.5 w-3.5" /> Discounts
             </TabsTrigger>
+            <TabsTrigger value="shipping" className="text-xs sm:text-sm gap-1.5">
+              <Truck className="h-3.5 w-3.5" /> Shipping
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
@@ -867,6 +871,7 @@ const Admin = () => {
           <TabsContent value="form-builder"><FormBuilderTab /></TabsContent>
           <TabsContent value="discounts"><DiscountsTab /></TabsContent>
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
+          <TabsContent value="shipping"><ShippingSettingsTab /></TabsContent>
         </Tabs>
       </div>
     </div>

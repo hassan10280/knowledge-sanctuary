@@ -4,6 +4,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import { useShippingRules } from "@/hooks/useAdvancedDiscounts";
+import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +29,7 @@ const Checkout = () => {
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const { data: shippingRules } = useShippingRules();
+  const { calculateShipping: calcNewShipping } = useShippingCalculator();
   const { data: books } = useBooks();
   const { getCartDiscounts } = useDiscountCalculator();
   const navigate = useNavigate();
@@ -59,24 +61,10 @@ const Checkout = () => {
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
 
-  // Dynamic shipping calculation
-  const calculateShipping = () => {
-    const baseAmount = cartDiscounts.discountedSubtotal;
-    if (!shippingRules || shippingRules.length === 0) {
-      return baseAmount >= 25 ? 0 : 3.99;
-    }
-    const applicableRules = shippingRules
-      .filter(r => r.is_active && baseAmount >= Number(r.min_amount))
-      .filter(r => !r.is_wholesale || isWholesale)
-      .sort((a, b) => Number(b.min_amount) - Number(a.min_amount));
-    if (applicableRules.length > 0) {
-      return Number(applicableRules[0].shipping_cost);
-    }
-    const defaultRule = shippingRules.find(r => r.is_active && Number(r.min_amount) === 0 && (!r.is_wholesale || isWholesale));
-    return defaultRule ? Number(defaultRule.shipping_cost) : 3.99;
-  };
-
-  const shipping = calculateShipping();
+  // Shipping calculated with city from address (uses saved or manual)
+  const addrCity = (useSaved && savedAddress) ? savedAddress.city : address.city;
+  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, addrCity);
+  const shipping = shippingResult.shippingCost;
   const grandTotal = cartDiscounts.discountedSubtotal + shipping;
 
   useEffect(() => {
