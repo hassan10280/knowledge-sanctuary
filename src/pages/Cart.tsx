@@ -201,7 +201,7 @@ const Cart = () => {
                 <div className="border-t border-border pt-4 space-y-2">
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Subtotal</span>
-                    <span>£{totalPrice.toFixed(2)}</span>
+                    <span>£{originalSubtotal.toFixed(2)}</span>
                   </div>
                   {totalItemSavings > 0.01 && (
                     <div className="flex justify-between text-sm text-green-600">
