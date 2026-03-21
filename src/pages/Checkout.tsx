@@ -69,7 +69,15 @@ const Checkout = () => {
     selectedMethodId || undefined
   );
   const shipping = shippingResult.shippingCost;
-  const grandTotal = cartDiscounts.discountedSubtotal + shipping;
+
+  const couponDiscount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100)
+      : Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal)
+    : 0;
+
+  const subtotalAfterCoupon = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount);
+  const grandTotal = subtotalAfterCoupon + shipping;
 
   // Auto-select cheapest available method
   useEffect(() => {
