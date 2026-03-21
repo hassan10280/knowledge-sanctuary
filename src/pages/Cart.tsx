@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
-import { useShippingRules, useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
+import { useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
 import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
@@ -19,8 +19,7 @@ const Cart = () => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
-  const { data: shippingRules } = useShippingRules();
-  const { calculateShipping: calcNewShipping, zones: shippingZones } = useShippingCalculator();
+  const { calculateShipping: calcNewShipping } = useShippingCalculator();
   const { data: books } = useBooks();
   const { getCartDiscounts, role } = useDiscountCalculator();
   const validateCoupon = useValidateCoupon();
@@ -39,7 +38,8 @@ const Cart = () => {
   }));
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
-  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale);
+  // Cart page: no city known yet, use default zone calculation
+  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
   const shipping = shippingResult.shippingCost;
 
   const couponDiscount = appliedCoupon

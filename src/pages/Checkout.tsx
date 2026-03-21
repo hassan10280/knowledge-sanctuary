@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
-import { useShippingRules } from "@/hooks/useAdvancedDiscounts";
 import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
@@ -28,7 +27,6 @@ const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
-  const { data: shippingRules } = useShippingRules();
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
   const { data: books } = useBooks();
   const { getCartDiscounts } = useDiscountCalculator();
@@ -185,13 +183,17 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        book_id: item.id,
-        title: item.title,
-        price: item.price,
-        quantity: item.quantity,
-      }));
+      const orderItems = items.map((item) => {
+        const disc = cartDiscounts.itemPrices.get(item.id);
+        const finalPrice = disc ? disc.finalPrice : item.price;
+        return {
+          order_id: order.id,
+          book_id: item.id,
+          title: item.title,
+          price: finalPrice,
+          quantity: item.quantity,
+        };
+      });
 
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
