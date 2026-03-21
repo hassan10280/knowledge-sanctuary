@@ -20,7 +20,7 @@ const Cart = () => {
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
-  const { calculateShipping: calcNewShipping, zones: shippingZones } = useShippingCalculator();
+  const { data: books } = useBooks();
   const { data: books } = useBooks();
   const { getCartDiscounts, role } = useDiscountCalculator();
   const validateCoupon = useValidateCoupon();
