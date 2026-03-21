@@ -812,6 +812,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_coupon_usage: {
+        Args: { coupon_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "wholesale"
