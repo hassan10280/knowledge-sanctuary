@@ -331,6 +331,7 @@ export type Database = {
           created_at: string
           id: string
           payment_method: string
+          shipping_override: number | null
           status: string
           total: number
           transaction_id: string | null
@@ -346,6 +347,7 @@ export type Database = {
           created_at?: string
           id?: string
           payment_method?: string
+          shipping_override?: number | null
           status?: string
           total?: number
           transaction_id?: string | null
@@ -361,6 +363,7 @@ export type Database = {
           created_at?: string
           id?: string
           payment_method?: string
+          shipping_override?: number | null
           status?: string
           total?: number
           transaction_id?: string | null
@@ -463,6 +466,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          estimated_delivery_days: string | null
           id: string
           is_active: boolean
           name: string
@@ -472,6 +476,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          estimated_delivery_days?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -481,6 +486,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          estimated_delivery_days?: string | null
           id?: string
           is_active?: boolean
           name?: string
