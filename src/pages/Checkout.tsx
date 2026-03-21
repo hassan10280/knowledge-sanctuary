@@ -61,7 +61,10 @@ const Checkout = () => {
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
 
-  // Shipping is recalculated below after currentAddress is defined
+  // Shipping calculated with city from address (uses saved or manual)
+  const addrCity = (useSaved && savedAddress) ? savedAddress.city : address.city;
+  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, addrCity);
+  const shipping = shippingResult.shippingCost;
   const grandTotal = cartDiscounts.discountedSubtotal + shipping;
 
   useEffect(() => {
