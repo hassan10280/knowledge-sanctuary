@@ -185,13 +185,17 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        book_id: item.id,
-        title: item.title,
-        price: item.price,
-        quantity: item.quantity,
-      }));
+      const orderItems = items.map((item) => {
+        const disc = cartDiscounts.itemPrices.get(item.id);
+        const finalPrice = disc ? disc.finalPrice : item.price;
+        return {
+          order_id: order.id,
+          book_id: item.id,
+          title: item.title,
+          price: finalPrice,
+          quantity: item.quantity,
+        };
+      });
 
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;

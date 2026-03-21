@@ -39,7 +39,8 @@ const Cart = () => {
   }));
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
-  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale);
+  // Cart page: no city known yet, use default zone calculation
+  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
   const shipping = shippingResult.shippingCost;
 
   const couponDiscount = appliedCoupon
