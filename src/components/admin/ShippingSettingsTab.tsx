@@ -108,7 +108,7 @@ const ZonesPanel = () => {
   );
 };
 
-/* ─── Methods Sub-Tab ─── */
+/* ─── Methods Sub-Tab (with estimated delivery days) ─── */
 const MethodsPanel = () => {
   const { data: methods, isLoading } = useShippingMethods();
   const upsert = useUpsertShippingMethod();
@@ -130,7 +130,7 @@ const MethodsPanel = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Define delivery methods (e.g. Home Delivery, Courier, Pickup)</p>
-        <Button size="sm" onClick={() => setEditing({ name: "", description: "", is_active: true, sort_order: 0 })} className="gap-1.5">
+        <Button size="sm" onClick={() => setEditing({ name: "", description: "", estimated_delivery_days: "", is_active: true, sort_order: 0 })} className="gap-1.5">
           <Plus className="h-4 w-4" /> Add Method
         </Button>
       </div>
@@ -147,15 +147,18 @@ const MethodsPanel = () => {
               <Label className="text-xs">Description</Label>
               <Input value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })} placeholder="Delivered to your door" className="h-9 text-xs" />
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch checked={editing.is_active} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />
-              <Label className="text-xs">Active</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Estimated Delivery Time</Label>
+              <Input value={editing.estimated_delivery_days || ""} onChange={e => setEditing({ ...editing, estimated_delivery_days: e.target.value })} placeholder="e.g. 2-3 days, 1 week" className="h-9 text-xs" />
             </div>
             <div className="space-y-1.5">
-              <Input type="number" value={editing.sort_order} onChange={e => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })} className="h-9 text-xs w-20" placeholder="Order" />
+              <Label className="text-xs">Sort Order</Label>
+              <Input type="number" value={editing.sort_order} onChange={e => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })} className="h-9 text-xs" />
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={editing.is_active} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />
+            <Label className="text-xs">Active</Label>
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
@@ -169,7 +172,11 @@ const MethodsPanel = () => {
           <div key={m.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
             <div>
               <p className="text-sm font-medium flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-primary" /> {m.name}</p>
-              <p className="text-xs text-muted-foreground">{m.description || "No description"} {!m.is_active && " • Inactive"}</p>
+              <p className="text-xs text-muted-foreground">
+                {m.description || "No description"}
+                {(m as any).estimated_delivery_days ? ` • Est: ${(m as any).estimated_delivery_days}` : ""}
+                {!m.is_active && " • Inactive"}
+              </p>
             </div>
             <div className="flex gap-1">
               <Button size="sm" variant="ghost" onClick={() => setEditing({ ...m })}>Edit</Button>
@@ -307,11 +314,9 @@ const RatesPanel = ({ wholesaleOnly }: { wholesaleOnly?: boolean }) => {
             </div>
           )}
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch checked={editing.is_active} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />
-              <Label className="text-xs">Active</Label>
-            </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={editing.is_active} onCheckedChange={v => setEditing({ ...editing, is_active: v })} />
+            <Label className="text-xs">Active</Label>
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
@@ -466,8 +471,9 @@ const ShippingSettingsTab = () => {
             <TabsTrigger value="wholesale-free" className="text-xs gap-1.5"><Gift className="h-3.5 w-3.5" /> Wholesale Free Ship</TabsTrigger>
           </TabsList>
 
-          <div className="p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground">
-            <strong>Priority:</strong> 1. Free Shipping Rule → 2. Role-Based Rate → 3. Zone-Based Rate → 4. Default (£3.99)
+          <div className="p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground space-y-1">
+            <p><strong>Priority:</strong> 1. Free Shipping Rule → 2. Role-Based Rate → 3. Zone-Based Rate → 4. Default (£3.99)</p>
+            <p><strong>⚠️ Isolation:</strong> Retail rules NEVER apply to Wholesale users, and vice versa. Each role has completely separate rates and free shipping rules.</p>
           </div>
 
           <TabsContent value="zones"><ZonesPanel /></TabsContent>

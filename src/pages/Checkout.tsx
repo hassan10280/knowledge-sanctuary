@@ -13,7 +13,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, Package } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
@@ -39,6 +39,7 @@ const Checkout = () => {
   const [useSaved, setUseSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transactionId, setTransactionId] = useState("");
+  const [selectedMethodId, setSelectedMethodId] = useState<string>("");
 
   const [address, setAddress] = useState({
     full_name: "",
@@ -61,11 +62,17 @@ const Checkout = () => {
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
 
-  // Shipping calculated with city from address (uses saved or manual)
   const addrCity = (useSaved && savedAddress) ? savedAddress.city : address.city;
-  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, addrCity);
+  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, addrCity, undefined, selectedMethodId || undefined);
   const shipping = shippingResult.shippingCost;
   const grandTotal = cartDiscounts.discountedSubtotal + shipping;
+
+  // Auto-select first available method
+  useEffect(() => {
+    if (shippingResult.availableMethods.length > 0 && !selectedMethodId) {
+      setSelectedMethodId(shippingResult.availableMethods[0].id);
+    }
+  }, [shippingResult.availableMethods, selectedMethodId]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -96,7 +103,6 @@ const Checkout = () => {
     }
   }, [items, navigate, submitting]);
 
-  // Block pending wholesale users (after all hooks)
   if (!authLoading && !wholesaleLoading && wholesaleStatus === "pending") {
     return (
       <div className="min-h-screen bg-background">
@@ -140,7 +146,6 @@ const Checkout = () => {
 
     setSubmitting(true);
     try {
-      // Save billing address if new
       if (!useSaved && isAddressValid) {
         await supabase.from("billing_addresses").insert({
           user_id: user.id,
@@ -150,7 +155,6 @@ const Checkout = () => {
         });
       }
 
-      // Create order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -169,7 +173,6 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items
       const orderItems = items.map((item) => ({
         order_id: order.id,
         book_id: item.id,
@@ -205,8 +208,7 @@ const Checkout = () => {
         <div className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Link to="/cart" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-4">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Cart
+              <ArrowLeft className="h-4 w-4" /> Back to Cart
             </Link>
             <h1 className="font-serif text-3xl sm:text-4xl text-foreground mb-8">Checkout</h1>
           </motion.div>
@@ -221,75 +223,130 @@ const Checkout = () => {
                   {step > s ? <Check className="h-4 w-4" /> : s}
                 </div>
                 <span className="text-xs font-medium text-muted-foreground hidden sm:block">
-                  {s === 1 ? "Billing Address" : "Payment"}
+                  {s === 1 ? "Address & Shipping" : "Payment"}
                 </span>
                 {s < 2 && <div className={`flex-1 h-0.5 ${step > s ? "bg-primary" : "bg-muted"} transition-colors`} />}
               </div>
             ))}
           </div>
 
-          {/* Step 1: Billing Address */}
+          {/* Step 1: Address + Shipping Method */}
           {step === 1 && (
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-card border border-border rounded-xl p-6 space-y-5">
-              <h2 className="font-serif text-xl text-foreground">Billing Address</h2>
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+              <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+                <h2 className="font-serif text-xl text-foreground">Billing Address</h2>
 
-              {savedAddress && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setUseSaved(true)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
-                      useSaved ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-foreground">Use this address</span>
-                      {useSaved && <Check className="h-4 w-4 text-primary" />}
+                {savedAddress && (
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setUseSaved(true)}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
+                        useSaved ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-foreground">Use this address</span>
+                        {useSaved && <Check className="h-4 w-4 text-primary" />}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {savedAddress.full_name}, {savedAddress.address_line1}, {savedAddress.city}, {savedAddress.postcode}
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => setUseSaved(false)}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
+                        !useSaved ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                      }`}
+                    >
+                      <span className="text-sm font-semibold text-foreground">Enter a new address</span>
+                    </button>
+                  </div>
+                )}
+
+                {(!savedAddress || !useSaved) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name *</label>
+                      <Input value={address.full_name} onChange={(e) => setAddress({ ...address, full_name: e.target.value })} placeholder="John Smith" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {savedAddress.full_name}, {savedAddress.address_line1}, {savedAddress.city}, {savedAddress.postcode}
-                    </p>
-                  </button>
-                  <button
-                    onClick={() => setUseSaved(false)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
-                      !useSaved ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                    }`}
-                  >
-                    <span className="text-sm font-semibold text-foreground">Enter a new address</span>
-                  </button>
-                </div>
-              )}
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Address Line 1 *</label>
+                      <Input value={address.address_line1} onChange={(e) => setAddress({ ...address, address_line1: e.target.value })} placeholder="123 High Street" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Address Line 2</label>
+                      <Input value={address.address_line2} onChange={(e) => setAddress({ ...address, address_line2: e.target.value })} placeholder="Flat 4B" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">City *</label>
+                      <Input value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} placeholder="London" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">County</label>
+                      <Input value={address.county} onChange={(e) => setAddress({ ...address, county: e.target.value })} placeholder="Greater London" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Postcode *</label>
+                      <Input value={address.postcode} onChange={(e) => setAddress({ ...address, postcode: e.target.value })} placeholder="E1 6AN" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Phone</label>
+                      <Input value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} placeholder="+44 7700 900000" />
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {(!savedAddress || !useSaved) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name *</label>
-                    <Input value={address.full_name} onChange={(e) => setAddress({ ...address, full_name: e.target.value })} placeholder="John Smith" />
+              {/* Shipping Method Selection */}
+              {shippingResult.availableMethods.length > 0 && (
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                  <h2 className="font-serif text-xl text-foreground flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-primary" /> Shipping Method
+                  </h2>
+                  {shippingResult.zoneName !== "Default" && (
+                    <p className="text-xs text-muted-foreground">
+                      Zone: <span className="font-medium text-foreground">{shippingResult.zoneName}</span>
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    {shippingResult.availableMethods.map((method) => (
+                      <button
+                        key={method.id}
+                        onClick={() => setSelectedMethodId(method.id)}
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
+                          selectedMethodId === method.id
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-muted-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Package className="h-4 w-4 text-primary shrink-0" />
+                            <div>
+                              <span className="text-sm font-semibold text-foreground">{method.name}</span>
+                              {method.estimatedDays && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                  <Clock className="h-3 w-3" /> Estimated: {method.estimatedDays}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-sm font-bold text-foreground">
+                            {method.cost === 0 ? <span className="text-green-600">Free</span> : `£${method.cost.toFixed(2)}`}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">Address Line 1 *</label>
-                    <Input value={address.address_line1} onChange={(e) => setAddress({ ...address, address_line1: e.target.value })} placeholder="123 High Street" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">Address Line 2</label>
-                    <Input value={address.address_line2} onChange={(e) => setAddress({ ...address, address_line2: e.target.value })} placeholder="Flat 4B" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">City *</label>
-                    <Input value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} placeholder="London" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">County</label>
-                    <Input value={address.county} onChange={(e) => setAddress({ ...address, county: e.target.value })} placeholder="Greater London" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">Postcode *</label>
-                    <Input value={address.postcode} onChange={(e) => setAddress({ ...address, postcode: e.target.value })} placeholder="E1 6AN" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">Phone</label>
-                    <Input value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} placeholder="+44 7700 900000" />
-                  </div>
+                  {/* Free shipping proximity */}
+                  {!shippingResult.isFreeShipping && shippingResult.amountToFreeShipping > 0 && (
+                    <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                      <Truck className="h-4 w-4 text-primary shrink-0" />
+                      <p className="text-xs text-primary font-medium">
+                        Add <span className="font-bold">£{shippingResult.amountToFreeShipping.toFixed(2)}</span> more for free shipping!
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -298,8 +355,7 @@ const Checkout = () => {
                 disabled={!isAddressValid}
                 className="w-full h-11 font-semibold gap-2"
               >
-                Continue to Payment
-                <CreditCard className="h-4 w-4" />
+                Continue to Payment <CreditCard className="h-4 w-4" />
               </Button>
             </motion.div>
           )}
@@ -322,9 +378,20 @@ const Checkout = () => {
                 })}
                 <div className="border-t border-border pt-3 space-y-2">
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Shipping</span>
-                    <span>{shipping === 0 ? "Free" : `£${shipping.toFixed(2)}`}</span>
+                    <span className="flex items-center gap-1">
+                      Shipping
+                      {shippingResult.methodName !== "Standard" && (
+                        <span className="text-xs">({shippingResult.methodName})</span>
+                      )}
+                    </span>
+                    <span>{shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}</span>
                   </div>
+                  {shippingResult.estimatedDays && (
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Estimated delivery</span>
+                      <span>{shippingResult.estimatedDays}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-semibold text-foreground">
                     <span>Total</span>
                     <span className="text-lg text-primary">£{grandTotal.toFixed(2)}</span>
@@ -363,12 +430,7 @@ const Checkout = () => {
 
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Enter Transaction ID *</label>
-                  <Input
-                    value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="e.g. TXN-123456789"
-                    className="font-mono"
-                  />
+                  <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="e.g. TXN-123456789" className="font-mono" />
                   <p className="text-xs text-muted-foreground mt-2">
                     Please enter your transaction ID after completing the payment so we can verify it.
                   </p>
@@ -376,8 +438,7 @@ const Checkout = () => {
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
+                    <ArrowLeft className="h-4 w-4" /> Back
                   </Button>
                   <Button
                     onClick={handlePlaceOrder}
@@ -385,15 +446,9 @@ const Checkout = () => {
                     className="flex-1 h-11 font-semibold gap-2"
                   >
                     {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
                     ) : (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Place Order — £{grandTotal.toFixed(2)}
-                      </>
+                      <><Check className="h-4 w-4" /> Place Order — £{grandTotal.toFixed(2)}</>
                     )}
                   </Button>
                 </div>
