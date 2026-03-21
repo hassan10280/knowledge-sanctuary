@@ -13,7 +13,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, Package, Sparkles, Info } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
@@ -213,10 +213,6 @@ const Checkout = () => {
     );
   }
 
-  // Check if there's a mix of free and paid methods
-  const hasMixedPricing = shippingResult.availableMethods.length > 1 &&
-    shippingResult.availableMethods.some(m => m.cost === 0) &&
-    shippingResult.availableMethods.some(m => m.cost > 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -314,74 +310,63 @@ const Checkout = () => {
                 )}
               </div>
 
-              {/* Shipping Method Selection */}
+              {/* Delivery Options */}
               {shippingResult.availableMethods.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-6 space-y-4">
                   <h2 className="font-serif text-xl text-foreground flex items-center gap-2">
-                    <Truck className="h-5 w-5 text-primary" /> Shipping Method
+                    <Truck className="h-5 w-5 text-primary" /> Delivery Options
                   </h2>
-                  {shippingResult.zoneName !== "Default" && (
-                    <p className="text-xs text-muted-foreground">
-                      Delivery zone: <span className="font-medium text-foreground">{shippingResult.zoneName}</span>
-                    </p>
-                  )}
-
-                  {/* Mixed pricing info */}
-                  {hasMixedPricing && (
-                    <div className="flex items-start gap-2 p-2.5 bg-muted/50 border border-border rounded-lg">
-                      <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                      <p className="text-xs text-muted-foreground">
-                        Some methods include free shipping based on your order total. Paid methods are also available if you prefer faster delivery.
-                      </p>
-                    </div>
-                  )}
 
                   <div className="space-y-2">
-                    {shippingResult.availableMethods.map((method) => (
-                      <button
-                        key={method.id}
-                        onClick={() => setSelectedMethodId(method.id)}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
-                          selectedMethodId === method.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-muted-foreground"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Package className="h-4 w-4 text-primary shrink-0" />
-                            <div>
-                              <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                                {method.name}
-                                {method.isCheapest && shippingResult.availableMethods.length > 1 && (
-                                  <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">Best value</span>
+                    {shippingResult.availableMethods.map((method) => {
+                      const isSelected = selectedMethodId === method.id;
+                      const maxCost = Math.max(...shippingResult.availableMethods.map(m => m.cost));
+                      const savings = method.isCheapest && method.cost < maxCost ? maxCost - method.cost : 0;
+
+                      return (
+                        <button
+                          key={method.id}
+                          onClick={() => setSelectedMethodId(method.id)}
+                          className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
+                            isSelected
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-muted-foreground/50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                isSelected ? "border-primary" : "border-muted-foreground/40"
+                              }`}>
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                              </div>
+                              <div>
+                                <span className="text-sm font-semibold text-foreground">{method.name}</span>
+                                {method.estimatedDays && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{method.estimatedDays}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-sm font-bold text-foreground">
+                                {method.cost === 0 ? (
+                                  <span className="text-green-600">Free</span>
+                                ) : (
+                                  `£${method.cost.toFixed(2)}`
                                 )}
                               </span>
-                              {method.estimatedDays && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                  <Clock className="h-3 w-3" /> {method.estimatedDays}
-                                </p>
+                              {savings > 0 && (
+                                <p className="text-[10px] text-green-600 font-medium">Save £{savings.toFixed(2)}</p>
                               )}
                             </div>
                           </div>
-                          <span className="text-sm font-bold text-foreground">
-                            {method.cost === 0 ? (
-                              <span className="text-green-600">Free</span>
-                            ) : (
-                              `£${method.cost.toFixed(2)}`
-                            )}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  {/* Smart suggestion */}
                   {shippingResult.smartSuggestion && (
-                    <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                      <Sparkles className="h-4 w-4 text-primary shrink-0" />
-                      <p className="text-xs text-primary font-medium">{shippingResult.smartSuggestion}</p>
-                    </div>
+                    <p className="text-xs text-primary font-medium px-1">{shippingResult.smartSuggestion}</p>
                   )}
                 </div>
               )}
@@ -400,46 +385,33 @@ const Checkout = () => {
           {step === 2 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
 
-              {/* Shipping Summary Box */}
+              {/* Compact Shipping Summary */}
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-primary" /> Shipping Summary
-                </h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" /> Delivery
+                  </h3>
+                  <button onClick={() => setStep(1)} className="text-xs text-primary hover:underline font-medium">
+                    Change
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Method</p>
                     <p className="font-medium text-foreground">{shippingResult.methodName}</p>
+                    {shippingResult.estimatedDays && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{shippingResult.estimatedDays}</p>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Cost</p>
-                    <p className="font-medium text-foreground">
-                      {shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}
-                    </p>
-                  </div>
-                  {shippingResult.zoneName !== "Default" && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Zone</p>
-                      <p className="font-medium text-foreground">{shippingResult.zoneName}</p>
-                    </div>
-                  )}
-                  {shippingResult.estimatedDays && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Estimated Delivery</p>
-                      <p className="font-medium text-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" /> {shippingResult.estimatedDays}
-                      </p>
-                    </div>
-                  )}
+                  <span className="font-bold text-foreground">
+                    {shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}
+                  </span>
                 </div>
                 {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
-                  <p className="text-xs text-green-600 font-medium">{shippingResult.freeShippingReason}</p>
+                  <p className="text-xs text-green-600 font-medium">✓ {shippingResult.freeShippingReason}</p>
                 )}
-                <button
-                  onClick={() => setStep(1)}
-                  className="text-xs text-primary hover:underline font-medium"
-                >
-                  Change shipping method →
-                </button>
+                <p className="text-[11px] text-muted-foreground border-t border-primary/10 pt-2">
+                  🔒 Secure packaging · Tracked delivery · Easy returns
+                </p>
               </div>
 
               {/* Order Summary */}
