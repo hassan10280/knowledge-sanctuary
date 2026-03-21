@@ -442,6 +442,12 @@ const Checkout = () => {
                     <span>Subtotal</span>
                     <span>£{cartDiscounts.discountedSubtotal.toFixed(2)}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Coupon ({appliedCoupon?.code})</span>
+                      <span>-£{couponDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Shipping ({shippingResult.methodName})</span>
                     <span>{shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}</span>
