@@ -871,6 +871,7 @@ const Admin = () => {
           <TabsContent value="form-builder"><FormBuilderTab /></TabsContent>
           <TabsContent value="discounts"><DiscountsTab /></TabsContent>
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
+          <TabsContent value="shipping"><ShippingSettingsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
