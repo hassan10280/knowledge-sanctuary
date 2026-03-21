@@ -389,46 +389,33 @@ const Checkout = () => {
           {step === 2 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
 
-              {/* Shipping Summary Box */}
+              {/* Compact Shipping Summary */}
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-primary" /> Shipping Summary
-                </h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" /> Delivery
+                  </h3>
+                  <button onClick={() => setStep(1)} className="text-xs text-primary hover:underline font-medium">
+                    Change
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Method</p>
                     <p className="font-medium text-foreground">{shippingResult.methodName}</p>
+                    {shippingResult.estimatedDays && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{shippingResult.estimatedDays}</p>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Cost</p>
-                    <p className="font-medium text-foreground">
-                      {shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}
-                    </p>
-                  </div>
-                  {shippingResult.zoneName !== "Default" && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Zone</p>
-                      <p className="font-medium text-foreground">{shippingResult.zoneName}</p>
-                    </div>
-                  )}
-                  {shippingResult.estimatedDays && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Estimated Delivery</p>
-                      <p className="font-medium text-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" /> {shippingResult.estimatedDays}
-                      </p>
-                    </div>
-                  )}
+                  <span className="font-bold text-foreground">
+                    {shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}
+                  </span>
                 </div>
                 {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
-                  <p className="text-xs text-green-600 font-medium">{shippingResult.freeShippingReason}</p>
+                  <p className="text-xs text-green-600 font-medium">✓ {shippingResult.freeShippingReason}</p>
                 )}
-                <button
-                  onClick={() => setStep(1)}
-                  className="text-xs text-primary hover:underline font-medium"
-                >
-                  Change shipping method →
-                </button>
+                <p className="text-[11px] text-muted-foreground border-t border-primary/10 pt-2">
+                  🔒 Secure packaging · Tracked delivery · Easy returns
+                </p>
               </div>
 
               {/* Order Summary */}

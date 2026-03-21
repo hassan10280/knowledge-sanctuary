@@ -161,19 +161,11 @@ const Cart = () => {
               ))}
 
               <div className="mt-8 bg-card border border-border rounded-xl p-6 space-y-4">
-                {/* Smart suggestion / free shipping proximity */}
+                {/* Single contextual shipping message */}
                 {shippingResult.smartSuggestion && (
                   <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                    <Sparkles className="h-4 w-4 text-primary shrink-0" />
-                    <p className="text-sm text-primary font-medium">{shippingResult.smartSuggestion}</p>
-                  </div>
-                )}
-                {!shippingResult.smartSuggestion && !shippingResult.isFreeShipping && shippingResult.amountToFreeShipping > 0 && (
-                  <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                     <Truck className="h-4 w-4 text-primary shrink-0" />
-                    <p className="text-sm text-primary font-medium">
-                      You're <span className="font-bold">£{shippingResult.amountToFreeShipping.toFixed(2)}</span> away from free shipping!
-                    </p>
+                    <p className="text-sm text-primary font-medium">{shippingResult.smartSuggestion}</p>
                   </div>
                 )}
 

@@ -325,35 +325,25 @@ export function useShippingCalculator() {
       });
     }
 
-    // Mark cheapest method
-    if (availableMethods.length > 1) {
+    // Mark cheapest
+    if (availableMethods.length > 0) {
       const minCost = Math.min(...availableMethods.map(m => m.cost));
-      availableMethods.forEach(m => {
-        m.isCheapest = m.cost === minCost;
-      });
+      availableMethods.forEach(m => { m.isCheapest = m.cost === minCost; });
     }
 
-    // ── 4. Pick selected or cheapest method ──
+    // ── 4. Auto-select best method (cheapest) ──
     let chosenMethod = selectedMethodId
       ? availableMethods.find(m => m.id === selectedMethodId)
       : null;
 
     if (!chosenMethod && availableMethods.length > 0) {
-      // Default to cheapest
       chosenMethod = availableMethods.reduce((a, b) => a.cost <= b.cost ? a : b);
     }
 
-    // ── 5. Smart suggestion ──
+    // ── 5. Single smart message (prioritized, no clutter) ──
     let smartSuggestion = "";
-    if (chosenMethod && availableMethods.length > 1) {
-      const cheapest = availableMethods.reduce((a, b) => a.cost < b.cost ? a : b);
-      if (cheapest.id !== chosenMethod.id && cheapest.cost < chosenMethod.cost) {
-        const saving = chosenMethod.cost - cheapest.cost;
-        smartSuggestion = `💡 Switch to "${cheapest.name}" to save £${saving.toFixed(2)}`;
-      }
-    }
-    if (!smartSuggestion && !isFreeShipping && amountToFreeShipping > 0 && amountToFreeShipping <= 20) {
-      smartSuggestion = `🚚 Add £${amountToFreeShipping.toFixed(2)} more for free shipping!`;
+    if (!isFreeShipping && amountToFreeShipping > 0 && amountToFreeShipping <= 15) {
+      smartSuggestion = `Add £${amountToFreeShipping.toFixed(2)} more to get free delivery!`;
     }
 
     if (!chosenMethod) {
