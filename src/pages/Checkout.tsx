@@ -29,6 +29,7 @@ const Checkout = () => {
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const { data: shippingRules } = useShippingRules();
+  const { calculateShipping: calcNewShipping } = useShippingCalculator();
   const { data: books } = useBooks();
   const { getCartDiscounts } = useDiscountCalculator();
   const navigate = useNavigate();
