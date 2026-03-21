@@ -647,6 +647,9 @@ const Admin = () => {
             <TabsTrigger value="discounts" className="text-xs sm:text-sm gap-1.5">
               <Percent className="h-3.5 w-3.5" /> Discounts
             </TabsTrigger>
+            <TabsTrigger value="shipping" className="text-xs sm:text-sm gap-1.5">
+              <Truck className="h-3.5 w-3.5" /> Shipping
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
