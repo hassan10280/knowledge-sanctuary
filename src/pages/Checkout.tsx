@@ -6,6 +6,7 @@ import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
 import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
+import { incrementCouponUsage } from "@/hooks/useAdvancedDiscounts";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
