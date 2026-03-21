@@ -61,9 +61,7 @@ const Checkout = () => {
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
 
-  // Use new zone-based shipping calculator
-  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, currentAddress?.city);
-  const shipping = shippingResult.shippingCost;
+  // Shipping is recalculated below after currentAddress is defined
   const grandTotal = cartDiscounts.discountedSubtotal + shipping;
 
   useEffect(() => {
