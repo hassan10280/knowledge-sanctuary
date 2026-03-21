@@ -150,6 +150,15 @@ export function useDeleteFreeShippingRule() {
 }
 
 // ─── Shipping Calculator ───
+export interface AvailableMethod {
+  id: string;
+  name: string;
+  cost: number;
+  originalCost: number; // cost before free shipping applied
+  estimatedDays: string;
+  isCheapest: boolean;
+}
+
 export interface ShippingCalcResult {
   shippingCost: number;
   zoneName: string;
@@ -158,11 +167,13 @@ export interface ShippingCalcResult {
   isFreeShipping: boolean;
   freeShippingReason: string;
   estimatedDays: string;
-  /** How much more the user needs to spend to get free shipping (0 if already free or no rule) */
   amountToFreeShipping: number;
   freeShippingThreshold: number;
-  /** Available shipping methods for the matched zone */
-  availableMethods: Array<{ id: string; name: string; cost: number; estimatedDays: string }>;
+  availableMethods: AvailableMethod[];
+  /** Smart suggestion text for user */
+  smartSuggestion: string;
+  /** Whether an admin override was applied */
+  isOverride: boolean;
 }
 
 export function useShippingCalculator() {
@@ -176,7 +187,9 @@ export function useShippingCalculator() {
     isWholesale: boolean,
     city?: string,
     selectedZoneId?: string,
-    selectedMethodId?: string
+    selectedMethodId?: string,
+    /** Admin override cost — highest priority when set */
+    overrideCost?: number | null
   ): ShippingCalcResult => {
     const defaultResult: ShippingCalcResult = {
       shippingCost: 3.99,
@@ -189,46 +202,70 @@ export function useShippingCalculator() {
       amountToFreeShipping: 0,
       freeShippingThreshold: 0,
       availableMethods: [],
+      smartSuggestion: "",
+      isOverride: false,
     };
 
+    // ── PRIORITY 0: Admin override (highest priority) ──
+    if (overrideCost !== undefined && overrideCost !== null) {
+      return {
+        ...defaultResult,
+        shippingCost: overrideCost,
+        isFreeShipping: overrideCost === 0,
+        freeShippingReason: overrideCost === 0 ? "Free shipping (admin override)" : "",
+        isOverride: true,
+      };
+    }
+
     if (!zones?.length || !rates?.length) {
-      // Fallback to old logic
       const isFree = orderTotal >= 25;
       return {
         ...defaultResult,
         shippingCost: isFree ? 0 : 3.99,
         isFreeShipping: isFree,
         freeShippingReason: isFree ? "Free shipping on orders over £25" : "",
-        amountToFreeShipping: isFree ? 0 : 25 - orderTotal,
+        amountToFreeShipping: isFree ? 0 : Math.max(0, 25 - orderTotal),
         freeShippingThreshold: 25,
       };
     }
 
-    // ── 1. Find matching zone (improved city matching) ──
-    let matchedZone = selectedZoneId ? zones.find(z => z.id === selectedZoneId && z.is_active) : null;
+    // ── 1. Find matching zone (strict city matching) ──
+    let matchedZone = selectedZoneId
+      ? zones.find(z => z.id === selectedZoneId && z.is_active)
+      : null;
+
     if (!matchedZone && city) {
-      const cityLower = city.toLowerCase().trim();
-      // Exact match first
-      matchedZone = zones.find(z => z.is_active && (z.locations as string[]).some(
-        (loc: string) => loc.toLowerCase().trim() === cityLower
-      )) || null;
-      // Partial/contains match fallback
-      if (!matchedZone) {
-        matchedZone = zones.find(z => z.is_active && (z.locations as string[]).some(
-          (loc: string) => cityLower.includes(loc.toLowerCase().trim()) || loc.toLowerCase().trim().includes(cityLower)
-        )) || null;
+      const cityNorm = city.toLowerCase().trim();
+      if (cityNorm.length >= 2) {
+        // Pass 1: Exact match only (case-insensitive, trimmed)
+        matchedZone = zones.find(z =>
+          z.is_active &&
+          (z.locations as string[]).some(loc => loc.toLowerCase().trim() === cityNorm)
+        ) || null;
+
+        // Pass 2: Strict word-boundary match (city must start with location or vice versa, min 3 chars)
+        if (!matchedZone && cityNorm.length >= 3) {
+          matchedZone = zones.find(z =>
+            z.is_active &&
+            (z.locations as string[]).some(loc => {
+              const locNorm = loc.toLowerCase().trim();
+              if (locNorm.length < 3) return false;
+              return cityNorm.startsWith(locNorm) || locNorm.startsWith(cityNorm);
+            })
+          ) || null;
+        }
       }
     }
-    // Fallback to first active zone
+
+    // Fallback to first active zone (never match randomly)
     if (!matchedZone) {
       matchedZone = zones.find(z => z.is_active) || null;
     }
     if (!matchedZone) return defaultResult;
 
-    // ── 2. Check free shipping rules (ONLY for matching role) ──
+    // ── 2. Check free shipping rules (strict role isolation) ──
     const applicableFreeRules = (freeRules || []).filter(r => {
       if (!r.is_active) return false;
-      // STRICT role filtering - retail rules NEVER apply to wholesale and vice versa
       if (r.is_wholesale !== isWholesale) return false;
       if (r.zone_id && r.zone_id !== matchedZone!.id) return false;
       return true;
@@ -250,50 +287,77 @@ export function useShippingCalculator() {
         freeShippingReason = rule.name || `Free shipping on orders over £${threshold.toFixed(0)}`;
         break;
       }
-      // Track closest threshold for "X away from free shipping" message
       if (!closestThreshold || threshold < closestThreshold) {
         closestThreshold = threshold;
       }
     }
 
-    const amountToFreeShipping = isFreeShipping ? 0 : (closestThreshold > 0 ? Math.max(0, closestThreshold - orderTotal) : 0);
+    const amountToFreeShipping = isFreeShipping
+      ? 0
+      : closestThreshold > 0
+        ? Math.max(0, closestThreshold - orderTotal)
+        : 0;
 
-    // ── 3. Build available methods for this zone + role ──
+    // ── 3. Build available methods for zone + role ──
     const zoneRates = (rates || []).filter(r =>
       r.is_active && r.zone_id === matchedZone!.id && r.is_wholesale === isWholesale
     );
 
     const activeMethods = (methods || []).filter(m => m.is_active);
-    const availableMethods: ShippingCalcResult["availableMethods"] = [];
+    const availableMethods: AvailableMethod[] = [];
 
     for (const rate of zoneRates) {
       const method = activeMethods.find(m => m.id === rate.method_id);
       if (!method) continue;
-      let cost = Number(rate.flat_rate) || 0;
+      let originalCost = Number(rate.flat_rate) || 0;
       if (rate.rate_type === "price_based" && rate.price_ranges) {
         const ranges = rate.price_ranges as Array<{ min: number; max: number; cost: number }>;
         const matched = ranges.find(r => orderTotal >= r.min && (r.max === 0 || orderTotal <= r.max));
-        if (matched) cost = matched.cost;
+        if (matched) originalCost = matched.cost;
       }
       availableMethods.push({
         id: method.id,
         name: method.name,
-        cost: isFreeShipping ? 0 : cost,
+        originalCost,
+        cost: isFreeShipping ? 0 : originalCost,
         estimatedDays: (method as any).estimated_delivery_days || "",
+        isCheapest: false,
       });
     }
 
-    // ── 4. Pick selected or first method ──
+    // Mark cheapest method
+    if (availableMethods.length > 1) {
+      const minCost = Math.min(...availableMethods.map(m => m.cost));
+      availableMethods.forEach(m => {
+        m.isCheapest = m.cost === minCost;
+      });
+    }
+
+    // ── 4. Pick selected or cheapest method ──
     let chosenMethod = selectedMethodId
       ? availableMethods.find(m => m.id === selectedMethodId)
-      : availableMethods[0];
+      : null;
 
     if (!chosenMethod && availableMethods.length > 0) {
-      chosenMethod = availableMethods[0];
+      // Default to cheapest
+      chosenMethod = availableMethods.reduce((a, b) => a.cost <= b.cost ? a : b);
+    }
+
+    // ── 5. Smart suggestion ──
+    let smartSuggestion = "";
+    if (chosenMethod && availableMethods.length > 1) {
+      const cheapest = availableMethods.reduce((a, b) => a.cost < b.cost ? a : b);
+      if (cheapest.id !== chosenMethod.id && cheapest.cost < chosenMethod.cost) {
+        const saving = chosenMethod.cost - cheapest.cost;
+        smartSuggestion = `💡 Switch to "${cheapest.name}" to save £${saving.toFixed(2)}`;
+      }
+    }
+    if (!smartSuggestion && !isFreeShipping && amountToFreeShipping > 0 && amountToFreeShipping <= 20) {
+      smartSuggestion = `🚚 Add £${amountToFreeShipping.toFixed(2)} more for free shipping!`;
     }
 
     if (!chosenMethod) {
-      // No rates for this role+zone combo, try any rate for this zone
+      // Fallback: any rate for this zone
       const fallbackRate = (rates || []).find(r => r.is_active && r.zone_id === matchedZone!.id);
       if (fallbackRate) {
         const fbMethod = activeMethods.find(m => m.id === fallbackRate.method_id);
@@ -314,9 +378,18 @@ export function useShippingCalculator() {
           amountToFreeShipping,
           freeShippingThreshold: closestThreshold,
           availableMethods,
+          smartSuggestion,
+          isOverride: false,
         };
       }
-      return { ...defaultResult, zoneName: matchedZone.name, amountToFreeShipping, freeShippingThreshold: closestThreshold, availableMethods };
+      return {
+        ...defaultResult,
+        zoneName: matchedZone.name,
+        amountToFreeShipping,
+        freeShippingThreshold: closestThreshold,
+        availableMethods,
+        smartSuggestion,
+      };
     }
 
     return {
@@ -330,6 +403,8 @@ export function useShippingCalculator() {
       amountToFreeShipping,
       freeShippingThreshold: closestThreshold,
       availableMethods,
+      smartSuggestion,
+      isOverride: false,
     };
   };
 
