@@ -213,10 +213,6 @@ const Checkout = () => {
     );
   }
 
-  // Check if there's a mix of free and paid methods
-  const hasMixedPricing = shippingResult.availableMethods.length > 1 &&
-    shippingResult.availableMethods.some(m => m.cost === 0) &&
-    shippingResult.availableMethods.some(m => m.cost > 0);
 
   return (
     <div className="min-h-screen bg-background">
