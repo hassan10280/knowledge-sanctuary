@@ -63,7 +63,7 @@ const Cart = () => {
     try {
       const coupon = await validateCoupon.mutateAsync({
         code: couponCode,
-        orderTotal: totalPrice,
+        orderTotal: cartDiscounts.discountedSubtotal,
         isWholesale,
       });
       setAppliedCoupon(coupon);
