@@ -207,6 +207,11 @@ const Checkout = () => {
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
 
+      // Increment coupon usage if a coupon was applied
+      if (appliedCoupon?.id) {
+        await incrementCouponUsage(appliedCoupon.id);
+      }
+
       clearCart();
       toast.success("Order placed successfully! We will verify your payment shortly.");
       navigate("/");
