@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
+import { useSiteSettings, useUpdateSettingsBatch } from "@/hooks/useSiteSettings";
 import { toast } from "sonner";
 import { Save, RotateCcw, Type, ShoppingCart, AlertCircle, CheckCircle, Search, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -103,37 +103,50 @@ Object.values(GROUPS).forEach((groups) =>
 
 const ContentEditorTab = () => {
   const { data: allSettings, isLoading } = useSiteSettings(SECTION);
-  const updateSetting = useUpdateSetting();
+  const updateSettingsBatch = useUpdateSettingsBatch();
   const [local, setLocal] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isDirty) return;
     const merged = { ...DEFAULTS };
     allSettings?.forEach((s) => {
-      if (s.section === SECTION) merged[s.key] = String(s.value ?? "");
+      merged[s.key] = String(s.value ?? "");
     });
     setLocal(merged);
-  }, [allSettings]);
+  }, [allSettings, isDirty]);
 
   const get = useCallback((key: string) => local[key] ?? DEFAULTS[key] ?? "", [local]);
-  const set = useCallback((key: string, value: string) => {
-    setLocal((prev) => ({ ...prev, [key]: value }));
+  const markDirty = useCallback(() => {
+    setIsDirty(true);
+    setLastSavedAt(null);
   }, []);
+  const set = useCallback((key: string, value: string) => {
+    markDirty();
+    setLocal((prev) => ({ ...prev, [key]: value }));
+  }, [markDirty]);
 
   const saveAll = async () => {
+    const entries = Object.entries(local).map(([key, value]) => ({ key, value }));
+    if (!entries.length || !isDirty) return;
+
     setSaving(true);
     try {
-      for (const [key, value] of Object.entries(local)) {
-        await updateSetting.mutateAsync({ section: SECTION, key, value });
-      }
+      await updateSettingsBatch.mutateAsync({ section: SECTION, entries });
+      setIsDirty(false);
+      setLastSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       toast.success("Content saved successfully");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const resetAll = () => {
+    markDirty();
     setLocal({ ...DEFAULTS });
     toast.info("Reset to defaults — save to apply");
   };
@@ -191,13 +204,16 @@ const ContentEditorTab = () => {
             <Button variant="outline" size="sm" onClick={resetAll} className="gap-1.5">
               <RotateCcw className="h-3.5 w-3.5" /> Reset
             </Button>
-            <Button size="sm" onClick={saveAll} disabled={saving} className="gap-1.5">
-              <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save All"}
+            <Button size="sm" onClick={saveAll} disabled={saving || !isDirty} className="gap-1.5">
+              <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : isDirty ? "Save All" : "Saved"}
             </Button>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
           Edit button labels, messages, and placeholders. Changes apply site-wide after save.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {saving ? "Saving your latest content changes..." : lastSavedAt ? `Last saved at ${lastSavedAt}` : isDirty ? "You have unsaved changes." : "All content changes are saved."}
         </p>
       </CardHeader>
       <CardContent>

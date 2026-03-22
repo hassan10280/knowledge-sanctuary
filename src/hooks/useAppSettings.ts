@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCallback } from "react";
+import type { Tables } from "@/integrations/supabase/types";
+
+type SiteSettingRow = Tables<"site_settings">;
 
 const DEFAULTS: Record<string, Record<string, unknown>> = {
   business: {
@@ -70,7 +73,75 @@ export function useUpdateAppSetting() {
         .upsert({ section, key, value: value as never, updated_at: new Date().toISOString() }, { onConflict: "section,key" });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["site_settings"] }),
+    onMutate: ({ section, key, value }) => {
+      qc.setQueryData<SiteSettingRow[]>(["site_settings"], (current) => {
+        const merged = [...(current ?? [])];
+        const index = merged.findIndex((row) => row.section === section && row.key === key);
+        const nextRow: SiteSettingRow = {
+          id: index >= 0 ? merged[index].id : crypto.randomUUID(),
+          section,
+          key,
+          value: value as SiteSettingRow["value"],
+          updated_at: new Date().toISOString(),
+          updated_by: index >= 0 ? merged[index].updated_by : null,
+        };
+
+        if (index >= 0) merged[index] = { ...merged[index], ...nextRow };
+        else merged.push(nextRow);
+
+        return merged;
+      });
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["site_settings"] });
+    },
+  });
+}
+
+export function useUpdateAppSettingsBatch() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ section, entries }: { section: string; entries: Array<{ key: string; value: unknown }> }) => {
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert(
+          entries.map(({ key, value }) => ({
+            section,
+            key,
+            value: value as never,
+            updated_at: new Date().toISOString(),
+          })),
+          { onConflict: "section,key" },
+        );
+
+      if (error) throw error;
+    },
+    onMutate: ({ section, entries }) => {
+      qc.setQueryData<SiteSettingRow[]>(["site_settings"], (current) => {
+        const merged = [...(current ?? [])];
+
+        entries.forEach(({ key, value }) => {
+          const index = merged.findIndex((row) => row.section === section && row.key === key);
+          const nextRow: SiteSettingRow = {
+            id: index >= 0 ? merged[index].id : crypto.randomUUID(),
+            section,
+            key,
+            value: value as SiteSettingRow["value"],
+            updated_at: new Date().toISOString(),
+            updated_by: index >= 0 ? merged[index].updated_by : null,
+          };
+
+          if (index >= 0) merged[index] = { ...merged[index], ...nextRow };
+          else merged.push(nextRow);
+        });
+
+        return merged;
+      });
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["site_settings"] });
+    },
   });
 }
 

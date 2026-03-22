@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { toast } from "sonner";
-import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
+import { useSiteSettings, useUpdateSettingsBatch } from "@/hooks/useSiteSettings";
 import { Save, Plus, Trash2, RotateCcw, ChevronUp, ChevronDown, Link2, MessageSquare, Phone, Globe, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,40 +157,53 @@ LinkColumnEditor.displayName = "LinkColumnEditor";
 
 const FooterEditorTab = () => {
   const { data: settings, isLoading } = useSiteSettings("footer");
-  const updateSetting = useUpdateSetting();
+  const updateSettingsBatch = useUpdateSettingsBatch();
   const [local, setLocal] = useState<Record<string, unknown>>({ ...DEFAULTS });
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!settings) return;
     const merged = { ...DEFAULTS };
     settings.forEach((s) => { merged[s.key] = s.value; });
+    if (isDirty) return;
     setLocal(merged);
-  }, [settings]);
+  }, [settings, isDirty]);
 
   const get = useCallback((key: string): unknown => local[key] ?? DEFAULTS[key] ?? "", [local]);
-  const set = useCallback((key: string, value: unknown) => {
-    setLocal((prev) => ({ ...prev, [key]: value }));
+  const markDirty = useCallback(() => {
+    setIsDirty(true);
+    setLastSavedAt(null);
   }, []);
+  const set = useCallback((key: string, value: unknown) => {
+    markDirty();
+    setLocal((prev) => ({ ...prev, [key]: value }));
+  }, [markDirty]);
 
   const saveAll = async () => {
+    const entries = Object.entries(local).filter(([, value]) => value !== undefined).map(([key, value]) => ({ key, value }));
+    if (!entries.length || !isDirty) return;
+
     setSaving(true);
     try {
-      for (const [key, value] of Object.entries(local)) {
-        await updateSetting.mutateAsync({ section: "footer", key, value });
-      }
+      await updateSettingsBatch.mutateAsync({ section: "footer", entries });
+      setIsDirty(false);
+      setLastSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       toast.success("Footer settings saved!");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
-  const resetAll = () => { setLocal({ ...DEFAULTS }); toast.info("Reset to defaults — save to apply"); };
+  const resetAll = () => { markDirty(); setLocal({ ...DEFAULTS }); toast.info("Reset to defaults — save to apply"); };
 
   // Stable callbacks for link columns
   const makeLinkHandlers = useCallback((settingsKey: string) => ({
     onUpdateLabel: (i: number, val: string) => {
+      markDirty();
       setLocal((prev) => {
         const links = [...((prev[settingsKey] || []) as FooterLink[])];
         links[i] = { ...links[i], label: val };
@@ -198,6 +211,7 @@ const FooterEditorTab = () => {
       });
     },
     onUpdateHref: (i: number, val: string) => {
+      markDirty();
       setLocal((prev) => {
         const links = [...((prev[settingsKey] || []) as FooterLink[])];
         links[i] = { ...links[i], href: val };
@@ -205,6 +219,7 @@ const FooterEditorTab = () => {
       });
     },
     onMoveUp: (i: number) => {
+      markDirty();
       setLocal((prev) => {
         const links = [...((prev[settingsKey] || []) as FooterLink[])];
         if (i <= 0) return prev;
@@ -213,6 +228,7 @@ const FooterEditorTab = () => {
       });
     },
     onMoveDown: (i: number) => {
+      markDirty();
       setLocal((prev) => {
         const links = [...((prev[settingsKey] || []) as FooterLink[])];
         if (i >= links.length - 1) return prev;
@@ -221,6 +237,7 @@ const FooterEditorTab = () => {
       });
     },
     onRemove: (i: number) => {
+      markDirty();
       setLocal((prev) => {
         const links = [...((prev[settingsKey] || []) as FooterLink[])];
         links.splice(i, 1);
@@ -228,12 +245,13 @@ const FooterEditorTab = () => {
       });
     },
     onAdd: () => {
+      markDirty();
       setLocal((prev) => ({
         ...prev,
         [settingsKey]: [...((prev[settingsKey] || []) as FooterLink[]), { label: "New Link", href: "/" }],
       }));
     },
-  }), []);
+  }), [markDirty]);
 
   const libraryHandlers = makeLinkHandlers("library_links");
   const communityHandlers = makeLinkHandlers("community_links");
@@ -241,32 +259,36 @@ const FooterEditorTab = () => {
 
   // Social link handlers
   const handleSocialPlatform = useCallback((i: number, val: string) => {
+    markDirty();
     setLocal((prev) => {
       const links = [...((prev.social_links || []) as Array<{ platform: string; url: string }>)];
       links[i] = { ...links[i], platform: val };
       return { ...prev, social_links: links };
     });
-  }, []);
+  }, [markDirty]);
 
   const handleSocialUrl = useCallback((i: number, val: string) => {
+    markDirty();
     setLocal((prev) => {
       const links = [...((prev.social_links || []) as Array<{ platform: string; url: string }>)];
       links[i] = { ...links[i], url: val };
       return { ...prev, social_links: links };
     });
-  }, []);
+  }, [markDirty]);
 
   const handleSocialRemove = useCallback((i: number) => {
+    markDirty();
     setLocal((prev) => {
       const links = [...((prev.social_links || []) as Array<{ platform: string; url: string }>)];
       links.splice(i, 1);
       return { ...prev, social_links: links };
     });
-  }, []);
+  }, [markDirty]);
 
   const handleTitleChange = useCallback((key: string, val: string) => {
+    markDirty();
     setLocal((prev) => ({ ...prev, [key]: val }));
-  }, []);
+  }, [markDirty]);
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading…</p>;
 
@@ -377,13 +399,14 @@ const FooterEditorTab = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-4 border-t border-border">
-          <Button onClick={saveAll} disabled={saving} className="gap-1.5">
-            <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save Footer"}
+          <Button onClick={saveAll} disabled={saving || !isDirty} className="gap-1.5">
+            <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : isDirty ? "Save Footer" : "Saved"}
           </Button>
           <Button variant="outline" onClick={resetAll} className="gap-1.5">
             <RotateCcw className="h-3.5 w-3.5" /> Reset
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">{saving ? "Saving your latest footer changes..." : lastSavedAt ? `Last saved at ${lastSavedAt}` : isDirty ? "You have unsaved changes." : "All footer changes are saved."}</p>
       </CardContent>
     </Card>
   );

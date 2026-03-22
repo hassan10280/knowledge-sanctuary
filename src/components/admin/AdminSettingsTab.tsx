@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAppSettings, useUpdateAppSetting, useSettingsDefaults } from "@/hooks/useAppSettings";
+import { useAppSettings, useUpdateAppSettingsBatch, useSettingsDefaults } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import { Save, Settings2, Mail, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AdminSettingsTab = () => {
   const { data: allSettings, isLoading } = useAppSettings();
-  const updateSetting = useUpdateAppSetting();
+  const updateSettingsBatch = useUpdateAppSettingsBatch();
   const DEFAULTS = useSettingsDefaults();
   const [local, setLocal] = useState<Record<string, Record<string, unknown>>>({});
-  const [saving, setSaving] = useState(false);
+  const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [dirtySections, setDirtySections] = useState<Record<string, boolean>>({});
+  const [lastSavedAt, setLastSavedAt] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     if (!allSettings) return;
@@ -35,28 +37,38 @@ const AdminSettingsTab = () => {
     [local, DEFAULTS],
   );
 
-  const set = useCallback((section: string, key: string, value: unknown) => {
-    setLocal((prev) => ({ ...prev, [section]: { ...prev[section], [key]: value } }));
+  const markDirty = useCallback((section: string) => {
+    setDirtySections((prev) => ({ ...prev, [section]: true }));
+    setLastSavedAt((prev) => ({ ...prev, [section]: null }));
   }, []);
+
+  const set = useCallback((section: string, key: string, value: unknown) => {
+    markDirty(section);
+    setLocal((prev) => ({ ...prev, [section]: { ...prev[section], [key]: value } }));
+  }, [markDirty]);
 
   const saveSection = async (section: string) => {
     const data = local[section];
-    if (!data) return;
-    setSaving(true);
+    const entries = data ? Object.entries(data).map(([key, value]) => ({ key, value })) : [];
+    if (!entries.length || !dirtySections[section]) return;
+
+    setSavingSection(section);
     try {
-      for (const [key, value] of Object.entries(data)) {
-        await updateSetting.mutateAsync({ section, key, value });
-      }
+      await updateSettingsBatch.mutateAsync({ section, entries });
+      setDirtySections((prev) => ({ ...prev, [section]: false }));
+      setLastSavedAt((prev) => ({ ...prev, [section]: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) }));
       toast.success(`${section} settings saved`);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSavingSection(null);
     }
-    setSaving(false);
   };
 
   const resetSection = (section: string) => {
     const defaults = DEFAULTS[section];
     if (!defaults) return;
+    markDirty(section);
     setLocal((prev) => ({ ...prev, [section]: { ...defaults } }));
     toast.info("Reset to defaults — save to apply");
   };
@@ -76,13 +88,16 @@ const AdminSettingsTab = () => {
   );
 
   const Actions = ({ section }: { section: string }) => (
-    <div className="flex gap-2 pt-4 border-t border-border">
-      <Button onClick={() => saveSection(section)} disabled={saving} size="sm" className="gap-1.5">
-        <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save"}
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => resetSection(section)} className="gap-1.5">
-        <RotateCcw className="h-3.5 w-3.5" /> Reset
-      </Button>
+    <div className="space-y-2 pt-4 border-t border-border">
+      <div className="flex gap-2">
+        <Button onClick={() => saveSection(section)} disabled={Boolean(savingSection) || !dirtySections[section]} size="sm" className="gap-1.5">
+          <Save className="h-3.5 w-3.5" /> {savingSection === section ? "Saving..." : dirtySections[section] ? "Save" : "Saved"}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => resetSection(section)} className="gap-1.5">
+          <RotateCcw className="h-3.5 w-3.5" /> Reset
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">{savingSection === section ? `Saving your latest ${section} changes...` : lastSavedAt[section] ? `Last saved at ${lastSavedAt[section]}` : dirtySections[section] ? "You have unsaved changes." : `All ${section} changes are saved.`}</p>
     </div>
   );
 

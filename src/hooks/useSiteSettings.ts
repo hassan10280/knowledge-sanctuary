@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 
 type SettingValue = unknown;
 type SettingEntry = { section: string; key: string; value: SettingValue };
+type SiteSettingRow = Tables<"site_settings">;
 
 const buildSettingRows = (entries: SettingEntry[]) =>
   entries.map(({ section, key, value }) => ({
@@ -18,6 +20,30 @@ async function upsertSettings(entries: SettingEntry[]) {
     .upsert(buildSettingRows(entries), { onConflict: "section,key" });
 
   if (error) throw error;
+}
+
+function mergeSettings(existing: SiteSettingRow[] | undefined, entries: SettingEntry[]): SiteSettingRow[] {
+  const merged = [...(existing ?? [])];
+
+  entries.forEach(({ section, key, value }) => {
+    const index = merged.findIndex((row) => row.section === section && row.key === key);
+    const nextRow: SiteSettingRow = {
+      id: index >= 0 ? merged[index].id : crypto.randomUUID(),
+      section,
+      key,
+      value: value as SiteSettingRow["value"],
+      updated_at: new Date().toISOString(),
+      updated_by: index >= 0 ? merged[index].updated_by : null,
+    };
+
+    if (index >= 0) {
+      merged[index] = { ...merged[index], ...nextRow };
+    } else {
+      merged.push(nextRow);
+    }
+  });
+
+  return merged;
 }
 
 export function useSiteSettings(section?: string) {
@@ -45,7 +71,15 @@ export function useUpdateSetting() {
     mutationFn: async ({ section, key, value }: { section: string; key: string; value: any }) => {
       await upsertSettings([{ section, key, value }]);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["site_settings"] }),
+    onMutate: ({ section, key, value }) => {
+      const entries = [{ section, key, value }];
+      qc.setQueryData<SiteSettingRow[]>(["site_settings"], (current) => mergeSettings(current, entries));
+      qc.setQueryData<SiteSettingRow[]>(["site_settings", section], (current) => mergeSettings(current, entries));
+    },
+    onSettled: (_data, _error, variables) => {
+      void qc.invalidateQueries({ queryKey: ["site_settings"] });
+      void qc.invalidateQueries({ queryKey: ["site_settings", variables.section] });
+    },
   });
 }
 
@@ -56,11 +90,14 @@ export function useUpdateSettingsBatch() {
     mutationFn: async ({ section, entries }: { section: string; entries: Array<{ key: string; value: SettingValue }> }) => {
       await upsertSettings(entries.map((entry) => ({ ...entry, section })));
     },
-    onSuccess: async (_data, variables) => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["site_settings"] }),
-        qc.invalidateQueries({ queryKey: ["site_settings", variables.section] }),
-      ]);
+    onMutate: ({ section, entries }) => {
+      const nextEntries = entries.map((entry) => ({ ...entry, section }));
+      qc.setQueryData<SiteSettingRow[]>(["site_settings"], (current) => mergeSettings(current, nextEntries));
+      qc.setQueryData<SiteSettingRow[]>(["site_settings", section], (current) => mergeSettings(current, nextEntries));
+    },
+    onSettled: (_data, _error, variables) => {
+      void qc.invalidateQueries({ queryKey: ["site_settings"] });
+      void qc.invalidateQueries({ queryKey: ["site_settings", variables.section] });
     },
   });
 }

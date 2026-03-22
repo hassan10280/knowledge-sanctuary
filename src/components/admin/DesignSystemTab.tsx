@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
+import { useSiteSettings, useUpdateSettingsBatch } from "@/hooks/useSiteSettings";
 import { Save, RotateCcw, Palette, Type, Ruler, RectangleHorizontal, ChevronUp, ChevronDown, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,9 +46,11 @@ const SECTION = "design_system";
 
 const DesignSystemTab = () => {
   const { data: settings, isLoading } = useSiteSettings(SECTION);
-  const updateSetting = useUpdateSetting();
+  const updateSettingsBatch = useUpdateSettingsBatch();
   const [local, setLocal] = useState<Record<string, unknown>>({ ...DEFAULTS });
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!settings) return;
@@ -56,32 +58,43 @@ const DesignSystemTab = () => {
     settings.forEach((s) => {
       merged[s.key] = s.value;
     });
+    if (isDirty) return;
     setLocal(merged);
-  }, [settings]);
+  }, [settings, isDirty]);
 
   const get = useCallback((key: string): unknown => local[key] ?? DEFAULTS[key] ?? "", [local]);
   const getNum = useCallback((key: string): number => {
     const v = local[key];
     return typeof v === "number" ? v : (DEFAULTS[key] as number) ?? 0;
   }, [local]);
-  const set = useCallback((key: string, value: unknown) => {
-    setLocal((prev) => ({ ...prev, [key]: value }));
+  const markDirty = useCallback(() => {
+    setIsDirty(true);
+    setLastSavedAt(null);
   }, []);
+  const set = useCallback((key: string, value: unknown) => {
+    markDirty();
+    setLocal((prev) => ({ ...prev, [key]: value }));
+  }, [markDirty]);
 
   const saveAll = async () => {
+    const entries = Object.entries(local).filter(([, value]) => value !== undefined).map(([key, value]) => ({ key, value }));
+    if (!entries.length || !isDirty) return;
+
     setSaving(true);
     try {
-      for (const [key, value] of Object.entries(local)) {
-        await updateSetting.mutateAsync({ section: SECTION, key, value });
-      }
+      await updateSettingsBatch.mutateAsync({ section: SECTION, entries });
+      setIsDirty(false);
+      setLastSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       toast.success("Design system saved!");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const resetAll = () => {
+    markDirty();
     setLocal({ ...DEFAULTS });
     toast.info("Reset to defaults — save to apply");
   };
@@ -324,13 +337,14 @@ const DesignSystemTab = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-4 border-t border-border">
-          <Button onClick={saveAll} disabled={saving} className="gap-1.5">
-            <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save Design System"}
+          <Button onClick={saveAll} disabled={saving || !isDirty} className="gap-1.5">
+            <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : isDirty ? "Save Design System" : "Saved"}
           </Button>
           <Button variant="outline" onClick={resetAll} className="gap-1.5">
             <RotateCcw className="h-3.5 w-3.5" /> Reset
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">{saving ? "Saving your latest design changes..." : lastSavedAt ? `Last saved at ${lastSavedAt}` : isDirty ? "You have unsaved changes." : "All design changes are saved."}</p>
       </CardContent>
     </Card>
   );

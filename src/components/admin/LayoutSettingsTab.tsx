@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, memo } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
+import { useSiteSettings, useUpdateSetting, useUpdateSettingsBatch } from "@/hooks/useSiteSettings";
 import { Save, Monitor, Tablet, Smartphone, Upload, RotateCcw, ChevronDown, ChevronUp, Minus, Plus, Image, Layout, Menu as MenuIcon, GripVertical, Eye, EyeOff, Trash2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,9 +176,12 @@ MenuItemRowComponent.displayName = "MenuItemRowComponent";
 const LayoutSettingsTab = () => {
   const { data: settings, isLoading } = useSiteSettings();
   const updateSetting = useUpdateSetting();
+  const updateSettingsBatch = useUpdateSettingsBatch();
   const [device, setDevice] = useState<Device>("desktop");
   const [local, setLocal] = useState<Record<Device, Record<string, unknown>>>({ mobile: { ...DEFAULTS.mobile }, tablet: { ...DEFAULTS.tablet }, desktop: { ...DEFAULTS.desktop } });
-  const [saving, setSaving] = useState(false);
+  const [savingDevice, setSavingDevice] = useState<Device | null>(null);
+  const [dirtyDevices, setDirtyDevices] = useState<Record<Device, boolean>>({ mobile: false, tablet: false, desktop: false });
+  const [lastSavedAt, setLastSavedAt] = useState<Record<Device, string | null>>({ mobile: null, tablet: null, desktop: null });
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -190,37 +193,51 @@ const LayoutSettingsTab = () => {
       const section = sectionKey(d);
       settings.filter((s) => s.section === section).forEach((s) => { next[d][s.key] = s.value; });
     });
-    setLocal(next);
+    setLocal((prev) => ({
+      mobile: dirtyDevices.mobile ? prev.mobile : next.mobile,
+      tablet: dirtyDevices.tablet ? prev.tablet : next.tablet,
+      desktop: dirtyDevices.desktop ? prev.desktop : next.desktop,
+    }));
     const logoSetting = settings.find((s) => s.section === "header" && s.key === "logo_url");
     if (logoSetting?.value) setLogoPreviewUrl(logoSetting.value as string);
-  }, [settings]);
+  }, [settings, dirtyDevices]);
 
   const get = useCallback((key: string): unknown => local[device]?.[key] ?? DEFAULTS[device]?.[key] ?? "", [local, device]);
   const getNum = useCallback((key: string, fallback = 0): number => {
     const v = local[device]?.[key];
     return typeof v === "number" ? v : fallback;
   }, [local, device]);
+  const markDirty = useCallback((target: Device) => {
+    setDirtyDevices((prev) => ({ ...prev, [target]: true }));
+    setLastSavedAt((prev) => ({ ...prev, [target]: null }));
+  }, []);
   const set = useCallback((key: string, value: unknown) => {
+    markDirty(device);
     setLocal((prev) => ({ ...prev, [device]: { ...prev[device], [key]: value } }));
-  }, [device]);
+  }, [device, markDirty]);
 
   const menuItems = (get("menu_items") as MenuItem[] | undefined) || DEFAULT_MENU;
   const setMenuItems = useCallback((items: MenuItem[]) => set("menu_items", items), [set]);
 
   const saveDevice = async () => {
-    setSaving(true);
+    const entries = Object.entries(local[device]).filter(([, value]) => value !== undefined).map(([key, value]) => ({ key, value }));
+    if (!entries.length || !dirtyDevices[device]) return;
+
+    setSavingDevice(device);
     try {
-      for (const [key, value] of Object.entries(local[device])) {
-        await updateSetting.mutateAsync({ section: sectionKey(device), key, value });
-      }
+      await updateSettingsBatch.mutateAsync({ section: sectionKey(device), entries });
+      setDirtyDevices((prev) => ({ ...prev, [device]: false }));
+      setLastSavedAt((prev) => ({ ...prev, [device]: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) }));
       toast.success(`${DEVICE_META[device].label} layout saved!`);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSavingDevice(null);
     }
-    setSaving(false);
   };
 
   const resetDevice = () => {
+    markDirty(device);
     setLocal((prev) => ({ ...prev, [device]: { ...DEFAULTS[device] } }));
     toast.info("Reset to defaults — save to apply");
   };
@@ -260,32 +277,36 @@ const LayoutSettingsTab = () => {
   };
 
   const handleUpdateItem = useCallback((id: string, update: Partial<MenuItem>) => {
+    markDirty(device);
     setLocal((prev) => {
       const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
       return { ...prev, [device]: { ...prev[device], menu_items: updateMenuItemInTree(items, id, update) } };
     });
-  }, [device]);
+  }, [device, markDirty]);
 
   const handleRemoveItem = useCallback((id: string) => {
+    markDirty(device);
     setLocal((prev) => {
       const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
       return { ...prev, [device]: { ...prev[device], menu_items: removeMenuItemFromTree(items, id) } };
     });
-  }, [device]);
+  }, [device, markDirty]);
 
   const handleAddSubItem = useCallback((parentId: string) => {
+    markDirty(device);
     setLocal((prev) => {
       const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
       return { ...prev, [device]: { ...prev[device], menu_items: addSubItemToTree(items, parentId) } };
     });
-  }, [device]);
+  }, [device, markDirty]);
 
   const handleMoveItem = useCallback((id: string, direction: -1 | 1) => {
+    markDirty(device);
     setLocal((prev) => {
       const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
       return { ...prev, [device]: { ...prev[device], menu_items: moveItemInTree(items, id, direction) } };
     });
-  }, [device]);
+  }, [device, markDirty]);
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading…</p>;
 
@@ -455,13 +476,14 @@ const LayoutSettingsTab = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-2 pt-4 border-t border-border">
-                <Button onClick={saveDevice} disabled={saving} className="gap-1.5">
-                  <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : `Save ${DEVICE_META[device].label}`}
+                <Button onClick={saveDevice} disabled={Boolean(savingDevice) || !dirtyDevices[device]} className="gap-1.5">
+                  <Save className="h-3.5 w-3.5" /> {savingDevice === device ? "Saving..." : dirtyDevices[device] ? `Save ${DEVICE_META[device].label}` : "Saved"}
                 </Button>
                 <Button variant="outline" onClick={resetDevice} className="gap-1.5">
                   <RotateCcw className="h-3.5 w-3.5" /> Reset
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">{savingDevice === device ? `Saving your latest ${DEVICE_META[device].label.toLowerCase()} layout changes...` : lastSavedAt[device] ? `Last saved at ${lastSavedAt[device]}` : dirtyDevices[device] ? "You have unsaved changes." : `All ${DEVICE_META[device].label.toLowerCase()} layout changes are saved.`}</p>
             </TabsContent>
           ))}
         </Tabs>
