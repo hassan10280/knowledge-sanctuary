@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShippingRules, useUpsertShippingRule, useDeleteShippingRule } from "@/hooks/useAdvancedDiscounts";
 import { toast } from "sonner";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 interface ShippingRulesTabProps {
   wholesaleOnly?: boolean;
@@ -23,18 +24,38 @@ const ShippingRulesTab = ({ wholesaleOnly, retailOnly }: ShippingRulesTabProps) 
   const upsert = useUpsertShippingRule();
   const deleteRule = useDeleteShippingRule();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.rule_name?.trim()) {
-      toast.error("Rule name is required");
+    if (!editing) {
+      toast.error("No shipping rule data found.");
       return;
     }
+
+    if (isBlank(editing.rule_name)) {
+      toast.error("Rule Name is required.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editing.min_amount), { min: 0 })) {
+      toast.error("Min Order Amount must be 0 or greater.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editing.shipping_cost), { min: 0 })) {
+      toast.error("Shipping Cost must be 0 or greater.");
+      return;
+    }
+
+    setSaving(true);
     try {
       await upsert.mutateAsync(editing);
       toast.success("Shipping rule saved!");
       setEditing(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -125,8 +146,8 @@ const ShippingRulesTab = ({ wholesaleOnly, retailOnly }: ShippingRulesTabProps) 
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
-                <Save className="h-3.5 w-3.5" /> Save
+              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>

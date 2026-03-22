@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWholesaleFormFields, useUpsertFormField, useDeleteFormField } from "@/hooks/useWholesale";
 import { toast } from "sonner";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 const FIELD_TYPES = [
   { value: "text", label: "Text" },
@@ -23,18 +24,51 @@ const FormBuilderTab = () => {
   const upsertField = useUpsertFormField();
   const deleteField = useDeleteFormField();
   const [editingField, setEditingField] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editingField || !editingField.label.trim()) {
-      toast.error("Label is required");
+    if (!editingField) {
+      toast.error("No field data found.");
       return;
     }
+
+    if (isBlank(editingField.label)) {
+      toast.error("Label is required.");
+      return;
+    }
+
+    if (isBlank(editingField.field_type)) {
+      toast.error("Field Type is required.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editingField.sort_order ?? 0), { min: 0 })) {
+      toast.error("Sort Order must be a valid number.");
+      return;
+    }
+
+    if (editingField.field_type === "dropdown") {
+      const options = Array.isArray(editingField.options) ? editingField.options : [];
+      if (!options.length) {
+        toast.error("Dropdown Options must contain at least one item.");
+        return;
+      }
+      const blankIndex = options.findIndex((option) => isBlank(option));
+      if (blankIndex >= 0) {
+        toast.error(`Dropdown Option ${blankIndex + 1} is required.`);
+        return;
+      }
+    }
+
+    setSaving(true);
     try {
       await upsertField.mutateAsync(editingField);
       toast.success("Field saved!");
       setEditingField(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -159,8 +193,8 @@ const FormBuilderTab = () => {
             )}
 
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={upsertField.isPending} className="gap-1.5">
-                <Save className="h-3.5 w-3.5" /> Save Field
+              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Field"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>Cancel</Button>
             </div>

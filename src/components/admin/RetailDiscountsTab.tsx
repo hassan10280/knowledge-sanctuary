@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRetailDiscounts, useUpsertRetailDiscount, useDeleteRetailDiscount } from "@/hooks/useRetailDiscounts";
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { toast } from "sonner";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 const RetailDiscountsTab = () => {
   const { data: discounts, isLoading } = useRetailDiscounts();
@@ -17,12 +18,30 @@ const RetailDiscountsTab = () => {
   const upsert = useUpsertRetailDiscount();
   const deleteDiscount = useDeleteRetailDiscount();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.reference_value?.trim()) {
-      toast.error("Please fill in all required fields");
+    if (!editing) {
+      toast.error("No discount data found.");
       return;
     }
+
+    if (editing.discount_type === "category" && isBlank(editing.reference_value)) {
+      toast.error("Category is required.");
+      return;
+    }
+
+    if (editing.discount_type === "product" && isBlank(editing.book_id)) {
+      toast.error("Book is required.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editing.discount_percent), { min: 0, max: 100 })) {
+      toast.error("Discount % must be between 0 and 100.");
+      return;
+    }
+
+    setSaving(true);
     try {
       const toSave = { ...editing };
       if (toSave.discount_type === "category") {
@@ -31,8 +50,10 @@ const RetailDiscountsTab = () => {
       await upsert.mutateAsync(toSave);
       toast.success("Discount saved!");
       setEditing(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -155,8 +176,8 @@ const RetailDiscountsTab = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
-              <Save className="h-3.5 w-3.5" /> Save
+            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+              <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
           </div>

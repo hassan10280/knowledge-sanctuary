@@ -7,24 +7,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuantityTiers, useUpsertQuantityTier, useDeleteQuantityTier } from "@/hooks/useAdvancedDiscounts";
 import { toast } from "sonner";
+import { getErrorMessage, isValidNumber } from "@/lib/admin-submit";
 
 const QuantityTiersTab = () => {
   const { data: tiers, isLoading } = useQuantityTiers();
   const upsert = useUpsertQuantityTier();
   const deleteTier = useDeleteQuantityTier();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing || editing.min_qty <= 0 || editing.discount_percent <= 0) {
-      toast.error("Please fill in all required fields correctly");
+    if (!editing) {
+      toast.error("No quantity tier data found.");
       return;
     }
+
+    if (!isValidNumber(Number(editing.min_qty), { min: 1 })) {
+      toast.error("Min Qty must be 1 or greater.");
+      return;
+    }
+
+    if (editing.max_qty !== null && editing.max_qty !== undefined && editing.max_qty !== "") {
+      if (!isValidNumber(Number(editing.max_qty), { min: Number(editing.min_qty) })) {
+        toast.error("Max Qty must be greater than or equal to Min Qty.");
+        return;
+      }
+    }
+
+    if (!isValidNumber(Number(editing.discount_percent), { min: 0.01, max: 100 })) {
+      toast.error("Discount % must be greater than 0 and no more than 100.");
+      return;
+    }
+
+    setSaving(true);
     try {
       await upsert.mutateAsync(editing);
       toast.success("Quantity tier saved!");
       setEditing(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -108,8 +131,8 @@ const QuantityTiersTab = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
-                <Save className="h-3.5 w-3.5" /> Save
+              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>
