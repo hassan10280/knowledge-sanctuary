@@ -387,7 +387,15 @@ const LayoutSettingsTab = () => {
 
                   <div className="space-y-1.5">
                     {menuItems.map((item) => (
-                      <MenuItemRow key={item.id} item={item} />
+                      <MenuItemRowComponent
+                        key={item.id}
+                        item={item}
+                        depth={0}
+                        onUpdate={handleUpdateItem}
+                        onRemove={handleRemoveItem}
+                        onAddSub={handleAddSubItem}
+                        onMove={handleMoveItem}
+                      />
                     ))}
                   </div>
 
