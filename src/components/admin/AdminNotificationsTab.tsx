@@ -39,7 +39,7 @@ function useMarkRead() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("admin_notifications")
-        .update({ is_read: true } as any)
+        .update({ is_read: true })
         .eq("id", id);
       if (error) throw error;
     },
