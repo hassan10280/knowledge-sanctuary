@@ -73,7 +73,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: "abandoned-carts", label: "Abandoned Carts", icon: ShoppingCart, group: "Insights" },
   { id: "notifications", label: "Notifications", icon: Bell, group: "Insights" },
 
-  { id: "users", label: "Users", icon: Users, group: "System" },
+  { id: "users", label: "Account", icon: Users, group: "System" },
   { id: "settings", label: "Settings", icon: Cog, group: "System" },
 ];
 
