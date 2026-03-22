@@ -217,17 +217,49 @@ const Checkout = () => {
       return;
     }
 
+    const txnId = transactionId.trim();
+    if (txnId.length < 4 || txnId.length > 50) {
+      toast.error("Transaction ID must be 4-50 characters");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // Validate transaction ID format (alphanumeric, 4-50 chars)
-      const txnId = transactionId.trim();
-      if (txnId.length < 4 || txnId.length > 50) {
-        toast.error("Transaction ID must be 4-50 characters");
+      // 1. Server-side price validation
+      const { data: validation, error: valErr } = await supabase.functions.invoke("validate-order", {
+        body: {
+          items: items.map((item) => {
+            const disc = cartDiscounts.itemPrices.get(item.id);
+            return {
+              book_id: item.id,
+              quantity: item.quantity,
+              claimed_price: disc ? disc.finalPrice : item.price,
+            };
+          }),
+          coupon_code: appliedCoupon?.code || null,
+          shipping_method_id: selectedMethodId || null,
+          city: addrCity,
+          is_wholesale: isWholesale,
+          claimed_subtotal: cartDiscounts.discountedSubtotal,
+          claimed_coupon_discount: couponDiscount,
+          claimed_shipping: shipping,
+          claimed_total: grandTotal,
+        },
+      });
+
+      if (valErr) {
+        toast.error("Order validation failed. Please try again.");
         setSubmitting(false);
         return;
       }
 
-      // Check duplicate transaction ID
+      if (!validation?.valid) {
+        toast.error(validation?.error || "Price mismatch detected. Please refresh and try again.", { duration: 8000 });
+        setSubmitting(false);
+        return;
+      }
+
+      // 2. Check duplicate transaction ID
       const { data: existingTxn } = await supabase
         .from("orders")
         .select("id")
@@ -239,7 +271,7 @@ const Checkout = () => {
         return;
       }
 
-      // Stock validation
+      // 3. Stock validation
       const bookIds = items.map((i) => i.id);
       const { data: stockData } = await supabase
         .from("books")
@@ -254,6 +286,22 @@ const Checkout = () => {
         }
       }
 
+      // 4. Per-user coupon check
+      if (appliedCoupon?.id) {
+        const { data: usageCheck } = await supabase
+          .from("coupon_user_usage")
+          .select("id")
+          .eq("coupon_id", appliedCoupon.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (usageCheck) {
+          toast.error("You have already used this coupon");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // 5. Save address if new
       if (!useSaved && isAddressValid) {
         await supabase.from("billing_addresses").insert({
           user_id: user.id,
@@ -266,14 +314,17 @@ const Checkout = () => {
       const rawSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
       const totalDiscountAmount = rawSubtotal - cartDiscounts.subtotalAfterItemDiscounts + cartDiscounts.quantityTierAmount;
 
+      // 6. Use server-validated total for the order
+      const serverTotal = validation.server.total;
+
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
           user_id: user.id,
-          total: grandTotal,
-          shipping_cost: shipping,
+          total: serverTotal,
+          shipping_cost: validation.server.shipping,
           coupon_id: appliedCoupon?.id || null,
-          coupon_discount: couponDiscount,
+          coupon_discount: validation.server.coupon_discount,
           discount_amount: totalDiscountAmount > 0 ? totalDiscountAmount : 0,
           payment_method: "bank_transfer",
           transaction_id: txnId,
@@ -288,6 +339,7 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
+      // 7. Insert order items
       const orderItems = items.map((item) => {
         const disc = cartDiscounts.itemPrices.get(item.id);
         const finalPrice = disc ? disc.finalPrice : item.price;
@@ -303,15 +355,21 @@ const Checkout = () => {
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
 
+      // 8. Record coupon usage
       if (appliedCoupon?.id) {
         await incrementCouponUsage(appliedCoupon.id);
+        await supabase.from("coupon_user_usage").insert({
+          coupon_id: appliedCoupon.id,
+          user_id: user.id,
+          order_id: order.id,
+        } as any);
       }
 
-      // Admin notification
+      // 9. Admin notification
       await supabase.from("admin_notifications").insert({
         order_id: order.id,
         user_id: user.id,
-        message: `New order #${order.id.slice(0, 8)} — £${grandTotal.toFixed(2)} via bank transfer`,
+        message: `New order #${order.id.slice(0, 8)} — £${serverTotal.toFixed(2)} via bank transfer`,
       } as any);
 
       clearCart();
