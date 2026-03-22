@@ -22,6 +22,9 @@ const Footer = () => {
   const description = get("description", "A curated digital sanctuary of Islamic scholarship for the UK community.") as string;
   const copyright = get("copyright", "© 2026 MadrasahMatters. All rights reserved.") as string;
   const tagline = get("tagline", "Made with reverence for knowledge.") as string;
+  const libraryTitle = get("library_title", "Library") as string;
+  const communityTitle = get("community_title", "Community") as string;
+  const supportTitle = get("support_title", "Support") as string;
   const libraryLinks = get("library_links", []) as Array<{ label: string; href: string }>;
   const communityLinks = get("community_links", []) as Array<{ label: string; href: string }>;
   const supportLinks = get("support_links", []) as Array<{ label: string; href: string }>;
@@ -54,9 +57,9 @@ const Footer = () => {
               )}
               <p className="text-sm text-white/50 leading-relaxed">{description}</p>
             </div>
-            <LinkList title="Library" links={libraryLinks} />
-            <LinkList title="Community" links={communityLinks} />
-            <LinkList title="Support" links={supportLinks} />
+             <LinkList title={libraryTitle} links={libraryLinks} />
+             <LinkList title={communityTitle} links={communityLinks} />
+             <LinkList title={supportTitle} links={supportLinks} />
           </div>
 
           <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
