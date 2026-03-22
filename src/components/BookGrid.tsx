@@ -185,6 +185,7 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   const { data: retailDiscounts } = useRetailDiscounts();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [sampleBook, setSampleBook] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const getDiscountedPrice = (book: any): number | undefined => {
     const result = getBookDiscount(book);
@@ -225,14 +226,22 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
     );
   }
 
+  // Filter out inactive books (in_stock === false means admin hid the book)
+  const activeBooks = books?.filter(b => b.in_stock !== false);
+
   const query = searchQuery.trim().toLowerCase();
-  const filteredBooks = query
-    ? books?.filter(b =>
+  let filteredBooks = query
+    ? activeBooks?.filter(b =>
         b.title.toLowerCase().includes(query) ||
         b.author.toLowerCase().includes(query) ||
         b.category.toLowerCase().includes(query)
       )
-    : books;
+    : activeBooks;
+
+  // Apply category filter
+  if (selectedCategory !== "all") {
+    filteredBooks = filteredBooks?.filter(b => b.category === selectedCategory);
+  }
 
   const groupedBooks = categories?.map((cat) => ({
     ...cat,
