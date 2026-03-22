@@ -11,12 +11,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X, Tag, Truck } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X, Tag, Truck, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const Cart = () => {
-  const { items, removeItem, updateQuantity, totalPrice, totalItems, pricesSyncing } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, totalItems, pricesSyncing, lastSyncedAt } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
@@ -29,6 +29,16 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState("");
   const { appliedCoupon, setAppliedCoupon } = useCart();
   const isWholesale = wholesaleStatus === "approved";
+  const [showSyncBadge, setShowSyncBadge] = useState(false);
+
+  // Show "Prices updated" badge briefly after sync
+  useEffect(() => {
+    if (lastSyncedAt) {
+      setShowSyncBadge(true);
+      const t = setTimeout(() => setShowSyncBadge(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [lastSyncedAt]);
 
   const bookDetails = (books || []).map((b: any) => ({
     id: b.id,
@@ -44,7 +54,6 @@ const Cart = () => {
     return sum + (disc?.originalPrice ?? item.price) * item.quantity;
   }, 0);
 
-  // Cart page: no city known yet, use default zone calculation
   const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
   const shipping = shippingResult.shippingCost;
 
@@ -86,17 +95,30 @@ const Cart = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-4">
               <ArrowLeft className="h-4 w-4" />
-              Continue Shopping
+              <span>Continue Shopping</span>
             </Link>
-            <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Your Cart</h1>
-            <p className="text-muted-foreground mt-1">{totalItems} {totalItems === 1 ? "item" : "items"}</p>
+            <div className="flex items-center gap-3">
+              <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Your Cart</h1>
+              {pricesSyncing && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+              {showSyncBadge && !pricesSyncing && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                  Prices updated
+                </span>
+              )}
+            </div>
+            <p className="text-muted-foreground mt-1">
+              {totalItems} {totalItems === 1 ? "item" : "items"}
+            </p>
           </motion.div>
 
           {!loading && !user && items.length > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 p-4 bg-[hsl(var(--gold))]/10 border border-[hsl(var(--gold))]/30 rounded-xl flex items-center justify-between gap-4">
               <p className="text-sm text-foreground">Please log in to proceed with checkout.</p>
               <Button onClick={() => navigate("/auth", { state: { from: "/cart" } })} size="sm" className="gap-1.5 shrink-0">
-                <LogIn className="h-3.5 w-3.5" /> Log In
+                <LogIn className="h-3.5 w-3.5" />
+                <span>Log In</span>
               </Button>
             </motion.div>
           )}
@@ -110,64 +132,66 @@ const Cart = () => {
               <p className="text-muted-foreground mb-6">Browse our collection and add some books.</p>
               <Button asChild>
                 <Link to="/" className="gap-2">
-                  <BookOpen className="h-4 w-4" /> Browse Books
+                  <BookOpen className="h-4 w-4" />
+                  <span>Browse Books</span>
                 </Link>
               </Button>
             </motion.div>
           ) : (
             <div ref={cartContentRef} className="space-y-4">
-              {items.map((item, i) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:shadow-card transition-all duration-300"
-                >
-                  <div
-                    className="w-14 h-[72px] rounded-lg shrink-0 flex items-center justify-center"
-                    style={{ background: `linear-gradient(145deg, ${item.cover_color}, ${item.cover_color}cc)` }}
+              {items.map((item, i) => {
+                const disc = cartDiscounts.itemPrices.get(item.id);
+                const unitPrice = disc && disc.discountSource !== "none" ? disc.finalPrice : item.price;
+                const hasDiscount = disc && disc.discountSource !== "none";
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:shadow-card transition-all duration-300"
                   >
-                    <BookOpen className="h-5 w-5 text-white/50" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground truncate">{item.title}</h3>
-                    <p className="text-xs text-muted-foreground">{item.author}</p>
-                    <p className="text-sm font-bold text-primary mt-1">
-                      {(() => {
-                        const disc = cartDiscounts.itemPrices.get(item.id);
-                        if (disc && disc.discountSource !== "none") {
-                          return (
-                            <span className="flex items-center gap-1.5">
-                              <span>£{disc.finalPrice.toFixed(2)}</span>
-                              <span className="text-xs line-through text-muted-foreground">£{item.price.toFixed(2)}</span>
-                            </span>
-                          );
-                        }
-                        return `£${item.price.toFixed(2)}`;
-                      })()}
+                    <div
+                      className="w-14 h-[72px] rounded-lg shrink-0 flex items-center justify-center"
+                      style={{ background: `linear-gradient(145deg, ${item.cover_color}, ${item.cover_color}cc)` }}
+                    >
+                      <BookOpen className="h-5 w-5 text-white/50" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-foreground truncate">{item.title}</h3>
+                      <p className="text-xs text-muted-foreground">{item.author}</p>
+                      <p className="text-sm font-bold text-primary mt-1">
+                        {hasDiscount ? (
+                          <span className="flex items-center gap-1.5">
+                            <span>£{unitPrice.toFixed(2)}</span>
+                            <span className="text-xs line-through text-muted-foreground">£{item.price.toFixed(2)}</span>
+                          </span>
+                        ) : (
+                          <span>£{item.price.toFixed(2)}</span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="text-sm font-semibold w-6 text-center">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <p className="text-sm font-bold text-foreground w-16 text-right hidden sm:block">
+                      £{(unitPrice * item.quantity).toFixed(2)}
                     </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                      <Minus className="h-3 w-3" />
+                    <button onClick={() => removeItem(item.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash2 className="h-4 w-4" />
                     </button>
-                    <span className="text-sm font-semibold w-6 text-center">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <p className="text-sm font-bold text-foreground w-16 text-right hidden sm:block">
-                    £{((cartDiscounts.itemPrices.get(item.id)?.finalPrice ?? item.price) * item.quantity).toFixed(2)}
-                  </p>
-                  <button onClick={() => removeItem(item.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
 
               <div className="mt-8 bg-card border border-border rounded-xl p-6 space-y-4">
-                {/* Single contextual shipping message */}
                 {shippingResult.smartSuggestion && (
                   <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                     <Truck className="h-4 w-4 text-primary shrink-0" />
@@ -191,8 +215,15 @@ const Cart = () => {
                     </div>
                   ) : (
                     <div className="flex gap-2">
-                      <Input value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())} placeholder="Enter code..." className="font-mono uppercase text-sm" />
-                      <Button variant="outline" size="sm" onClick={handleApplyCoupon} disabled={validateCoupon.isPending} className="shrink-0">Apply</Button>
+                      <Input
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter code..."
+                        className="font-mono uppercase text-sm"
+                      />
+                      <Button variant="outline" size="sm" onClick={handleApplyCoupon} disabled={validateCoupon.isPending} className="shrink-0">
+                        <span>Apply</span>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -206,7 +237,7 @@ const Cart = () => {
                     <div className="flex justify-between text-sm text-green-600">
                       <span className="flex items-center gap-1">
                         <Tag className="h-3 w-3" />
-                        {role === "wholesale" ? "Wholesale" : "Retail"} Discount
+                        <span>{role === "wholesale" ? "Wholesale" : "Retail"} Discount</span>
                       </span>
                       <span>-£{totalItemSavings.toFixed(2)}</span>
                     </div>
@@ -215,7 +246,7 @@ const Cart = () => {
                     <div className="flex justify-between text-sm text-green-600">
                       <span className="flex items-center gap-1">
                         <Tag className="h-3 w-3" />
-                        Qty Tier ({cartDiscounts.quantityTierName}) {cartDiscounts.quantityTierPercent}%
+                        <span>Qty Tier ({cartDiscounts.quantityTierName}) {cartDiscounts.quantityTierPercent}%</span>
                       </span>
                       <span>-£{cartDiscounts.quantityTierAmount.toFixed(2)}</span>
                     </div>
@@ -228,12 +259,18 @@ const Cart = () => {
                   )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      Shipping (est.)
+                      <span>Shipping (est.)</span>
                       {shippingResult.zoneName !== "Default" && (
                         <span className="text-xs text-muted-foreground/70">({shippingResult.zoneName})</span>
                       )}
                     </span>
-                    <span>{shipping === 0 ? <span className="text-green-600 font-medium">Free</span> : `£${shipping.toFixed(2)}`}</span>
+                    <span>
+                      {shipping === 0 ? (
+                        <span className="text-green-600 font-medium">Free</span>
+                      ) : (
+                        <span>£{shipping.toFixed(2)}</span>
+                      )}
+                    </span>
                   </div>
                   {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
                     <p className="text-xs text-green-600 text-right">{shippingResult.freeShippingReason}</p>
@@ -250,17 +287,21 @@ const Cart = () => {
                       <Clock className="h-4 w-4 text-amber-600 shrink-0" />
                       <p className="text-xs text-amber-700">Your wholesale account is under review. You can place orders after admin approval.</p>
                     </div>
-                    <Button disabled className="w-full h-12 text-base font-semibold gap-2 opacity-50">Checkout Unavailable</Button>
+                    <Button disabled className="w-full h-12 text-base font-semibold gap-2 opacity-50">
+                      <span>Checkout Unavailable</span>
+                    </Button>
                   </div>
                 ) : user ? (
                   <Button asChild className="w-full h-12 text-base font-semibold gap-2">
                     <Link to="/checkout">
-                      Proceed to Checkout <ArrowRight className="h-4 w-4" />
+                      <span>Proceed to Checkout</span>
+                      <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
                 ) : (
                   <Button onClick={() => navigate("/auth", { state: { from: "/cart" } })} className="w-full h-12 text-base font-semibold gap-2">
-                    <LogIn className="h-4 w-4" /> Log In to Checkout
+                    <LogIn className="h-4 w-4" />
+                    <span>Log In to Checkout</span>
                   </Button>
                 )}
               </div>

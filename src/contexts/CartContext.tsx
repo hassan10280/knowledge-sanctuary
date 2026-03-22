@@ -28,6 +28,7 @@ interface CartContextType {
   appliedCoupon: AppliedCoupon | null;
   setAppliedCoupon: (coupon: AppliedCoupon | null) => void;
   pricesSyncing: boolean;
+  lastSyncedAt: number | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -36,14 +37,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [pricesSyncing, setPricesSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const [itemCount, setItemCount] = useState(0);
 
-  // Track item count separately to avoid infinite loops
   useEffect(() => {
     setItemCount(items.length);
   }, [items.length]);
 
-  // Sync cart prices with latest DB prices
   const syncPrices = useCallback(async () => {
     if (items.length === 0) return;
     const ids = items.map((i) => i.id);
@@ -61,6 +61,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             }
             return item;
           });
+          if (changed) setLastSyncedAt(Date.now());
           return changed ? next : prev;
         });
       }
@@ -70,12 +71,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setPricesSyncing(false);
   }, [itemCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync on mount & when items are added/removed
   useEffect(() => {
     if (itemCount > 0) syncPrices();
   }, [itemCount, syncPrices]);
 
-  // Sync when tab becomes visible
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && items.length > 0) {
@@ -106,13 +105,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = () => {
     setItems([]);
     setAppliedCoupon(null);
+    setLastSyncedAt(null);
   };
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, appliedCoupon, setAppliedCoupon, pricesSyncing }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+        appliedCoupon,
+        setAppliedCoupon,
+        pricesSyncing,
+        lastSyncedAt,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

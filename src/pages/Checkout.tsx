@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,8 +40,8 @@ const Checkout = () => {
   const [transactionId, setTransactionId] = useState("");
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
 
-  // Price lock: snapshot prices when entering payment step
-  const [lockedSubtotal, setLockedSubtotal] = useState<number | null>(null);
+  // Item-level price lock: snapshot per-item prices when entering payment step
+  const [lockedPrices, setLockedPrices] = useState<Map<string, number> | null>(null);
 
   const [address, setAddress] = useState({
     full_name: "",
@@ -83,26 +83,46 @@ const Checkout = () => {
   const subtotalAfterCoupon = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount);
   const grandTotal = subtotalAfterCoupon + shipping;
 
-  // Lock prices when entering step 2, detect drift
+  // Lock item prices when entering step 2
+  const lockPrices = useCallback(() => {
+    const priceMap = new Map<string, number>();
+    items.forEach((item) => {
+      const disc = cartDiscounts.itemPrices.get(item.id);
+      priceMap.set(item.id, disc ? disc.finalPrice : item.price);
+    });
+    setLockedPrices(priceMap);
+  }, [items, cartDiscounts.itemPrices]);
+
   useEffect(() => {
-    if (step === 2 && lockedSubtotal === null) {
-      setLockedSubtotal(cartDiscounts.discountedSubtotal);
+    if (step === 2 && lockedPrices === null) {
+      lockPrices();
     }
     if (step === 1) {
-      setLockedSubtotal(null);
+      setLockedPrices(null);
     }
-  }, [step]);
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Detect price changes during payment step
-  const priceChanged = lockedSubtotal !== null && Math.abs(lockedSubtotal - cartDiscounts.discountedSubtotal) > 0.01;
-
+  // Detect price drift at item level during payment step
   useEffect(() => {
-    if (priceChanged && step === 2) {
+    if (step !== 2 || lockedPrices === null) return;
+
+    let drifted = false;
+    for (const item of items) {
+      const disc = cartDiscounts.itemPrices.get(item.id);
+      const currentPrice = disc ? disc.finalPrice : item.price;
+      const locked = lockedPrices.get(item.id);
+      if (locked === undefined || Math.abs(currentPrice - locked) > 0.01) {
+        drifted = true;
+        break;
+      }
+    }
+
+    if (drifted) {
       toast.warning("Prices or discounts have changed. Please review your order.", { duration: 6000 });
-      setLockedSubtotal(null);
+      setLockedPrices(null);
       setStep(1);
     }
-  }, [priceChanged, step]);
+  }, [step, items, cartDiscounts.itemPrices, lockedPrices]);
 
   // Auto-select cheapest available method
   useEffect(() => {
@@ -159,7 +179,9 @@ const Checkout = () => {
             <p className="text-sm text-amber-800 font-medium">Your account has been created successfully.</p>
             <p className="text-sm text-amber-700">Your wholesale account is currently under review by an admin. You will be able to place orders after approval.</p>
           </div>
-          <Button onClick={() => navigate("/")} variant="outline">Back to Home</Button>
+          <Button onClick={() => navigate("/")} variant="outline">
+            <span>Back to Home</span>
+          </Button>
         </div>
         <Footer />
       </div>
@@ -178,12 +200,20 @@ const Checkout = () => {
       }
     : address;
 
-  const isAddressValid = currentAddress.full_name && currentAddress.address_line1 && currentAddress.city && currentAddress.postcode;
+  const isAddressValid = !!(currentAddress.full_name && currentAddress.address_line1 && currentAddress.city && currentAddress.postcode);
 
   const handlePlaceOrder = async () => {
     if (!user) return;
+    if (items.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
     if (!transactionId.trim()) {
       toast.error("Please enter your transaction ID");
+      return;
+    }
+    if (!isAddressValid) {
+      toast.error("Please provide a valid address");
       return;
     }
 
@@ -198,6 +228,9 @@ const Checkout = () => {
         });
       }
 
+      const rawSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+      const totalDiscountAmount = rawSubtotal - cartDiscounts.subtotalAfterItemDiscounts + cartDiscounts.quantityTierAmount;
+
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -206,9 +239,7 @@ const Checkout = () => {
           shipping_cost: shipping,
           coupon_id: appliedCoupon?.id || null,
           coupon_discount: couponDiscount,
-          discount_amount: cartDiscounts.subtotalAfterItemDiscounts < items.reduce((s, i) => s + i.price * i.quantity, 0)
-            ? items.reduce((s, i) => s + i.price * i.quantity, 0) - cartDiscounts.subtotalAfterItemDiscounts + cartDiscounts.quantityTierAmount
-            : 0,
+          discount_amount: totalDiscountAmount > 0 ? totalDiscountAmount : 0,
           payment_method: "bank_transfer",
           transaction_id: transactionId.trim(),
           billing_name: currentAddress.full_name,
@@ -258,7 +289,6 @@ const Checkout = () => {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -266,7 +296,8 @@ const Checkout = () => {
         <div className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Link to="/cart" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-4">
-              <ArrowLeft className="h-4 w-4" /> Back to Cart
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Cart</span>
             </Link>
             <h1 className="font-serif text-3xl sm:text-4xl text-foreground mb-8">Checkout</h1>
           </motion.div>
@@ -359,7 +390,8 @@ const Checkout = () => {
               {shippingResult.availableMethods.length > 0 && (
                 <div className="bg-card border border-border rounded-xl p-6 space-y-4">
                   <h2 className="font-serif text-xl text-foreground flex items-center gap-2">
-                    <Truck className="h-5 w-5 text-primary" /> Delivery Options
+                    <Truck className="h-5 w-5 text-primary" />
+                    <span>Delivery Options</span>
                   </h2>
 
                   <div className="space-y-2">
@@ -397,7 +429,7 @@ const Checkout = () => {
                                 {method.cost === 0 ? (
                                   <span className="text-green-600">Free</span>
                                 ) : (
-                                  `£${method.cost.toFixed(2)}`
+                                  <span>£{method.cost.toFixed(2)}</span>
                                 )}
                               </span>
                               {savings > 0 && (
@@ -421,7 +453,8 @@ const Checkout = () => {
                 disabled={!isAddressValid}
                 className="w-full h-11 font-semibold gap-2"
               >
-                Continue to Payment <CreditCard className="h-4 w-4" />
+                <span>Continue to Payment</span>
+                <CreditCard className="h-4 w-4" />
               </Button>
             </motion.div>
           )}
@@ -434,10 +467,11 @@ const Checkout = () => {
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-primary" /> Delivery
+                    <Truck className="h-4 w-4 text-primary" />
+                    <span>Delivery</span>
                   </h3>
                   <button onClick={() => setStep(1)} className="text-xs text-primary hover:underline font-medium">
-                    Change
+                    <span>Change</span>
                   </button>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -448,7 +482,11 @@ const Checkout = () => {
                     )}
                   </div>
                   <span className="font-bold text-foreground">
-                    {shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}
+                    {shipping === 0 ? (
+                      <span className="text-green-600">Free</span>
+                    ) : (
+                      <span>£{shipping.toFixed(2)}</span>
+                    )}
                   </span>
                 </div>
                 {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
@@ -467,7 +505,9 @@ const Checkout = () => {
                   const unitPrice = disc ? disc.finalPrice : item.price;
                   return (
                     <div key={item.id} className="flex justify-between text-sm">
-                      <span className="text-foreground">{item.title} × {item.quantity}</span>
+                      <span className="text-foreground">
+                        {item.title} × {item.quantity}
+                      </span>
                       <span className="font-medium text-foreground">£{(unitPrice * item.quantity).toFixed(2)}</span>
                     </div>
                   );
@@ -485,7 +525,13 @@ const Checkout = () => {
                   )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Shipping ({shippingResult.methodName})</span>
-                    <span>{shipping === 0 ? <span className="text-green-600">Free</span> : `£${shipping.toFixed(2)}`}</span>
+                    <span>
+                      {shipping === 0 ? (
+                        <span className="text-green-600">Free</span>
+                      ) : (
+                        <span>£{shipping.toFixed(2)}</span>
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between font-semibold text-foreground border-t border-border pt-2">
                     <span>Total</span>
@@ -533,17 +579,24 @@ const Checkout = () => {
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
-                    <ArrowLeft className="h-4 w-4" /> Back
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back</span>
                   </Button>
                   <Button
                     onClick={handlePlaceOrder}
-                    disabled={submitting || !transactionId.trim()}
+                    disabled={submitting || !transactionId.trim() || items.length === 0}
                     className="flex-1 h-11 font-semibold gap-2"
                   >
                     {submitting ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Processing...</span>
+                      </>
                     ) : (
-                      <><Check className="h-4 w-4" /> Place Order — £{grandTotal.toFixed(2)}</>
+                      <>
+                        <Check className="h-4 w-4" />
+                        <span>Place Order — £{grandTotal.toFixed(2)}</span>
+                      </>
                     )}
                   </Button>
                 </div>
