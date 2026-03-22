@@ -76,6 +76,9 @@ const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
             used_count: 0,
             is_active: true,
             wholesale_only: !!wholesaleOnly,
+            auto_apply: false,
+            first_order_only: false,
+            max_discount_amount: null,
           })}
           className="gap-1.5"
         >
