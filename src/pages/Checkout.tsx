@@ -62,8 +62,13 @@ const Checkout = () => {
   }));
 
   const addrCity = (useSaved && savedAddress) ? savedAddress.city : address.city;
+
+  // Step 1: Calculate discounts without shipping to get discountedSubtotal
+  const preShipDiscounts = getCartDiscounts(items, bookDetails, appliedCoupon, 0);
+
+  // Step 2: Use discountedSubtotal for accurate shipping (free shipping thresholds, price-based rates)
   const shippingResult = calcNewShipping(
-    0, // will be recalculated
+    preShipDiscounts.discountedSubtotal,
     isWholesale,
     addrCity,
     undefined,
@@ -71,7 +76,7 @@ const Checkout = () => {
   );
   const shipping = shippingResult.shippingCost;
 
-  // Single source of truth: all calculations from one function
+  // Step 3: Final calculations with correct shipping
   const cartDiscounts = getCartDiscounts(items, bookDetails, appliedCoupon, shipping);
 
   // Lock item prices when entering step 2
