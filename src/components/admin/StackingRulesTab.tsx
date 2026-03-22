@@ -64,8 +64,8 @@ const StackingRulesTab = () => {
           </div>
         ))}
 
-        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-          <p className="text-xs text-amber-800 dark:text-amber-200">
+        <div className="p-3 rounded-lg bg-accent/50 border border-border">
+          <p className="text-xs text-muted-foreground">
             <strong>Priority Order:</strong> Fixed Price → Wholesale → Product → Publisher → Category → Bundle → Quantity Tier → Coupon.
             Higher priority discounts always override lower ones unless stacking is explicitly allowed above.
           </p>

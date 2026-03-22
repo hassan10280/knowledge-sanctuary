@@ -29,7 +29,7 @@ export function useUpdateStackingRule() {
     mutationFn: async ({ id, allowed }: { id: string; allowed: boolean }) => {
       const { error } = await supabase
         .from("discount_stacking_rules" as any)
-        .update({ allowed, updated_at: new Date().toISOString() })
+        .update({ allowed, updated_at: new Date().toISOString() } as any)
         .eq("id", id);
       if (error) throw error;
     },
