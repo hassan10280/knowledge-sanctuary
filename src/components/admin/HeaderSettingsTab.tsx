@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getErrorMessage } from "@/lib/admin-submit";
 
 export type NavLink = {
   label: string;
@@ -93,6 +94,23 @@ const HeaderSettingsTab = () => {
   const [isDirty, setIsDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
+  const saveWithTimeout = useCallback(
+    async (entries: Array<{ key: string; value: any }>) => {
+      await Promise.race([
+        updateSettingsBatch.mutateAsync({
+          section: "header",
+          entries,
+        }),
+        new Promise((_, reject) => {
+          window.setTimeout(() => {
+            reject(new Error("Header save timed out. Please try again."));
+          }, 15000);
+        }),
+      ]);
+    },
+    [updateSettingsBatch],
+  );
+
   useEffect(() => {
     if (!settings) return;
     const headerSettings: Record<string, any> = {};
@@ -120,15 +138,12 @@ const HeaderSettingsTab = () => {
 
     setSaving(true);
     try {
-      await updateSettingsBatch.mutateAsync({
-        section: "header",
-        entries: entries.map(([key, value]) => ({ key, value })),
-      });
+      await saveWithTimeout(entries.map(([key, value]) => ({ key, value })));
       setIsDirty(false);
       setLastSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       toast.success("✅ Header settings saved successfully!");
-    } catch (e: any) {
-      toast.error("Save failed: " + e.message);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setSaving(false);
     }
