@@ -108,6 +108,14 @@ const AdminSettingsTab = () => {
               <Field section="business" field="default_shipping_cost" label="Default Shipping (£)" type="number" />
               <Field section="business" field="free_shipping_threshold" label="Free Shipping Threshold (£)" type="number" />
             </div>
+            <div className="p-3 rounded-lg border border-border bg-muted/30 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Global Discount Cap</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field section="business" field="global_max_discount_percent" label="Max Discount % (0 = no cap)" type="number" />
+                <Field section="business" field="global_max_discount_amount" label="Max Discount £ (0 = no cap)" type="number" />
+              </div>
+              <p className="text-[10px] text-muted-foreground">Total discount will never exceed these limits. Set 0 to disable.</p>
+            </div>
             <p className="text-xs text-muted-foreground">UI texts are managed in the "Content" tab.</p>
             <Actions section="business" />
           </TabsContent>

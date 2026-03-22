@@ -8,6 +8,8 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     currency_code: "GBP",
     default_shipping_cost: 3.99,
     free_shipping_threshold: 30,
+    global_max_discount_percent: 0,
+    global_max_discount_amount: 0,
   },
   ui_text: {
     add_to_cart: "Add to Cart",

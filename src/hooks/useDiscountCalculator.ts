@@ -4,6 +4,7 @@ import { useQuantityTiers } from "@/hooks/useAdvancedDiscounts";
 import { useBundleDiscounts } from "@/hooks/useBundleDiscounts";
 import { useStackingRules, isStackingAllowed } from "@/hooks/useStackingRules";
 import { useUserRole } from "@/hooks/useWholesale";
+import { useSettingsGetter } from "@/hooks/useAppSettings";
 import type { CartItem } from "@/contexts/CartContext";
 
 export interface DiscountResult {
@@ -215,6 +216,8 @@ export interface CartDiscountSummary {
   bundleDiscountAmount: number;
   bundleDiscountName: string;
   discountedSubtotal: number;
+  totalSavings: number;
+  globalCapApplied: boolean;
 }
 
 /**
@@ -227,6 +230,7 @@ export function useDiscountCalculator() {
   const { data: quantityTiers } = useQuantityTiers();
   const { data: bundles } = useBundleDiscounts();
   const { data: stackingRules } = useStackingRules();
+  const { getSetting } = useSettingsGetter();
 
   const role = userRole || "retail";
 
@@ -250,17 +254,21 @@ export function useDiscountCalculator() {
       totalItems += item.quantity;
     }
 
-    // Check if wholesale stacking is blocked
+    const originalSubtotal = items.reduce((sum, item) => {
+      const disc = itemPrices.get(item.id);
+      return sum + (disc?.originalPrice ?? item.price) * item.quantity;
+    }, 0);
+
+    // Stacking checks
     const wholesaleHasDiscount = role === "wholesale" && Array.from(itemPrices.values()).some((d) => d.discountSource !== "none");
     const wholesaleCanStack = isStackingAllowed(stackingRules, "wholesale_plus_other");
 
-    // Bundle discount (priority 7)
+    // Bundle discount
     let bundleDiscountAmount = 0;
     let bundleDiscountName = "";
 
     if (!wholesaleHasDiscount || wholesaleCanStack) {
       const bundleCanStack = isStackingAllowed(stackingRules, "bundle_plus_category");
-      // If bundle can't stack with category and category discount was applied, skip bundle
       const hasCategoryDiscount = Array.from(itemPrices.values()).some((d) => d.discountSource === "category" || d.discountSource === "retail_category");
 
       if (!hasCategoryDiscount || bundleCanStack) {
@@ -270,7 +278,7 @@ export function useDiscountCalculator() {
       }
     }
 
-    // Quantity tier (priority 6, wholesale only)
+    // Quantity tier (wholesale only)
     let quantityTierPercent = 0;
     let quantityTierAmount = 0;
     let quantityTierName = "";
@@ -285,7 +293,28 @@ export function useDiscountCalculator() {
       }
     }
 
-    const discountedSubtotal = subtotalAfterItemDiscounts - quantityTierAmount - bundleDiscountAmount;
+    // Calculate raw discount total
+    const itemLevelSavings = originalSubtotal - subtotalAfterItemDiscounts;
+    let totalDiscount = itemLevelSavings + quantityTierAmount + bundleDiscountAmount;
+
+    // Apply global cap
+    const globalCapPercent = Number(getSetting("business", "global_max_discount_percent")) || 0;
+    const globalCapAmount = Number(getSetting("business", "global_max_discount_amount")) || 0;
+    let globalCapApplied = false;
+
+    if (globalCapPercent > 0) {
+      const maxByPercent = originalSubtotal * (globalCapPercent / 100);
+      if (totalDiscount > maxByPercent) {
+        totalDiscount = maxByPercent;
+        globalCapApplied = true;
+      }
+    }
+    if (globalCapAmount > 0 && totalDiscount > globalCapAmount) {
+      totalDiscount = globalCapAmount;
+      globalCapApplied = true;
+    }
+
+    const discountedSubtotal = Math.max(0, originalSubtotal - totalDiscount);
 
     return {
       itemPrices,
@@ -295,7 +324,9 @@ export function useDiscountCalculator() {
       quantityTierName,
       bundleDiscountAmount,
       bundleDiscountName,
-      discountedSubtotal: Math.max(0, discountedSubtotal),
+      discountedSubtotal,
+      totalSavings: totalDiscount,
+      globalCapApplied,
     };
   };
 

@@ -128,6 +128,31 @@ export function useValidateCoupon() {
       if (data.expiry_date && new Date(data.expiry_date) < new Date()) throw new Error("This coupon has expired");
       if (data.usage_limit && data.used_count >= data.usage_limit) throw new Error("This coupon has reached its usage limit");
       if (data.min_order_amount && orderTotal < Number(data.min_order_amount)) throw new Error(`Minimum order amount is £${Number(data.min_order_amount).toFixed(2)}`);
+
+      // First-order-only check
+      if ((data as any).first_order_only) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { count } = await supabase
+            .from("orders")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .neq("status", "cancelled");
+          if (count && count > 0) throw new Error("This coupon is valid for first orders only");
+        }
+      }
+
+      // Per-user usage check
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const { data: usageData } = await supabase
+          .from("coupon_user_usage")
+          .select("id")
+          .eq("coupon_id", data.id)
+          .eq("user_id", currentUser.id);
+        if (usageData && usageData.length > 0) throw new Error("You have already used this coupon");
+      }
+
       return data;
     },
   });

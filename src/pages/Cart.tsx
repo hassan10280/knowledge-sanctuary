@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
-import { useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
+import { useValidateCoupon, useCoupons } from "@/hooks/useAdvancedDiscounts";
 import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
@@ -59,14 +59,23 @@ const Cart = () => {
   const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
   const shipping = shippingResult.shippingCost;
 
-  const couponDiscount = appliedCoupon
-    ? appliedCoupon.discount_type === "percentage"
-      ? cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100)
-      : Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal)
-    : 0;
+  // Apply max_discount_amount cap on coupon
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === "percentage") {
+      couponDiscount = cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100);
+    } else {
+      couponDiscount = Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal);
+    }
+    const maxCap = Number((appliedCoupon as any).max_discount_amount);
+    if (maxCap > 0 && couponDiscount > maxCap) {
+      couponDiscount = maxCap;
+    }
+  }
 
   const grandTotal = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount + shipping);
   const totalItemSavings = originalSubtotal - cartDiscounts.subtotalAfterItemDiscounts;
+  const totalSaved = cartDiscounts.totalSavings + couponDiscount;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -82,6 +91,23 @@ const Cart = () => {
       toast.error(e.message);
     }
   };
+
+  // Auto-apply coupon
+  const { data: allCoupons } = useCoupons();
+  useEffect(() => {
+    if (appliedCoupon || !allCoupons || items.length === 0) return;
+    const autoApplyCoupon = allCoupons.find((c: any) =>
+      c.is_active && c.auto_apply &&
+      (!c.wholesale_only || isWholesale) &&
+      (!c.expiry_date || new Date(c.expiry_date) > new Date()) &&
+      (!c.usage_limit || c.used_count < c.usage_limit) &&
+      (!c.min_order_amount || cartDiscounts.discountedSubtotal >= Number(c.min_order_amount))
+    );
+    if (autoApplyCoupon) {
+      setAppliedCoupon(autoApplyCoupon);
+      toast.success(`Coupon "${autoApplyCoupon.code}" auto-applied!`);
+    }
+  }, [allCoupons, appliedCoupon, items.length, isWholesale, cartDiscounts.discountedSubtotal]);
 
   useEffect(() => {
     if (location.state?.scrollToCart && cartContentRef.current) {
@@ -291,6 +317,15 @@ const Cart = () => {
                     <span className="font-semibold text-foreground">Estimated Total</span>
                     <span className="text-xl font-bold text-primary">£{grandTotal.toFixed(2)}</span>
                   </div>
+                  {totalSaved > 0.01 && (
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-primary/5 border border-primary/10">
+                      <span className="text-xs font-medium text-primary">🎉 You saved</span>
+                      <span className="text-sm font-bold text-primary">£{totalSaved.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cartDiscounts.globalCapApplied && (
+                    <p className="text-[10px] text-muted-foreground text-right">Global discount cap applied</p>
+                  )}
                 </div>
                 {user && wholesaleStatus === "pending" ? (
                   <div className="space-y-3">

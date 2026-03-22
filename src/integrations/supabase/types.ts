@@ -344,13 +344,16 @@ export type Database = {
       }
       coupons: {
         Row: {
+          auto_apply: boolean
           code: string
           created_at: string
           discount_type: string
           discount_value: number
           expiry_date: string | null
+          first_order_only: boolean
           id: string
           is_active: boolean
+          max_discount_amount: number | null
           min_order_amount: number | null
           updated_at: string
           usage_limit: number | null
@@ -358,13 +361,16 @@ export type Database = {
           wholesale_only: boolean
         }
         Insert: {
+          auto_apply?: boolean
           code: string
           created_at?: string
           discount_type?: string
           discount_value?: number
           expiry_date?: string | null
+          first_order_only?: boolean
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           min_order_amount?: number | null
           updated_at?: string
           usage_limit?: number | null
@@ -372,13 +378,16 @@ export type Database = {
           wholesale_only?: boolean
         }
         Update: {
+          auto_apply?: boolean
           code?: string
           created_at?: string
           discount_type?: string
           discount_value?: number
           expiry_date?: string | null
+          first_order_only?: boolean
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           min_order_amount?: number | null
           updated_at?: string
           usage_limit?: number | null
@@ -631,6 +640,7 @@ export type Database = {
           end_date: string | null
           id: string
           is_active: boolean
+          max_discount_amount: number | null
           reference_value: string
           start_date: string | null
           updated_at: string
@@ -643,6 +653,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           reference_value: string
           start_date?: string | null
           updated_at?: string
@@ -655,6 +666,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           reference_value?: string
           start_date?: string | null
           updated_at?: string
@@ -900,6 +912,7 @@ export type Database = {
           discount_type: string
           fixed_price: number | null
           id: string
+          max_discount_amount: number | null
           reference_value: string
           updated_at: string
         }
@@ -910,6 +923,7 @@ export type Database = {
           discount_type?: string
           fixed_price?: number | null
           id?: string
+          max_discount_amount?: number | null
           reference_value: string
           updated_at?: string
         }
@@ -920,6 +934,7 @@ export type Database = {
           discount_type?: string
           fixed_price?: number | null
           id?: string
+          max_discount_amount?: number | null
           reference_value?: string
           updated_at?: string
         }
