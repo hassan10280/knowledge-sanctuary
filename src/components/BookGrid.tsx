@@ -17,6 +17,7 @@ interface BookGridProps {
 const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number }) => {
   const { items, addItem } = useCart();
   const navigate = useNavigate();
+  const addToCartText = useAppSetting("ui_text", "add_to_cart");
   const isInCart = items.some((i) => i.id === book.id);
   const coverAccent = book.cover_color ? book.cover_color + "cc" : "#2980b9";
 
