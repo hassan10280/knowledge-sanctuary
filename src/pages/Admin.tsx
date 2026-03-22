@@ -25,6 +25,7 @@ import DesignSystemTab from "@/components/admin/DesignSystemTab";
 import ContentEditorTab from "@/components/admin/ContentEditorTab";
 import AnalyticsDashboardTab from "@/components/admin/AnalyticsDashboardTab";
 import AbandonedCartsTab from "@/components/admin/AbandonedCartsTab";
+import BooksManagementTab from "@/components/admin/BooksManagementTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
