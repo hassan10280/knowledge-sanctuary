@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const Cart = () => {
+  const { getSetting } = useSettingsGetter();
   const { items, removeItem, updateQuantity, totalPrice, totalItems, pricesSyncing, lastSyncedAt } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
