@@ -1,14 +1,38 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Image } from "lucide-react";
+import { Save, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+/* ── Stable row component — never remounts on sibling edits ── */
+const NavLinkRow = memo(({
+  index, label, href, onUpdateLabel, onUpdateHref, onRemove,
+}: {
+  index: number; label: string; href: string;
+  onUpdateLabel: (i: number, val: string) => void;
+  onUpdateHref: (i: number, val: string) => void;
+  onRemove: (i: number) => void;
+}) => (
+  <div className="flex gap-2 items-center">
+    <Input value={label} placeholder="Label" className="flex-1 h-8 text-xs"
+      onChange={(e) => onUpdateLabel(index, e.target.value)}
+      onClick={(e) => e.stopPropagation()} onFocus={(e) => e.stopPropagation()} />
+    <Input value={href} placeholder="/path" className="flex-1 h-8 text-xs"
+      onChange={(e) => onUpdateHref(index, e.target.value)}
+      onClick={(e) => e.stopPropagation()} onFocus={(e) => e.stopPropagation()} />
+    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => onRemove(index)}>
+      <Trash2 className="h-3 w-3" />
+    </Button>
+  </div>
+));
+NavLinkRow.displayName = "NavLinkRow";
+
+/* ── Main component ── */
 const HeaderSettingsTab = () => {
   const { data: settings, isLoading } = useSiteSettings();
   const updateSetting = useUpdateSetting();
@@ -54,15 +78,24 @@ const HeaderSettingsTab = () => {
   const logoSizePx = typeof local.logo_size_px === "number" ? local.logo_size_px : 56;
   const links = (local.nav_links || []) as Array<{ label: string; href: string }>;
 
-  const updateLink = useCallback((index: number, field: "label" | "href", value: string) => {
+  // Stable callbacks that use index parameter — no closure over changing array
+  const handleUpdateLabel = useCallback((index: number, val: string) => {
     setLocal((prev) => {
       const currentLinks = [...((prev.nav_links || []) as Array<{ label: string; href: string }>)];
-      currentLinks[index] = { ...currentLinks[index], [field]: value };
+      currentLinks[index] = { ...currentLinks[index], label: val };
       return { ...prev, nav_links: currentLinks };
     });
   }, []);
 
-  const removeLink = useCallback((index: number) => {
+  const handleUpdateHref = useCallback((index: number, val: string) => {
+    setLocal((prev) => {
+      const currentLinks = [...((prev.nav_links || []) as Array<{ label: string; href: string }>)];
+      currentLinks[index] = { ...currentLinks[index], href: val };
+      return { ...prev, nav_links: currentLinks };
+    });
+  }, []);
+
+  const handleRemoveLink = useCallback((index: number) => {
     setLocal((prev) => {
       const currentLinks = [...((prev.nav_links || []) as Array<{ label: string; href: string }>)];
       currentLinks.splice(index, 1);
@@ -90,7 +123,6 @@ const HeaderSettingsTab = () => {
             {get("logo_url") && <img src={get("logo_url") as string} alt="Logo" className="h-12 rounded" />}
           </div>
         </div>
-        {/* Custom logo size slider */}
         <div className="space-y-3">
           <Label className="text-xs font-medium text-foreground">Logo Size (px)</Label>
           <div className="flex items-center gap-3">
@@ -110,15 +142,8 @@ const HeaderSettingsTab = () => {
           <p className="text-xs text-muted-foreground mb-2">Edit labels and URLs for nav links</p>
           <div className="space-y-2">
             {links.map((link, i) => (
-              <NavLinkRow
-                key={i}
-                index={i}
-                label={link.label}
-                href={link.href}
-                onUpdateLabel={(val) => updateLink(i, "label", val)}
-                onUpdateHref={(val) => updateLink(i, "href", val)}
-                onRemove={() => removeLink(i)}
-              />
+              <NavLinkRow key={i} index={i} label={link.label} href={link.href}
+                onUpdateLabel={handleUpdateLabel} onUpdateHref={handleUpdateHref} onRemove={handleRemoveLink} />
             ))}
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={addLink}>
               <Plus className="h-3 w-3" /> Add Link
@@ -130,40 +155,5 @@ const HeaderSettingsTab = () => {
     </Card>
   );
 };
-
-/** Isolated row component — avoids re-mounting sibling rows on keystroke */
-const NavLinkRow = ({
-  index,
-  label,
-  href,
-  onUpdateLabel,
-  onUpdateHref,
-  onRemove,
-}: {
-  index: number;
-  label: string;
-  href: string;
-  onUpdateLabel: (val: string) => void;
-  onUpdateHref: (val: string) => void;
-  onRemove: () => void;
-}) => (
-  <div className="flex gap-2 items-center">
-    <Input
-      value={label}
-      placeholder="Label"
-      className="flex-1 h-8 text-xs"
-      onChange={(e) => onUpdateLabel(e.target.value)}
-    />
-    <Input
-      value={href}
-      placeholder="/path"
-      className="flex-1 h-8 text-xs"
-      onChange={(e) => onUpdateHref(e.target.value)}
-    />
-    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={onRemove}>
-      <Trash2 className="h-3 w-3" />
-    </Button>
-  </div>
-);
 
 export default HeaderSettingsTab;
