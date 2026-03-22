@@ -56,6 +56,9 @@ export function useSiteSettings(section?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: section ? 15_000 : 5_000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }
 
