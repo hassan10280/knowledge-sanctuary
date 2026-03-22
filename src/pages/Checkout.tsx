@@ -207,21 +207,21 @@ const Checkout = () => {
   const handlePlaceOrder = async () => {
     if (!user) return;
     if (items.length === 0) {
-      toast.error("Your cart is empty");
+      toast.error(String(getSetting("ui_text", "empty_cart")));
       return;
     }
     if (!transactionId.trim()) {
-      toast.error("Please enter your transaction ID");
+      toast.error(String(getSetting("messages", "txn_id_required")));
       return;
     }
     if (!isAddressValid) {
-      toast.error("Please provide a valid address");
+      toast.error(String(getSetting("messages", "address_required")));
       return;
     }
 
     const txnId = transactionId.trim();
     if (txnId.length < 4 || txnId.length > 50) {
-      toast.error("Transaction ID must be 4-50 characters");
+      toast.error(String(getSetting("messages", "txn_id_invalid")));
       return;
     }
 
