@@ -178,6 +178,7 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   const { data: books, isLoading: booksLoading } = useBooks();
   const { data: categories, isLoading: catsLoading } = useCategories();
   const { getBookDiscount } = useDiscountCalculator();
+  const { data: retailDiscounts } = useRetailDiscounts();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [sampleBook, setSampleBook] = useState<any>(null);
 
@@ -185,6 +186,16 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
     const result = getBookDiscount(book);
     if (result.discountSource === "none") return undefined;
     return Math.round(result.finalPrice * 100) / 100;
+  };
+
+  const getEndDate = (book: any): string | undefined => {
+    const rd = retailDiscounts?.find(
+      (d) => d.is_active && d.end_date && (
+        (d.discount_type === "product" && d.book_id === book.id) ||
+        (d.discount_type === "category" && d.reference_value === book.category)
+      )
+    );
+    return rd?.end_date ?? undefined;
   };
 
   if (booksLoading || catsLoading) {
