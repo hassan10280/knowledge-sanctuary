@@ -881,6 +881,7 @@ const Admin = () => {
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
           <TabsContent value="shipping"><ShippingSettingsTab /></TabsContent>
           <TabsContent value="notifications"><AdminNotificationsTab /></TabsContent>
+          <TabsContent value="orders"><AdminOrdersTab /></TabsContent>
         </Tabs>
       </div>
     </div>
