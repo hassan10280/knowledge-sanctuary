@@ -134,7 +134,14 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
 
         <div className="flex gap-2 mt-2">
           <button
-            onClick={() => onViewDetails(book)}
+            onClick={() => {
+              trackEvent("product_view", {
+                product_id: book.id,
+                product_title: book.title,
+                product_price: Number(book.price),
+              });
+              onViewDetails(book);
+            }}
             className="flex-1 flex items-center justify-center gap-1 px-2 py-2 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-all"
           >
             <Eye className="h-3 w-3" />
