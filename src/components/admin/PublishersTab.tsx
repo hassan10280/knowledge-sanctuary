@@ -6,24 +6,40 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePublishers, useUpsertPublisher, useDeletePublisher } from "@/hooks/usePublishers";
 import { toast } from "sonner";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 const PublishersTab = () => {
   const { data: publishers, isLoading } = usePublishers();
   const upsertPublisher = useUpsertPublisher();
   const deletePublisher = useDeletePublisher();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.name?.trim()) {
-      toast.error("Publisher name is required");
+    if (!editing) {
+      toast.error("No publisher data found.");
       return;
     }
+
+    if (isBlank(editing.name)) {
+      toast.error("Publisher Name is required.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editing.sort_order ?? 0), { min: 0 })) {
+      toast.error("Sort Order must be a valid number.");
+      return;
+    }
+
+    setSaving(true);
     try {
       await upsertPublisher.mutateAsync(editing);
       toast.success("Publisher saved!");
       setEditing(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -75,8 +91,8 @@ const PublishersTab = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={upsertPublisher.isPending} className="gap-1.5">
-                <Save className="h-3.5 w-3.5" /> Save
+              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>

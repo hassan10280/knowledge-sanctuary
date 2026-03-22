@@ -33,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 const FONT_FAMILIES = [
   "Instrument Serif", "Georgia", "Geist", "system-ui", "Inter", "Roboto", "Open Sans",
@@ -99,6 +100,8 @@ const Admin = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [openPanels, setOpenPanels] = useState<Record<string, boolean>>({});
+  const [savingBook, setSavingBook] = useState(false);
+  const [savingCategory, setSavingCategory] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -177,21 +180,83 @@ const Admin = () => {
   };
 
   const handleSaveBook = async () => {
-    if (!editingBook) return;
+    if (!editingBook) {
+      toast.error("No book data found.");
+      return;
+    }
+
+    if (isBlank(editingBook.title)) {
+      toast.error("Title is required.");
+      return;
+    }
+
+    if (isBlank(editingBook.author)) {
+      toast.error("Author is required.");
+      return;
+    }
+
+    if (isBlank(editingBook.category)) {
+      toast.error("Category is required.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editingBook.price), { min: 0 })) {
+      toast.error("Price must be a valid number.");
+      return;
+    }
+
+    if (editingBook.original_price !== null && editingBook.original_price !== undefined && editingBook.original_price !== "") {
+      if (!isValidNumber(Number(editingBook.original_price), { min: 0 })) {
+        toast.error("Original Price must be a valid number.");
+        return;
+      }
+    }
+
+    if (editingBook.discount_percent !== null && editingBook.discount_percent !== undefined && editingBook.discount_percent !== "") {
+      if (!isValidNumber(Number(editingBook.discount_percent), { min: 0, max: 100 })) {
+        toast.error("Discount % must be between 0 and 100.");
+        return;
+      }
+    }
+
+    setSavingBook(true);
     try {
       await upsertBook.mutateAsync(editingBook);
       toast.success("Book saved!");
       setEditingBook(null);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSavingBook(false);
+    }
   };
 
   const handleSaveCategory = async () => {
-    if (!editingCategory) return;
+    if (!editingCategory) {
+      toast.error("No category data found.");
+      return;
+    }
+
+    if (isBlank(editingCategory.name)) {
+      toast.error("Name (English) is required.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editingCategory.sort_order ?? 0), { min: 0 })) {
+      toast.error("Sort Order must be a valid number.");
+      return;
+    }
+
+    setSavingCategory(true);
     try {
       await upsertCategory.mutateAsync(editingCategory);
       toast.success("Category saved!");
       setEditingCategory(null);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSavingCategory(false);
+    }
   };
 
   if (loading || settingsLoading) {
@@ -355,8 +420,8 @@ const Admin = () => {
     switch (activeSection) {
       case "header": return <HeaderSettingsTab />;
       case "hero": return <HeroSettingsTab />;
-      case "books": return <BooksManagement editingBook={editingBook} setEditingBook={setEditingBook} books={books} categories={categories} publishers={publishers} handleSaveBook={handleSaveBook} handleCoverImageUpload={handleCoverImageUpload} handleSampleUpload={handleSampleUpload} deleteBook={deleteBook} />;
-      case "categories": return <CategoriesManagement editingCategory={editingCategory} setEditingCategory={setEditingCategory} categories={categories} handleSaveCategory={handleSaveCategory} deleteCategory={deleteCategory} />;
+      case "books": return <BooksManagement editingBook={editingBook} setEditingBook={setEditingBook} books={books} categories={categories} publishers={publishers} handleSaveBook={handleSaveBook} handleCoverImageUpload={handleCoverImageUpload} handleSampleUpload={handleSampleUpload} deleteBook={deleteBook} savingBook={savingBook} />;
+      case "categories": return <CategoriesManagement editingCategory={editingCategory} setEditingCategory={setEditingCategory} categories={categories} handleSaveCategory={handleSaveCategory} deleteCategory={deleteCategory} savingCategory={savingCategory} />;
       case "publishers": return <PublishersTab />;
       case "design": return (
         <div className="space-y-6">
@@ -466,7 +531,7 @@ const Admin = () => {
 };
 
 /* ─── Books Management Component ─── */
-const BooksManagement = ({ editingBook, setEditingBook, books, categories, publishers, handleSaveBook, handleCoverImageUpload, handleSampleUpload, deleteBook }: any) => (
+const BooksManagement = ({ editingBook, setEditingBook, books, categories, publishers, handleSaveBook, handleCoverImageUpload, handleSampleUpload, deleteBook, savingBook }: any) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between">
       <CardTitle className="font-serif">Books Management</CardTitle>
@@ -526,7 +591,7 @@ const BooksManagement = ({ editingBook, setEditingBook, books, categories, publi
             </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSaveBook} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" onClick={handleSaveBook} disabled={savingBook} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {savingBook ? "Saving..." : "Save"}</Button>
             <Button size="sm" variant="outline" onClick={() => setEditingBook(null)}>Cancel</Button>
           </div>
         </div>
@@ -550,7 +615,7 @@ const BooksManagement = ({ editingBook, setEditingBook, books, categories, publi
 );
 
 /* ─── Categories Management Component ─── */
-const CategoriesManagement = ({ editingCategory, setEditingCategory, categories, handleSaveCategory, deleteCategory }: any) => (
+const CategoriesManagement = ({ editingCategory, setEditingCategory, categories, handleSaveCategory, deleteCategory, savingCategory }: any) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between">
       <CardTitle className="font-serif">Categories</CardTitle>
@@ -566,7 +631,7 @@ const CategoriesManagement = ({ editingCategory, setEditingCategory, categories,
             <Input type="number" placeholder="Sort Order" value={editingCategory.sort_order || 0} onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })} />
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSaveCategory} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" onClick={handleSaveCategory} disabled={savingCategory} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {savingCategory ? "Saving..." : "Save"}</Button>
             <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>Cancel</Button>
           </div>
         </div>

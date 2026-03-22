@@ -9,6 +9,7 @@ import { useWholesaleDiscounts, useUpsertDiscount, useDeleteDiscount } from "@/h
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { usePublishers } from "@/hooks/usePublishers";
 import { toast } from "sonner";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 const WholesaleDiscountsTab = () => {
   const { data: discounts, isLoading } = useWholesaleDiscounts();
@@ -18,12 +19,43 @@ const WholesaleDiscountsTab = () => {
   const upsertDiscount = useUpsertDiscount();
   const deleteDiscount = useDeleteDiscount();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.reference_value?.trim()) {
-      toast.error("Please fill in all required fields");
+    if (!editing) {
+      toast.error("No discount data found.");
       return;
     }
+
+    if (editing.discount_type === "publisher" && isBlank(editing.reference_value)) {
+      toast.error("Publisher is required.");
+      return;
+    }
+
+    if (editing.discount_type === "category" && isBlank(editing.reference_value)) {
+      toast.error("Category is required.");
+      return;
+    }
+
+    if (editing.discount_type === "product" && isBlank(editing.book_id)) {
+      toast.error("Book is required.");
+      return;
+    }
+
+    const fixedPrice = editing.fixed_price == null ? null : Number(editing.fixed_price);
+    if (fixedPrice !== null && !Number.isNaN(fixedPrice) && fixedPrice < 0) {
+      toast.error("Fixed Price Override must be 0 or greater.");
+      return;
+    }
+
+    if (fixedPrice === null || fixedPrice === 0) {
+      if (!isValidNumber(Number(editing.discount_percent), { min: 0, max: 100 })) {
+        toast.error("Discount % must be between 0 and 100.");
+        return;
+      }
+    }
+
+    setSaving(true);
     try {
       const toSave = { ...editing };
       if (toSave.discount_type === "publisher" || toSave.discount_type === "category") {
@@ -38,8 +70,10 @@ const WholesaleDiscountsTab = () => {
       await upsertDiscount.mutateAsync(toSave);
       toast.success("Discount saved!");
       setEditing(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -164,8 +198,8 @@ const WholesaleDiscountsTab = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={upsertDiscount.isPending} className="gap-1.5">
-                <Save className="h-3.5 w-3.5" /> Save
+              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>

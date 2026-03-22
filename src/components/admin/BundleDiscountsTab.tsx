@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package, Plus, Trash2, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 const BundleDiscountsTab = () => {
   const { data: bundles, isLoading } = useBundleDiscounts();
@@ -19,6 +20,7 @@ const BundleDiscountsTab = () => {
 
   const [editing, setEditing] = useState<any>(null);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const startNew = () => {
     setEditing({
@@ -50,8 +52,34 @@ const BundleDiscountsTab = () => {
   };
 
   const handleSave = async () => {
-    if (!editing?.name) { toast.error("Name required"); return; }
-    if (selectedBooks.length < 2) { toast.error("Select at least 2 books"); return; }
+    if (!editing) {
+      toast.error("No bundle data found.");
+      return;
+    }
+    if (isBlank(editing.name)) {
+      toast.error("Name is required.");
+      return;
+    }
+    if (!isValidNumber(Number(editing.discount_value), { min: 0.01 })) {
+      toast.error("Discount Value must be greater than 0.");
+      return;
+    }
+    if (!isValidNumber(Number(editing.min_qty), { min: 2 })) {
+      toast.error("Min Qty from Bundle must be at least 2.");
+      return;
+    }
+    if (editing.max_discount_amount !== null && editing.max_discount_amount !== undefined && editing.max_discount_amount !== "") {
+      if (!isValidNumber(Number(editing.max_discount_amount), { min: 0 })) {
+        toast.error("Max Discount must be 0 or greater.");
+        return;
+      }
+    }
+    if (selectedBooks.length < 2) {
+      toast.error("Select at least 2 books.");
+      return;
+    }
+
+    setSaving(true);
     try {
       const bundle = { ...editing };
       if (!bundle.start_date) delete bundle.start_date;
@@ -61,8 +89,10 @@ const BundleDiscountsTab = () => {
       toast.success("Bundle saved!");
       setEditing(null);
       setSelectedBooks([]);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -177,8 +207,8 @@ const BundleDiscountsTab = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleSave} size="sm" disabled={upsert.isPending}>
-                <Save className="h-3.5 w-3.5 mr-1" /> Save
+              <Button onClick={handleSave} size="sm" disabled={saving}>
+                <Save className="h-3.5 w-3.5 mr-1" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button variant="outline" size="sm" onClick={() => { setEditing(null); setSelectedBooks([]); }}>
                 Cancel

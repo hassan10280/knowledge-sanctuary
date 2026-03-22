@@ -14,6 +14,7 @@ import {
   useShippingRates, useUpsertShippingRate, useDeleteShippingRate,
   useFreeShippingRules, useUpsertFreeShippingRule, useDeleteFreeShippingRule,
 } from "@/hooks/useShipping";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 /* ─── Zones Sub-Tab ─── */
 const ZonesPanel = () => {
@@ -22,15 +23,25 @@ const ZonesPanel = () => {
   const del = useDeleteShippingZone();
   const [editing, setEditing] = useState<any>(null);
   const [locInput, setLocInput] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.name?.trim()) { toast.error("Zone name required"); return; }
+    if (!editing) { toast.error("No zone data found."); return; }
+    if (isBlank(editing.name)) { toast.error("Zone Name is required."); return; }
+    if (!isValidNumber(Number(editing.sort_order ?? 0), { min: 0 })) { toast.error("Sort Order must be a valid number."); return; }
+    if (!Array.isArray(editing.locations)) { toast.error("Locations must be a valid list."); return; }
+
+    setSaving(true);
     try {
       await upsert.mutateAsync(editing);
       toast.success("Zone saved!");
       setEditing(null);
       setLocInput("");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addLocation = () => {
@@ -83,7 +94,7 @@ const ZonesPanel = () => {
             <Label className="text-xs">Active</Label>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}</Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </div>
@@ -114,14 +125,23 @@ const MethodsPanel = () => {
   const upsert = useUpsertShippingMethod();
   const del = useDeleteShippingMethod();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.name?.trim()) { toast.error("Method name required"); return; }
+    if (!editing) { toast.error("No method data found."); return; }
+    if (isBlank(editing.name)) { toast.error("Method Name is required."); return; }
+    if (!isValidNumber(Number(editing.sort_order ?? 0), { min: 0 })) { toast.error("Sort Order must be a valid number."); return; }
+
+    setSaving(true);
     try {
       await upsert.mutateAsync(editing);
       toast.success("Method saved!");
       setEditing(null);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading...</p>;
@@ -161,7 +181,7 @@ const MethodsPanel = () => {
             <Label className="text-xs">Active</Label>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}</Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </div>
@@ -199,14 +219,51 @@ const RatesPanel = ({ wholesaleOnly }: { wholesaleOnly?: boolean }) => {
   const upsert = useUpsertShippingRate();
   const del = useDeleteShippingRate();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.zone_id || !editing?.method_id) { toast.error("Zone and Method required"); return; }
+    if (!editing) { toast.error("No shipping rate data found."); return; }
+    if (isBlank(editing.zone_id)) { toast.error("Zone is required."); return; }
+    if (isBlank(editing.method_id)) { toast.error("Method is required."); return; }
+    if (editing.rate_type === "flat") {
+      if (!isValidNumber(Number(editing.flat_rate), { min: 0 })) {
+        toast.error("Flat Rate must be 0 or greater.");
+        return;
+      }
+    }
+    if (editing.rate_type === "price_based") {
+      const ranges = Array.isArray(editing.price_ranges) ? editing.price_ranges : [];
+      if (!ranges.length) {
+        toast.error("Price Ranges must contain at least one range.");
+        return;
+      }
+      for (let i = 0; i < ranges.length; i += 1) {
+        const range = ranges[i];
+        if (!isValidNumber(Number(range.min), { min: 0 })) {
+          toast.error(`Price Range ${i + 1}: Min must be 0 or greater.`);
+          return;
+        }
+        if (!isValidNumber(Number(range.cost), { min: 0 })) {
+          toast.error(`Price Range ${i + 1}: Cost must be 0 or greater.`);
+          return;
+        }
+        if (Number(range.max) !== 0 && !isValidNumber(Number(range.max), { min: Number(range.min) })) {
+          toast.error(`Price Range ${i + 1}: Max must be 0 or at least the Min value.`);
+          return;
+        }
+      }
+    }
+
+    setSaving(true);
     try {
       await upsert.mutateAsync(editing);
       toast.success("Rate saved!");
       setEditing(null);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addPriceRange = () => {
@@ -319,7 +376,7 @@ const RatesPanel = ({ wholesaleOnly }: { wholesaleOnly?: boolean }) => {
             <Label className="text-xs">Active</Label>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}</Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </div>
@@ -360,14 +417,26 @@ const FreeShippingPanel = ({ wholesaleOnly }: { wholesaleOnly?: boolean }) => {
   const upsert = useUpsertFreeShippingRule();
   const del = useDeleteFreeShippingRule();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.name?.trim()) { toast.error("Rule name required"); return; }
+    if (!editing) { toast.error("No free shipping rule data found."); return; }
+    if (isBlank(editing.name)) { toast.error("Rule Name is required."); return; }
+    if (!editing.always_free && !isValidNumber(Number(editing.min_order_amount), { min: 0 })) {
+      toast.error("Minimum Order Amount must be 0 or greater.");
+      return;
+    }
+
+    setSaving(true);
     try {
       await upsert.mutateAsync(editing);
       toast.success("Free shipping rule saved!");
       setEditing(null);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading...</p>;
@@ -417,7 +486,7 @@ const FreeShippingPanel = ({ wholesaleOnly }: { wholesaleOnly?: boolean }) => {
             </div>
           )}
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}</Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </div>

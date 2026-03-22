@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCoupons, useUpsertCoupon, useDeleteCoupon } from "@/hooks/useAdvancedDiscounts";
 import { toast } from "sonner";
+import { getErrorMessage, isBlank, isValidNumber } from "@/lib/admin-submit";
 
 interface CouponsTabProps {
   wholesaleOnly?: boolean;
@@ -24,19 +25,53 @@ const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
   const upsert = useUpsertCoupon();
   const deleteCoupon = useDeleteCoupon();
   const [editing, setEditing] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!editing?.code?.trim()) {
-      toast.error("Coupon code is required");
+    if (!editing) {
+      toast.error("No coupon data found.");
       return;
     }
+
+    if (isBlank(editing.code)) {
+      toast.error("Coupon Code is required.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editing.discount_value), { min: 0.01 })) {
+      toast.error("Discount Value must be greater than 0.");
+      return;
+    }
+
+    if (!isValidNumber(Number(editing.min_order_amount ?? 0), { min: 0 })) {
+      toast.error("Min Order Amount must be 0 or greater.");
+      return;
+    }
+
+    if (editing.usage_limit !== null && editing.usage_limit !== undefined && editing.usage_limit !== "") {
+      if (!isValidNumber(Number(editing.usage_limit), { min: 0 })) {
+        toast.error("Usage Limit must be 0 or greater.");
+        return;
+      }
+    }
+
+    if (editing.max_discount_amount !== null && editing.max_discount_amount !== undefined && editing.max_discount_amount !== "") {
+      if (!isValidNumber(Number(editing.max_discount_amount), { min: 0 })) {
+        toast.error("Max Discount Amount must be 0 or greater.");
+        return;
+      }
+    }
+
+    setSaving(true);
     try {
       const toSave = { ...editing, code: editing.code.toUpperCase().trim() };
       await upsert.mutateAsync(toSave);
       toast.success("Coupon saved!");
       setEditing(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -195,8 +230,8 @@ const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
               />
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
-                <Save className="h-3.5 w-3.5" /> Save
+              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>
