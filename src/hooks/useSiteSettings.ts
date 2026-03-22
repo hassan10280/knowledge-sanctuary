@@ -15,11 +15,20 @@ const buildSettingRows = (entries: SettingEntry[]) =>
   }));
 
 async function upsertSettings(entries: SettingEntry[]) {
-  const { error } = await supabase
-    .from("site_settings")
-    .upsert(buildSettingRows(entries), { onConflict: "section,key" });
+  // Verify user is authenticated before attempting write
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("You must be logged in as admin to save settings.");
 
-  if (error) throw error;
+  const rows = buildSettingRows(entries);
+
+  // Use individual upserts to avoid batch timeout issues
+  for (const row of rows) {
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert(row, { onConflict: "section,key" });
+
+    if (error) throw new Error(`Failed to save "${row.key}": ${error.message}`);
+  }
 }
 
 function mergeSettings(existing: SiteSettingRow[] | undefined, entries: SettingEntry[]): SiteSettingRow[] {
