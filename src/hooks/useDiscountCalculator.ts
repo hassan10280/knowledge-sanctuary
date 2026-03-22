@@ -1,6 +1,8 @@
 import { useWholesaleDiscounts } from "@/hooks/useWholesale";
 import { useRetailDiscounts } from "@/hooks/useRetailDiscounts";
 import { useQuantityTiers } from "@/hooks/useAdvancedDiscounts";
+import { useBundleDiscounts } from "@/hooks/useBundleDiscounts";
+import { useStackingRules, isStackingAllowed } from "@/hooks/useStackingRules";
 import { useUserRole } from "@/hooks/useWholesale";
 import type { CartItem } from "@/contexts/CartContext";
 
@@ -8,19 +10,18 @@ export interface DiscountResult {
   originalPrice: number;
   finalPrice: number;
   discountPercent: number;
-  discountSource: string; // "fixed_price" | "product" | "publisher" | "category" | "quantity" | "retail_product" | "retail_category" | "none"
+  discountSource: string;
 }
 
 /**
  * Calculates the effective price for a single book based on discount priority:
- * 
+ *
  * WHOLESALE priority:
  *   1. Fixed Price Override
  *   2. Product-based Discount
  *   3. Publisher-based Discount
  *   4. Category-based Discount
- *   (Quantity tier is applied at cart level, not per-book)
- * 
+ *
  * RETAIL priority:
  *   1. Product-based Discount
  *   2. Category-based Discount
@@ -128,7 +129,6 @@ function calcBookDiscount(
 
 /**
  * Calculate quantity tier discount for wholesale users (applied after per-book discounts).
- * Priority level 5 — only if no higher-priority discount already reduced the price.
  */
 function calcQuantityTierDiscount(
   totalItems: number,
@@ -136,7 +136,6 @@ function calcQuantityTierDiscount(
 ): { percent: number; tierName: string } {
   if (!quantityTiers || quantityTiers.length === 0) return { percent: 0, tierName: "" };
 
-  // Find the best matching tier
   const applicable = quantityTiers
     .filter((t) => totalItems >= t.min_qty && (!t.max_qty || totalItems <= t.max_qty))
     .sort((a, b) => Number(b.discount_percent) - Number(a.discount_percent));
@@ -150,16 +149,71 @@ function calcQuantityTierDiscount(
   return { percent: 0, tierName: "" };
 }
 
+/**
+ * Calculate bundle discount for cart items.
+ */
+function calcBundleDiscount(
+  items: CartItem[],
+  bundles: any[] | undefined,
+  role: string,
+): { amount: number; bundleName: string } {
+  if (!bundles || bundles.length === 0) return { amount: 0, bundleName: "" };
+
+  const now = new Date();
+  const activeBundles = bundles.filter((b) => {
+    if (!b.is_active) return false;
+    if (b.is_wholesale && role !== "wholesale") return false;
+    if (!b.is_wholesale && role === "wholesale") return false;
+    if (b.start_date && new Date(b.start_date) > now) return false;
+    if (b.end_date && new Date(b.end_date) < now) return false;
+    return true;
+  });
+
+  let bestDiscount = 0;
+  let bestName = "";
+
+  for (const bundle of activeBundles) {
+    const bundleBookIds: string[] = bundle.bundle_items?.map((i: any) => i.book_id) || [];
+    if (bundleBookIds.length === 0) continue;
+
+    // Count how many bundle books are in the cart
+    const matchingItems = items.filter((item) => bundleBookIds.includes(item.id));
+    const matchingQty = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    if (matchingQty >= bundle.min_qty) {
+      // Calculate discount on matching items
+      const matchingTotal = matchingItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      let discount = 0;
+
+      if (bundle.discount_type === "percentage") {
+        discount = matchingTotal * (Number(bundle.discount_value) / 100);
+      } else {
+        discount = Number(bundle.discount_value);
+      }
+
+      // Apply max cap
+      if (bundle.max_discount_amount && discount > Number(bundle.max_discount_amount)) {
+        discount = Number(bundle.max_discount_amount);
+      }
+
+      if (discount > bestDiscount) {
+        bestDiscount = discount;
+        bestName = bundle.name;
+      }
+    }
+  }
+
+  return { amount: bestDiscount, bundleName: bestName };
+}
+
 export interface CartDiscountSummary {
-  /** Per-item discounted prices */
   itemPrices: Map<string, DiscountResult>;
-  /** Subtotal after per-item discounts */
   subtotalAfterItemDiscounts: number;
-  /** Quantity tier discount (wholesale only, cart-scope) */
   quantityTierPercent: number;
   quantityTierAmount: number;
   quantityTierName: string;
-  /** Grand subtotal after all product-level discounts (before coupon/shipping) */
+  bundleDiscountAmount: number;
+  bundleDiscountName: string;
   discountedSubtotal: number;
 }
 
@@ -171,15 +225,15 @@ export function useDiscountCalculator() {
   const { data: wholesaleDiscounts } = useWholesaleDiscounts();
   const { data: retailDiscounts } = useRetailDiscounts();
   const { data: quantityTiers } = useQuantityTiers();
+  const { data: bundles } = useBundleDiscounts();
+  const { data: stackingRules } = useStackingRules();
 
   const role = userRole || "retail";
 
-  /** Calculate discount for a single book (used in BookGrid display) */
   const getBookDiscount = (book: { id: string; price: number; publisher?: string; category?: string }): DiscountResult => {
     return calcBookDiscount(book, role, wholesaleDiscounts, retailDiscounts);
   };
 
-  /** Calculate full cart discounts with priority system */
   const getCartDiscounts = (items: CartItem[], bookDetails: Array<{ id: string; price: number; publisher?: string; category?: string }>): CartDiscountSummary => {
     const itemPrices = new Map<string, DiscountResult>();
     let subtotalAfterItemDiscounts = 0;
@@ -196,12 +250,32 @@ export function useDiscountCalculator() {
       totalItems += item.quantity;
     }
 
-    // 5. Quantity tier (wholesale only, cart-scope)
+    // Check if wholesale stacking is blocked
+    const wholesaleHasDiscount = role === "wholesale" && Array.from(itemPrices.values()).some((d) => d.discountSource !== "none");
+    const wholesaleCanStack = isStackingAllowed(stackingRules, "wholesale_plus_other");
+
+    // Bundle discount (priority 7)
+    let bundleDiscountAmount = 0;
+    let bundleDiscountName = "";
+
+    if (!wholesaleHasDiscount || wholesaleCanStack) {
+      const bundleCanStack = isStackingAllowed(stackingRules, "bundle_plus_category");
+      // If bundle can't stack with category and category discount was applied, skip bundle
+      const hasCategoryDiscount = Array.from(itemPrices.values()).some((d) => d.discountSource === "category" || d.discountSource === "retail_category");
+
+      if (!hasCategoryDiscount || bundleCanStack) {
+        const bundleResult = calcBundleDiscount(items, bundles, role);
+        bundleDiscountAmount = bundleResult.amount;
+        bundleDiscountName = bundleResult.bundleName;
+      }
+    }
+
+    // Quantity tier (priority 6, wholesale only)
     let quantityTierPercent = 0;
     let quantityTierAmount = 0;
     let quantityTierName = "";
 
-    if (role === "wholesale") {
+    if (role === "wholesale" && (!wholesaleHasDiscount || wholesaleCanStack)) {
       const cartScopeTiers = quantityTiers?.filter((t) => t.scope === "cart");
       const tier = calcQuantityTierDiscount(totalItems, cartScopeTiers);
       if (tier.percent > 0) {
@@ -211,7 +285,7 @@ export function useDiscountCalculator() {
       }
     }
 
-    const discountedSubtotal = subtotalAfterItemDiscounts - quantityTierAmount;
+    const discountedSubtotal = subtotalAfterItemDiscounts - quantityTierAmount - bundleDiscountAmount;
 
     return {
       itemPrices,
@@ -219,9 +293,11 @@ export function useDiscountCalculator() {
       quantityTierPercent,
       quantityTierAmount,
       quantityTierName,
-      discountedSubtotal,
+      bundleDiscountAmount,
+      bundleDiscountName,
+      discountedSubtotal: Math.max(0, discountedSubtotal),
     };
   };
 
-  return { getBookDiscount, getCartDiscounts, role };
+  return { getBookDiscount, getCartDiscounts, role, stackingRules };
 }

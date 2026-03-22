@@ -1,11 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Percent, ShoppingBag, Building2 } from "lucide-react";
+import { Percent, ShoppingBag, Building2, Package, Layers } from "lucide-react";
 import WholesaleDiscountsTab from "./WholesaleDiscountsTab";
 import QuantityTiersTab from "./QuantityTiersTab";
 import CouponsTab from "./CouponsTab";
 import ShippingRulesTab from "./ShippingRulesTab";
 import RetailDiscountsTab from "./RetailDiscountsTab";
+import BundleDiscountsTab from "./BundleDiscountsTab";
+import StackingRulesTab from "./StackingRulesTab";
 
 const DiscountsTab = () => {
   return (
@@ -21,14 +23,22 @@ const DiscountsTab = () => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="wholesale" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 h-11">
-            <TabsTrigger value="wholesale" className="gap-1.5 text-sm">
-              <Building2 className="h-4 w-4" />
-              Wholesale Discounts
+          <TabsList className="grid w-full grid-cols-4 h-11">
+            <TabsTrigger value="wholesale" className="gap-1.5 text-xs">
+              <Building2 className="h-3.5 w-3.5" />
+              Wholesale
             </TabsTrigger>
-            <TabsTrigger value="retail" className="gap-1.5 text-sm">
-              <ShoppingBag className="h-4 w-4" />
-              Retail Discounts
+            <TabsTrigger value="retail" className="gap-1.5 text-xs">
+              <ShoppingBag className="h-3.5 w-3.5" />
+              Retail
+            </TabsTrigger>
+            <TabsTrigger value="bundles" className="gap-1.5 text-xs">
+              <Package className="h-3.5 w-3.5" />
+              Bundles
+            </TabsTrigger>
+            <TabsTrigger value="rules" className="gap-1.5 text-xs">
+              <Layers className="h-3.5 w-3.5" />
+              Rules
             </TabsTrigger>
           </TabsList>
 
@@ -76,6 +86,16 @@ const DiscountsTab = () => {
                 <ShippingRulesTab retailOnly />
               </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          {/* ─── Bundle Discounts ─── */}
+          <TabsContent value="bundles">
+            <BundleDiscountsTab />
+          </TabsContent>
+
+          {/* ─── Stacking Rules ─── */}
+          <TabsContent value="rules">
+            <StackingRulesTab />
           </TabsContent>
         </Tabs>
       </CardContent>
