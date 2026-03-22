@@ -5,7 +5,7 @@ import { useBundleDiscounts } from "@/hooks/useBundleDiscounts";
 import { useStackingRules, isStackingAllowed } from "@/hooks/useStackingRules";
 import { useUserRole } from "@/hooks/useWholesale";
 import { useSettingsGetter } from "@/hooks/useAppSettings";
-import type { CartItem } from "@/contexts/CartContext";
+import type { CartItem, AppliedCoupon } from "@/contexts/CartContext";
 
 export interface DiscountResult {
   originalPrice: number;
@@ -15,17 +15,9 @@ export interface DiscountResult {
 }
 
 /**
- * Calculates the effective price for a single book based on discount priority:
- *
- * WHOLESALE priority:
- *   1. Fixed Price Override
- *   2. Product-based Discount
- *   3. Publisher-based Discount
- *   4. Category-based Discount
- *
- * RETAIL priority:
- *   1. Product-based Discount
- *   2. Category-based Discount
+ * Per-book discount with strict priority:
+ * Fixed Price > Product % > Publisher > Category
+ * Respects max_discount_amount per discount rule.
  */
 function calcBookDiscount(
   book: { id: string; price: number; publisher?: string; category?: string },
@@ -47,7 +39,7 @@ function calcBookDiscount(
       (d) => d.discount_type === "product" && d.book_id === book.id && d.fixed_price && Number(d.fixed_price) > 0
     );
     if (fixedPrice) {
-      result.finalPrice = Number(fixedPrice.fixed_price);
+      result.finalPrice = Math.max(0, Number(fixedPrice.fixed_price));
       result.discountPercent = Math.round(((originalPrice - result.finalPrice) / originalPrice) * 100);
       result.discountSource = "fixed_price";
       return result;
@@ -59,7 +51,11 @@ function calcBookDiscount(
     );
     if (productDiscount) {
       result.discountPercent = Number(productDiscount.discount_percent);
-      result.finalPrice = originalPrice * (1 - result.discountPercent / 100);
+      let disc = originalPrice * (result.discountPercent / 100);
+      if (productDiscount.max_discount_amount && disc > Number(productDiscount.max_discount_amount)) {
+        disc = Number(productDiscount.max_discount_amount);
+      }
+      result.finalPrice = Math.max(0, originalPrice - disc);
       result.discountSource = "product";
       return result;
     }
@@ -71,7 +67,11 @@ function calcBookDiscount(
       );
       if (pubDiscount && Number(pubDiscount.discount_percent) > 0) {
         result.discountPercent = Number(pubDiscount.discount_percent);
-        result.finalPrice = originalPrice * (1 - result.discountPercent / 100);
+        let disc = originalPrice * (result.discountPercent / 100);
+        if (pubDiscount.max_discount_amount && disc > Number(pubDiscount.max_discount_amount)) {
+          disc = Number(pubDiscount.max_discount_amount);
+        }
+        result.finalPrice = Math.max(0, originalPrice - disc);
         result.discountSource = "publisher";
         return result;
       }
@@ -84,7 +84,11 @@ function calcBookDiscount(
       );
       if (catDiscount && Number(catDiscount.discount_percent) > 0) {
         result.discountPercent = Number(catDiscount.discount_percent);
-        result.finalPrice = originalPrice * (1 - result.discountPercent / 100);
+        let disc = originalPrice * (result.discountPercent / 100);
+        if (catDiscount.max_discount_amount && disc > Number(catDiscount.max_discount_amount)) {
+          disc = Number(catDiscount.max_discount_amount);
+        }
+        result.finalPrice = Math.max(0, originalPrice - disc);
         result.discountSource = "category";
         return result;
       }
@@ -106,7 +110,11 @@ function calcBookDiscount(
     );
     if (productDiscount && Number(productDiscount.discount_percent) > 0) {
       result.discountPercent = Number(productDiscount.discount_percent);
-      result.finalPrice = originalPrice * (1 - result.discountPercent / 100);
+      let disc = originalPrice * (result.discountPercent / 100);
+      if (productDiscount.max_discount_amount && disc > Number(productDiscount.max_discount_amount)) {
+        disc = Number(productDiscount.max_discount_amount);
+      }
+      result.finalPrice = Math.max(0, originalPrice - disc);
       result.discountSource = "retail_product";
       return result;
     }
@@ -118,7 +126,11 @@ function calcBookDiscount(
       );
       if (catDiscount && Number(catDiscount.discount_percent) > 0) {
         result.discountPercent = Number(catDiscount.discount_percent);
-        result.finalPrice = originalPrice * (1 - result.discountPercent / 100);
+        let disc = originalPrice * (result.discountPercent / 100);
+        if (catDiscount.max_discount_amount && disc > Number(catDiscount.max_discount_amount)) {
+          disc = Number(catDiscount.max_discount_amount);
+        }
+        result.finalPrice = Math.max(0, originalPrice - disc);
         result.discountSource = "retail_category";
         return result;
       }
@@ -129,7 +141,7 @@ function calcBookDiscount(
 }
 
 /**
- * Calculate quantity tier discount for wholesale users (applied after per-book discounts).
+ * Quantity tier discount for wholesale users.
  */
 function calcQuantityTierDiscount(
   totalItems: number,
@@ -151,12 +163,13 @@ function calcQuantityTierDiscount(
 }
 
 /**
- * Calculate bundle discount for cart items.
+ * Bundle discount calculation.
  */
 function calcBundleDiscount(
   items: CartItem[],
   bundles: any[] | undefined,
   role: string,
+  itemPrices: Map<string, DiscountResult>,
 ): { amount: number; bundleName: string } {
   if (!bundles || bundles.length === 0) return { amount: 0, bundleName: "" };
 
@@ -177,22 +190,23 @@ function calcBundleDiscount(
     const bundleBookIds: string[] = bundle.bundle_items?.map((i: any) => i.book_id) || [];
     if (bundleBookIds.length === 0) continue;
 
-    // Count how many bundle books are in the cart
     const matchingItems = items.filter((item) => bundleBookIds.includes(item.id));
     const matchingQty = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
 
     if (matchingQty >= bundle.min_qty) {
-      // Calculate discount on matching items
-      const matchingTotal = matchingItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      let discount = 0;
+      // Use discounted item prices for bundle calculation
+      const matchingTotal = matchingItems.reduce((sum, item) => {
+        const ip = itemPrices.get(item.id);
+        return sum + (ip?.finalPrice ?? item.price) * item.quantity;
+      }, 0);
 
+      let discount = 0;
       if (bundle.discount_type === "percentage") {
         discount = matchingTotal * (Number(bundle.discount_value) / 100);
       } else {
         discount = Number(bundle.discount_value);
       }
 
-      // Apply max cap
       if (bundle.max_discount_amount && discount > Number(bundle.max_discount_amount)) {
         discount = Number(bundle.max_discount_amount);
       }
@@ -207,6 +221,27 @@ function calcBundleDiscount(
   return { amount: bestDiscount, bundleName: bestName };
 }
 
+/**
+ * Calculate coupon discount with all validations.
+ */
+function calcCouponDiscount(
+  coupon: AppliedCoupon | null,
+  subtotal: number,
+): number {
+  if (!coupon || subtotal <= 0) return 0;
+  let discount = 0;
+  if (coupon.discount_type === "percentage") {
+    discount = subtotal * (Number(coupon.discount_value) / 100);
+  } else {
+    discount = Math.min(Number(coupon.discount_value), subtotal);
+  }
+  const maxCap = Number((coupon as any).max_discount_amount);
+  if (maxCap > 0 && discount > maxCap) {
+    discount = maxCap;
+  }
+  return Math.max(0, discount);
+}
+
 export interface CartDiscountSummary {
   itemPrices: Map<string, DiscountResult>;
   subtotalAfterItemDiscounts: number;
@@ -218,10 +253,14 @@ export interface CartDiscountSummary {
   discountedSubtotal: number;
   totalSavings: number;
   globalCapApplied: boolean;
+  couponDiscount: number;
+  grandTotal: number;
+  originalSubtotal: number;
 }
 
 /**
- * Main hook: provides discount calculation for both individual books and full cart.
+ * Main hook: single source of truth for all discount calculations on the frontend.
+ * Backend (validate-order) uses identical logic for server-side validation.
  */
 export function useDiscountCalculator() {
   const { data: userRole } = useUserRole();
@@ -238,7 +277,12 @@ export function useDiscountCalculator() {
     return calcBookDiscount(book, role, wholesaleDiscounts, retailDiscounts);
   };
 
-  const getCartDiscounts = (items: CartItem[], bookDetails: Array<{ id: string; price: number; publisher?: string; category?: string }>): CartDiscountSummary => {
+  const getCartDiscounts = (
+    items: CartItem[],
+    bookDetails: Array<{ id: string; price: number; publisher?: string; category?: string }>,
+    coupon?: AppliedCoupon | null,
+    shippingCost?: number,
+  ): CartDiscountSummary => {
     const itemPrices = new Map<string, DiscountResult>();
     let subtotalAfterItemDiscounts = 0;
     let totalItems = 0;
@@ -272,7 +316,7 @@ export function useDiscountCalculator() {
       const hasCategoryDiscount = Array.from(itemPrices.values()).some((d) => d.discountSource === "category" || d.discountSource === "retail_category");
 
       if (!hasCategoryDiscount || bundleCanStack) {
-        const bundleResult = calcBundleDiscount(items, bundles, role);
+        const bundleResult = calcBundleDiscount(items, bundles, role, itemPrices);
         bundleDiscountAmount = bundleResult.amount;
         bundleDiscountName = bundleResult.bundleName;
       }
@@ -316,6 +360,20 @@ export function useDiscountCalculator() {
 
     const discountedSubtotal = Math.max(0, originalSubtotal - totalDiscount);
 
+    // Coupon discount — check stacking rules
+    let couponDiscount = 0;
+    if (coupon) {
+      const couponCanStack = isStackingAllowed(stackingRules, "coupon_plus_wholesale");
+      if (wholesaleHasDiscount && !couponCanStack) {
+        couponDiscount = 0; // Wholesale override: no coupon stacking
+      } else {
+        couponDiscount = calcCouponDiscount(coupon, discountedSubtotal);
+      }
+    }
+
+    const shipping = shippingCost ?? 0;
+    const grandTotal = Math.max(0, discountedSubtotal - couponDiscount + shipping);
+
     return {
       itemPrices,
       subtotalAfterItemDiscounts,
@@ -327,6 +385,9 @@ export function useDiscountCalculator() {
       discountedSubtotal,
       totalSavings: totalDiscount,
       globalCapApplied,
+      couponDiscount,
+      grandTotal,
+      originalSubtotal,
     };
   };
 
