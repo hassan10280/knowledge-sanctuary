@@ -76,14 +76,23 @@ const Checkout = () => {
   );
   const shipping = shippingResult.shippingCost;
 
-  const couponDiscount = appliedCoupon
-    ? appliedCoupon.discount_type === "percentage"
-      ? cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100)
-      : Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal)
-    : 0;
+  // Apply max_discount_amount cap on coupon
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === "percentage") {
+      couponDiscount = cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100);
+    } else {
+      couponDiscount = Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal);
+    }
+    const maxCap = Number((appliedCoupon as any).max_discount_amount);
+    if (maxCap > 0 && couponDiscount > maxCap) {
+      couponDiscount = maxCap;
+    }
+  }
 
   const subtotalAfterCoupon = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount);
   const grandTotal = subtotalAfterCoupon + shipping;
+  const totalSaved = cartDiscounts.totalSavings + couponDiscount;
 
   // Lock item prices when entering step 2
   const lockPrices = useCallback(() => {
