@@ -129,8 +129,8 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
             </>
           )}
         </div>
+        {discountEndDate && <DiscountCountdown endDate={discountEndDate} />}
 
-        {/* Visible action buttons below card */}
         <div className="flex gap-2 mt-2">
           <button
             onClick={() => onViewDetails(book)}
