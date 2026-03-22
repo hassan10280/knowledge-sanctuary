@@ -911,6 +911,7 @@ const Admin = () => {
           <TabsContent value="layout"><LayoutSettingsTab /></TabsContent>
           <TabsContent value="content"><ContentEditorTab /></TabsContent>
           <TabsContent value="analytics"><AnalyticsDashboardTab /></TabsContent>
+          <TabsContent value="abandoned-carts"><AbandonedCartsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
