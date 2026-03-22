@@ -92,7 +92,7 @@ const AdminSettingsTab = () => {
         <CardTitle className="font-serif flex items-center gap-2">
           <Settings2 className="h-5 w-5 text-primary" /> Settings
         </CardTitle>
-        <p className="text-sm text-muted-foreground">Business rules, UI text, and email configuration.</p>
+        <p className="text-sm text-muted-foreground">Business rules and email configuration.</p>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="business" className="space-y-4">
