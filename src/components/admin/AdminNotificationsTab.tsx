@@ -53,7 +53,7 @@ function useMarkAllRead() {
     mutationFn: async () => {
       const { error } = await supabase
         .from("admin_notifications")
-        .update({ is_read: true } as any)
+        .update({ is_read: true })
         .eq("is_read", false);
       if (error) throw error;
     },

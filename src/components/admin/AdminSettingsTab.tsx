@@ -98,7 +98,6 @@ const AdminSettingsTab = () => {
         <Tabs defaultValue="business" className="space-y-4">
           <TabsList className="h-auto bg-muted p-1">
             <TabsTrigger value="business" className="text-xs gap-1.5"><Settings2 className="h-3.5 w-3.5" /> Business</TabsTrigger>
-            <TabsTrigger value="ui_text" className="text-xs gap-1.5"><Type className="h-3.5 w-3.5" /> UI Text</TabsTrigger>
             <TabsTrigger value="email" className="text-xs gap-1.5"><Mail className="h-3.5 w-3.5" /> Email</TabsTrigger>
           </TabsList>
 
@@ -109,22 +108,8 @@ const AdminSettingsTab = () => {
               <Field section="business" field="default_shipping_cost" label="Default Shipping (£)" type="number" />
               <Field section="business" field="free_shipping_threshold" label="Free Shipping Threshold (£)" type="number" />
             </div>
+            <p className="text-xs text-muted-foreground">UI texts are managed in the "Content" tab.</p>
             <Actions section="business" />
-          </TabsContent>
-
-          <TabsContent value="ui_text" className="space-y-4">
-            <p className="text-xs text-muted-foreground">Only key user-facing texts. Changes reflect immediately after save.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field section="ui_text" field="add_to_cart" label="Add to Cart Button" />
-              <Field section="ui_text" field="checkout" label="Checkout Button" />
-              <Field section="ui_text" field="place_order" label="Place Order Button" />
-              <Field section="ui_text" field="out_of_stock" label="Out of Stock Message" />
-            </div>
-            <Field section="ui_text" field="empty_cart" label="Empty Cart Title" />
-            <Field section="ui_text" field="empty_cart_desc" label="Empty Cart Description" />
-            <Field section="ui_text" field="order_success" label="Order Success Message" />
-            <Field section="ui_text" field="no_results" label="No Results Message" />
-            <Actions section="ui_text" />
           </TabsContent>
 
           <TabsContent value="email" className="space-y-4">

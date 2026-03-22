@@ -142,10 +142,10 @@ const ContentEditorTab = () => {
 
   const renderGroup = (group: ContentGroup) => (
     <Collapsible key={group.title} defaultOpen>
-      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors">
+      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors group/collapsible">
         {group.icon}
         <span className="text-sm font-medium flex-1">{group.title}</span>
-        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]/collapsible:rotate-180" />
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-3 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
