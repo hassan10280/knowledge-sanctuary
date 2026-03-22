@@ -65,6 +65,11 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
               {book.discount_percent}% OFF
             </div>
           )}
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black/40 z-10 flex items-center justify-center">
+              <span className="bg-destructive text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">Out of Stock</span>
+            </div>
+          )}
           {(book as any).cover_image ? (
             <img
               src={(book as any).cover_image}
