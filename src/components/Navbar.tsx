@@ -11,6 +11,7 @@ import logoWhite from "@/assets/logo-white.png";
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const { data: settings } = useSiteSettings("header");
   const { user, isAdmin, loading, signOut } = useAuth();
   const { totalItems } = useCart();
@@ -25,8 +26,8 @@ const Navbar = () => {
   }, []);
 
   const get = (key: string, fallback: any) => {
-    const s = settings?.find((s) => s.key === key);
-    return s?.value ?? fallback;
+    const setting = settings?.find((item) => item.key === key);
+    return setting?.value ?? fallback;
   };
 
   const navLinks = get("nav_links", [
@@ -38,7 +39,16 @@ const Navbar = () => {
   ]) as Array<{ label: string; href: string }>;
 
   const logoSize = get("logo_size", "h-14 sm:h-16") as string;
-  const logoUrl = get("logo_url", null) as string | null;
+  const logoUrlSetting = settings?.find((item) => item.key === "logo_url");
+  const rawLogoUrl = typeof logoUrlSetting?.value === "string" ? logoUrlSetting.value.trim() : "";
+  const logoVersion = logoUrlSetting?.updated_at ? encodeURIComponent(logoUrlSetting.updated_at) : "local";
+  const logoSrc = rawLogoUrl
+    ? `${rawLogoUrl}${rawLogoUrl.includes("?") ? "&" : "?"}v=${logoVersion}`
+    : logoWhite;
+
+  useEffect(() => {
+    setLogoLoadFailed(false);
+  }, [logoSrc]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -55,12 +65,13 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24">
-          <Link to="/" className="flex items-center">
+        <div className="flex items-center justify-between h-20 sm:h-24 gap-3 sm:gap-6">
+          <Link to="/" className="flex items-center shrink-0 min-w-0">
             <img
-              src={logoUrl || logoWhite}
+              src={logoLoadFailed ? logoWhite : logoSrc}
               alt="Madrasah Matters"
-              className={`${logoSize} w-auto`}
+              className={`${logoSize} w-auto max-w-[160px] sm:max-w-[220px] object-contain`}
+              onError={() => setLogoLoadFailed(true)}
             />
           </Link>
 
@@ -77,8 +88,7 @@ const Navbar = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Wholesale button */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               to="/auth?intent=wholesale"
               className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-lg hover:bg-[hsl(var(--gold))]/25 transition-all"
