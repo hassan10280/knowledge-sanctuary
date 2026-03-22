@@ -421,7 +421,7 @@ const Admin = () => {
     switch (activeSection) {
       case "header": return <HeaderSettingsTab />;
       case "hero": return <HeroSettingsTab />;
-      case "books": return <BooksManagement editingBook={editingBook} setEditingBook={setEditingBook} books={books} categories={categories} publishers={publishers} handleSaveBook={handleSaveBook} handleCoverImageUpload={handleCoverImageUpload} handleSampleUpload={handleSampleUpload} deleteBook={deleteBook} savingBook={savingBook} />;
+      case "books": return <BooksManagementTab />;
       case "categories": return <CategoriesManagement editingCategory={editingCategory} setEditingCategory={setEditingCategory} categories={categories} handleSaveCategory={handleSaveCategory} deleteCategory={deleteCategory} savingCategory={savingCategory} />;
       case "publishers": return <PublishersTab />;
       case "design": return (
