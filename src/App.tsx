@@ -16,6 +16,8 @@ const Cart = lazy(() => import("./pages/Cart.tsx"));
 const Checkout = lazy(() => import("./pages/Checkout.tsx"));
 const WholesaleApply = lazy(() => import("./pages/WholesaleApply.tsx"));
 const Profile = lazy(() => import("./pages/Profile.tsx"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess.tsx"));
+const Orders = lazy(() => import("./pages/Orders.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
