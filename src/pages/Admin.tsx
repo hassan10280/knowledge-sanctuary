@@ -876,6 +876,7 @@ const Admin = () => {
           <TabsContent value="discounts"><DiscountsTab /></TabsContent>
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
           <TabsContent value="shipping"><ShippingSettingsTab /></TabsContent>
+          <TabsContent value="notifications"><AdminNotificationsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
