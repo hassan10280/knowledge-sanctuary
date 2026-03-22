@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppSettings, useUpdateAppSetting, useSettingsDefaults } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
-import { Save, Settings2, Type, Mail, RotateCcw } from "lucide-react";
+import { Save, Settings2, Mail, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
