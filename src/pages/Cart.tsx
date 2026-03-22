@@ -106,7 +106,7 @@ const Cart = () => {
               )}
               {showSyncBadge && !pricesSyncing && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                  Prices updated
+                  {String(getSetting("messages", "price_updated"))}
                 </span>
               )}
             </div>
