@@ -296,7 +296,7 @@ const Cart = () => {
                 ) : user ? (
                   <Button asChild className="w-full h-12 text-base font-semibold gap-2">
                     <Link to="/checkout">
-                      <span>Proceed to Checkout</span>
+                      <span>{String(getSetting("ui_text", "checkout"))}</span>
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
