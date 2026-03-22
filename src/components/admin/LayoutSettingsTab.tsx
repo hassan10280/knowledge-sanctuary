@@ -210,76 +210,33 @@ const LayoutSettingsTab = () => {
   };
 
   // --- Render menu item ---
-  const MenuItemRow = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => (
-    <div className="space-y-1.5">
-      <div
-        className="flex items-center gap-1.5 p-2 rounded-lg border border-border bg-background hover:bg-muted/50 transition-colors"
-        style={{ marginLeft: `${depth * 20}px` }}
-      >
-        <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 cursor-grab" />
+  const handleUpdateItem = useCallback((id: string, update: Partial<MenuItem>) => {
+    setLocal((prev) => {
+      const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
+      return { ...prev, [device]: { ...prev[device], menu_items: updateMenuItem(items, id, update) } };
+    });
+  }, [device]);
 
-        {depth > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />}
+  const handleRemoveItem = useCallback((id: string) => {
+    setLocal((prev) => {
+      const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
+      return { ...prev, [device]: { ...prev[device], menu_items: removeMenuItem(items, id) } };
+    });
+  }, [device]);
 
-        <Input
-          value={item.label}
-          onChange={(e) => setMenuItems(updateMenuItem(menuItems, item.id, { label: e.target.value }))}
-          className="h-7 text-xs flex-1 min-w-0"
-          placeholder="Label"
-        />
-        <Input
-          value={item.href}
-          onChange={(e) => setMenuItems(updateMenuItem(menuItems, item.id, { href: e.target.value }))}
-          className="h-7 text-xs w-24 font-mono"
-          placeholder="/path"
-        />
+  const handleAddSubItem = useCallback((parentId: string) => {
+    setLocal((prev) => {
+      const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
+      return { ...prev, [device]: { ...prev[device], menu_items: addSubItem(items, parentId) } };
+    });
+  }, [device]);
 
-        {/* Visibility */}
-        <button
-          type="button"
-          onClick={() => setMenuItems(updateMenuItem(menuItems, item.id, { visible: !item.visible }))}
-          className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${item.visible ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
-          title={item.visible ? "Visible" : "Hidden"}
-        >
-          {item.visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-        </button>
-
-        {/* Move up/down */}
-        <button type="button" onClick={() => setMenuItems(moveItem(menuItems, item.id, -1))} className="w-6 h-7 rounded flex items-center justify-center text-muted-foreground hover:bg-muted shrink-0" title="Move up">
-          <ChevronUp className="h-3 w-3" />
-        </button>
-        <button type="button" onClick={() => setMenuItems(moveItem(menuItems, item.id, 1))} className="w-6 h-7 rounded flex items-center justify-center text-muted-foreground hover:bg-muted shrink-0" title="Move down">
-          <ChevronDown className="h-3 w-3" />
-        </button>
-
-        {/* Add sub-item (only depth 0) */}
-        {depth === 0 && (
-          <button
-            type="button"
-            onClick={() => setMenuItems(addSubItem(menuItems, item.id))}
-            className="w-7 h-7 rounded-md bg-muted hover:bg-accent flex items-center justify-center shrink-0 transition-colors"
-            title="Add sub-item"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-        )}
-
-        {/* Delete */}
-        <button
-          type="button"
-          onClick={() => setMenuItems(removeMenuItem(menuItems, item.id))}
-          className="w-7 h-7 rounded-md hover:bg-destructive/10 text-destructive flex items-center justify-center shrink-0 transition-colors"
-          title="Remove"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
-      </div>
-
-      {/* Children */}
-      {item.children.map((child) => (
-        <MenuItemRow key={child.id} item={child} depth={depth + 1} />
-      ))}
-    </div>
-  );
+  const handleMoveItem = useCallback((id: string, direction: -1 | 1) => {
+    setLocal((prev) => {
+      const items = (prev[device]?.["menu_items"] as MenuItem[] | undefined) || DEFAULT_MENU;
+      return { ...prev, [device]: { ...prev[device], menu_items: moveItem(items, id, direction) } };
+    });
+  }, [device]);
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading…</p>;
 
