@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_carts: {
+        Row: {
+          admin_notes: string | null
+          cart_items: Json
+          created_at: string
+          id: string
+          notified_at: string | null
+          recovered_at: string | null
+          recovery_coupon_code: string | null
+          session_id: string | null
+          status: string
+          subtotal: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          cart_items?: Json
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          recovered_at?: string | null
+          recovery_coupon_code?: string | null
+          session_id?: string | null
+          status?: string
+          subtotal?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          cart_items?: Json
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          recovered_at?: string | null
+          recovery_coupon_code?: string | null
+          session_id?: string | null
+          status?: string
+          subtotal?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           created_at: string
