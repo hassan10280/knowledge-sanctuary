@@ -213,6 +213,7 @@ export type Database = {
           discount_percent: number | null
           id: string
           in_stock: boolean | null
+          isbn: string | null
           original_price: number | null
           price: number | null
           publisher: string | null
@@ -220,6 +221,7 @@ export type Database = {
           sample_url: string | null
           show_ratings: boolean | null
           sort_order: number | null
+          stock_quantity: number | null
           title: string
           updated_at: string
         }
@@ -234,6 +236,7 @@ export type Database = {
           discount_percent?: number | null
           id?: string
           in_stock?: boolean | null
+          isbn?: string | null
           original_price?: number | null
           price?: number | null
           publisher?: string | null
@@ -241,6 +244,7 @@ export type Database = {
           sample_url?: string | null
           show_ratings?: boolean | null
           sort_order?: number | null
+          stock_quantity?: number | null
           title: string
           updated_at?: string
         }
@@ -255,6 +259,7 @@ export type Database = {
           discount_percent?: number | null
           id?: string
           in_stock?: boolean | null
+          isbn?: string | null
           original_price?: number | null
           price?: number | null
           publisher?: string | null
@@ -262,6 +267,7 @@ export type Database = {
           sample_url?: string | null
           show_ratings?: boolean | null
           sort_order?: number | null
+          stock_quantity?: number | null
           title?: string
           updated_at?: string
         }
@@ -1091,6 +1097,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deduct_stock: {
+        Args: { p_book_id: string; p_quantity: number }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

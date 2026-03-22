@@ -22,10 +22,12 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
   const navigate = useNavigate();
   const addToCartText = useAppSetting("ui_text", "add_to_cart");
   const isInCart = items.some((i) => i.id === book.id);
+  const isOutOfStock = book.stock_quantity !== null && book.stock_quantity !== undefined && book.stock_quantity <= 0;
   const coverAccent = book.cover_color ? book.cover_color + "cc" : "#2980b9";
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isOutOfStock) return;
     if (isInCart) {
       navigate("/cart", { state: { scrollToCart: true } });
       return;
@@ -61,6 +63,11 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
           {book.discount_percent > 0 && (
             <div className="absolute top-3 left-3 z-10 bg-[hsl(var(--coral))] text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
               {book.discount_percent}% OFF
+            </div>
+          )}
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black/40 z-10 flex items-center justify-center">
+              <span className="bg-destructive text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">Out of Stock</span>
             </div>
           )}
           {(book as any).cover_image ? (
@@ -119,13 +126,18 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
           {/* Add to Cart Button - rounded-full, prominent like reference */}
           <button
             onClick={handleAddToCart}
+            disabled={isOutOfStock}
             className={`mt-3 w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-full transition-all ${
-              isInCart
-                ? "bg-[hsl(var(--mint))]/15 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 hover:bg-[hsl(var(--mint))]/25"
-                : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
+              isOutOfStock
+                ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                : isInCart
+                  ? "bg-[hsl(var(--mint))]/15 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 hover:bg-[hsl(var(--mint))]/25"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
             }`}
           >
-            {isInCart ? (
+            {isOutOfStock ? (
+              "Out of Stock"
+            ) : isInCart ? (
               <>
                 <ArrowRight className="h-4 w-4" />
                 Go to Cart
@@ -173,6 +185,7 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   const { data: retailDiscounts } = useRetailDiscounts();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [sampleBook, setSampleBook] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const getDiscountedPrice = (book: any): number | undefined => {
     const result = getBookDiscount(book);
@@ -213,14 +226,22 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
     );
   }
 
+  // Filter out inactive books (in_stock === false means admin hid the book)
+  const activeBooks = books?.filter(b => b.in_stock !== false);
+
   const query = searchQuery.trim().toLowerCase();
-  const filteredBooks = query
-    ? books?.filter(b =>
+  let filteredBooks = query
+    ? activeBooks?.filter(b =>
         b.title.toLowerCase().includes(query) ||
         b.author.toLowerCase().includes(query) ||
         b.category.toLowerCase().includes(query)
       )
-    : books;
+    : activeBooks;
+
+  // Apply category filter
+  if (selectedCategory !== "all") {
+    filteredBooks = filteredBooks?.filter(b => b.category === selectedCategory);
+  }
 
   const groupedBooks = categories?.map((cat) => ({
     ...cat,
@@ -230,9 +251,30 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   return (
     <section id="book-grid" className="py-20 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {query && (!groupedBooks || groupedBooks.length === 0) && (
+        {/* Category Filter Chips */}
+        {categories && categories.length > 1 && (
+          <div className="flex flex-wrap gap-2 mb-10">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`px-4 py-2 text-sm font-medium rounded-full border transition-all ${selectedCategory === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}`}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.name)}
+                className={`px-4 py-2 text-sm font-medium rounded-full border transition-all ${selectedCategory === cat.name ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {(query || selectedCategory !== "all") && (!groupedBooks || groupedBooks.length === 0) && (
           <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg">No books found for "{searchQuery}"</p>
+            <p className="text-muted-foreground text-lg">No books found{query ? ` for "${searchQuery}"` : ""}</p>
           </div>
         )}
 

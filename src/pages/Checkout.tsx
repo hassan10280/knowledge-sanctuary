@@ -358,6 +358,11 @@ const Checkout = () => {
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
 
+      // 7b. Deduct stock for each item
+      for (const item of items) {
+        await supabase.rpc("deduct_stock", { p_book_id: item.id, p_quantity: item.quantity });
+      }
+
       // 8. Record coupon usage
       if (appliedCoupon?.id) {
         await incrementCouponUsage(appliedCoupon.id);

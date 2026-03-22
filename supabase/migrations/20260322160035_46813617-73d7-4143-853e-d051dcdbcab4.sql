@@ -1,0 +1,3 @@
+
+ALTER TABLE public.books ADD COLUMN IF NOT EXISTS isbn text DEFAULT NULL;
+ALTER TABLE public.books ADD COLUMN IF NOT EXISTS stock_quantity integer DEFAULT 100;
