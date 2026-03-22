@@ -458,4 +458,68 @@ const LayoutSettingsTab = () => {
   );
 };
 
+/** Stable component outside render — prevents focus loss on keystroke */
+const MenuItemRowComponent = ({
+  item,
+  depth = 0,
+  onUpdate,
+  onRemove,
+  onAddSub,
+  onMove,
+}: {
+  item: MenuItem;
+  depth?: number;
+  onUpdate: (id: string, update: Partial<MenuItem>) => void;
+  onRemove: (id: string) => void;
+  onAddSub: (parentId: string) => void;
+  onMove: (id: string, direction: -1 | 1) => void;
+}) => (
+  <div className="space-y-1.5">
+    <div
+      className="flex items-center gap-1.5 p-2 rounded-lg border border-border bg-background hover:bg-muted/50 transition-colors"
+      style={{ marginLeft: `${depth * 20}px` }}
+    >
+      <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 cursor-grab" />
+      {depth > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />}
+      <Input
+        value={item.label}
+        onChange={(e) => onUpdate(item.id, { label: e.target.value })}
+        className="h-7 text-xs flex-1 min-w-0"
+        placeholder="Label"
+      />
+      <Input
+        value={item.href}
+        onChange={(e) => onUpdate(item.id, { href: e.target.value })}
+        className="h-7 text-xs w-24 font-mono"
+        placeholder="/path"
+      />
+      <button
+        type="button"
+        onClick={() => onUpdate(item.id, { visible: !item.visible })}
+        className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${item.visible ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
+        title={item.visible ? "Visible" : "Hidden"}
+      >
+        {item.visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+      </button>
+      <button type="button" onClick={() => onMove(item.id, -1)} className="w-6 h-7 rounded flex items-center justify-center text-muted-foreground hover:bg-muted shrink-0" title="Move up">
+        <ChevronUp className="h-3 w-3" />
+      </button>
+      <button type="button" onClick={() => onMove(item.id, 1)} className="w-6 h-7 rounded flex items-center justify-center text-muted-foreground hover:bg-muted shrink-0" title="Move down">
+        <ChevronDown className="h-3 w-3" />
+      </button>
+      {depth === 0 && (
+        <button type="button" onClick={() => onAddSub(item.id)} className="w-7 h-7 rounded-md bg-muted hover:bg-accent flex items-center justify-center shrink-0 transition-colors" title="Add sub-item">
+          <Plus className="h-3 w-3" />
+        </button>
+      )}
+      <button type="button" onClick={() => onRemove(item.id)} className="w-7 h-7 rounded-md hover:bg-destructive/10 text-destructive flex items-center justify-center shrink-0 transition-colors" title="Remove">
+        <Trash2 className="h-3 w-3" />
+      </button>
+    </div>
+    {item.children.map((child) => (
+      <MenuItemRowComponent key={child.id} item={child} depth={depth + 1} onUpdate={onUpdate} onRemove={onRemove} onAddSub={onAddSub} onMove={onMove} />
+    ))}
+  </div>
+);
+
 export default LayoutSettingsTab;
