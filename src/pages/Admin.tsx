@@ -669,6 +669,9 @@ const Admin = () => {
             <TabsTrigger value="layout" className="text-xs sm:text-sm gap-1.5">
               <Layers className="h-3.5 w-3.5" /> Layout
             </TabsTrigger>
+            <TabsTrigger value="content" className="text-xs sm:text-sm gap-1.5">
+              <PenLine className="h-3.5 w-3.5" /> Content
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
