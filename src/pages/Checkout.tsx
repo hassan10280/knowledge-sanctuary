@@ -297,7 +297,7 @@ const Checkout = () => {
           .eq("user_id", user.id)
           .maybeSingle();
         if (usageCheck) {
-          toast.error("You have already used this coupon");
+          toast.error(String(getSetting("messages", "coupon_already_used")));
           setSubmitting(false);
           return;
         }
