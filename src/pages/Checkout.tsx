@@ -375,7 +375,7 @@ const Checkout = () => {
       } as any);
 
       clearCart();
-      toast.success("Order placed successfully!");
+      toast.success(String(getSetting("messages", "order_placed")));
       navigate(`/order-success?id=${order.id}`);
     } catch (e: any) {
       toast.error(e.message || "Failed to place order");
