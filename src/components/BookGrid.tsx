@@ -6,6 +6,7 @@ import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight }
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { useCart } from "@/contexts/CartContext";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
+import { useAppSetting } from "@/hooks/useAppSettings";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 
