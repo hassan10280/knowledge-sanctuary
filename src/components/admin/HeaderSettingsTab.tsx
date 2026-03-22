@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
+import { useSiteSettings, useUpdateSettingsBatch } from "@/hooks/useSiteSettings";
 import { toast } from "sonner";
 import { Save, Plus, Trash2, ChevronRight, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -86,32 +86,42 @@ function deepAddChild(links: NavLink[], path: number[]): NavLink[] {
 
 /* ── Main component ── */
 const HeaderSettingsTab = () => {
-  const { data: settings, isLoading } = useSiteSettings();
-  const updateSetting = useUpdateSetting();
+  const { data: settings, isLoading } = useSiteSettings("header");
+  const updateSettingsBatch = useUpdateSettingsBatch();
   const [local, setLocal] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!settings) return;
     const headerSettings: Record<string, any> = {};
     settings.forEach((s) => {
-      if (s.section === "header") headerSettings[s.key] = s.value;
+      headerSettings[s.key] = s.value;
     });
+    if (isDirty) return;
     setLocal(headerSettings);
-  }, [settings]);
+  }, [settings, isDirty]);
 
   const get = useCallback((key: string) => local[key] ?? "", [local]);
   const set = useCallback((key: string, value: any) => {
+    setIsDirty(true);
+    setLastSavedAt(null);
     setLocal((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const saveAll = async () => {
+    const entries = Object.entries(local).filter(([, value]) => value !== undefined);
+    if (!entries.length) return;
+
     setSaving(true);
     try {
-      const entries = Object.entries(local);
-      for (const [key, value] of entries) {
-        await updateSetting.mutateAsync({ section: "header", key, value });
-      }
+      await updateSettingsBatch.mutateAsync({
+        section: "header",
+        entries: entries.map(([key, value]) => ({ key, value })),
+      });
+      setIsDirty(false);
+      setLastSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       toast.success("✅ Header settings saved successfully!");
     } catch (e: any) {
       toast.error("Save failed: " + e.message);
@@ -128,8 +138,7 @@ const HeaderSettingsTab = () => {
     if (error) { toast.error("Upload failed: " + error.message); return; }
     const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(path);
     set("logo_url", urlData.publicUrl);
-    await updateSetting.mutateAsync({ section: "header", key: "logo_url", value: urlData.publicUrl });
-    toast.success("Logo uploaded!");
+    toast.success("Logo uploaded. Now click Save Header.");
   };
 
   const logoSizePx = typeof local.logo_size_px === "number" ? local.logo_size_px : 56;
@@ -213,10 +222,15 @@ const HeaderSettingsTab = () => {
         </div>
 
         {/* Save Button */}
-        <Button onClick={saveAll} disabled={saving} className="gap-2 w-full sm:w-auto">
-          <Save className="h-4 w-4" />
-          {saving ? "Saving..." : "Save Header"}
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={saveAll} disabled={saving || !isDirty} className="gap-2 w-full sm:w-auto">
+            <Save className="h-4 w-4" />
+            {saving ? "Saving..." : isDirty ? "Save Header" : "Saved"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {saving ? "Saving your latest header changes..." : lastSavedAt ? `Last saved at ${lastSavedAt}` : isDirty ? "You have unsaved changes." : "All header changes are saved."}
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
