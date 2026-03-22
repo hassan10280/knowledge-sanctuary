@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, Tag } from "lucide-react";
 import { motion } from "framer-motion";
+import { trackEvent } from "@/lib/analytics";
 import { Link } from "react-router-dom";
 
 const BANK_DETAILS = {
