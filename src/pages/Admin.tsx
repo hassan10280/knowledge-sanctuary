@@ -659,6 +659,9 @@ const Admin = () => {
             <TabsTrigger value="orders" className="text-xs sm:text-sm gap-1.5">
               <Package className="h-3.5 w-3.5" /> Orders
             </TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm gap-1.5">
+              <Cog className="h-3.5 w-3.5" /> Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
