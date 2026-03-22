@@ -251,9 +251,30 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   return (
     <section id="book-grid" className="py-20 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {query && (!groupedBooks || groupedBooks.length === 0) && (
+        {/* Category Filter Chips */}
+        {categories && categories.length > 1 && (
+          <div className="flex flex-wrap gap-2 mb-10">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`px-4 py-2 text-sm font-medium rounded-full border transition-all ${selectedCategory === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}`}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.name)}
+                className={`px-4 py-2 text-sm font-medium rounded-full border transition-all ${selectedCategory === cat.name ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {(query || selectedCategory !== "all") && (!groupedBooks || groupedBooks.length === 0) && (
           <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg">No books found for "{searchQuery}"</p>
+            <p className="text-muted-foreground text-lg">No books found{query ? ` for "${searchQuery}"` : ""}</p>
           </div>
         )}
 
