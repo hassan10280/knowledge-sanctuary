@@ -7,6 +7,7 @@ import { useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
 import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
+import { useSettingsGetter } from "@/hooks/useAppSettings";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
