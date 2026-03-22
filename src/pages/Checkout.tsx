@@ -268,7 +268,7 @@ const Checkout = () => {
         .eq("transaction_id", txnId)
         .maybeSingle();
       if (existingTxn) {
-        toast.error("This transaction ID has already been used");
+        toast.error(String(getSetting("messages", "txn_id_duplicate")));
         setSubmitting(false);
         return;
       }
