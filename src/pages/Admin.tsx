@@ -877,7 +877,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="whatsapp"><WhatsAppSettings /></TabsContent>
-          <TabsContent value="footer"><FooterSettings /></TabsContent>
+          <TabsContent value="footer"><FooterEditorTab /></TabsContent>
 
           {/* USERS TAB */}
           <TabsContent value="users">
