@@ -32,6 +32,7 @@ const Checkout = () => {
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
   const { data: books } = useBooks();
   const { getCartDiscounts } = useDiscountCalculator();
+  const { getSetting } = useSettingsGetter();
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(1);

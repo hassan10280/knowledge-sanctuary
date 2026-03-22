@@ -163,7 +163,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
           ) : (
             <>
               <ShoppingCart className="h-3.5 w-3.5" />
-              Add to Cart
+              {addToCartText}
             </>
           )}
         </button>
