@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, Tag } from "lucide-react";
 import { motion } from "framer-motion";
+import { trackEvent } from "@/lib/analytics";
 import { Link } from "react-router-dom";
 
 const BANK_DETAILS = {
@@ -374,6 +375,21 @@ const Checkout = () => {
         message: `New order #${order.id.slice(0, 8)} — £${serverTotal.toFixed(2)} via bank transfer`,
       } as any);
 
+      trackEvent("order_completed", {
+        order_id: order.id,
+        items: items.map((i) => {
+          const disc = cartDiscounts.itemPrices.get(i.id);
+          return { id: i.id, price: disc ? disc.finalPrice : i.price, quantity: i.quantity, title: i.title };
+        }),
+        subtotal: cartDiscounts.originalSubtotal,
+        discount_amount: serverDiscountAmount,
+        shipping_cost: validation.server.shipping,
+        final_total: serverTotal,
+        coupon_code: appliedCoupon?.code || null,
+        shipping_method: shippingResult.methodName,
+        address_city: addrCity,
+      }, user?.id);
+
       clearCart();
       toast.success(String(getSetting("messages", "order_placed")));
       navigate(`/order-success?id=${order.id}`);
@@ -555,7 +571,24 @@ const Checkout = () => {
               )}
 
               <Button
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  const payload = {
+                    items: items.map((i) => ({ id: i.id, price: i.price, quantity: i.quantity, title: i.title })),
+                    subtotal: cartDiscounts.originalSubtotal,
+                    discount_amount: cartDiscounts.totalSavings,
+                    shipping_cost: shipping,
+                    final_total: cartDiscounts.grandTotal,
+                    coupon_code: appliedCoupon?.code || null,
+                    shipping_method: shippingResult.methodName,
+                    address_city: addrCity,
+                  };
+                  trackEvent("begin_checkout", payload, user?.id);
+                  if (selectedMethodId) {
+                    trackEvent("shipping_selected", { shipping_method: shippingResult.methodName, shipping_cost: shipping, address_city: addrCity }, user?.id);
+                  }
+                  trackEvent("payment_started", payload, user?.id);
+                  setStep(2);
+                }}
                 disabled={!isAddressValid}
                 className="w-full h-11 font-semibold gap-2"
               >

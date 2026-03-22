@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/analytics";
 
 export interface CartItem {
   id: string;
@@ -115,9 +116,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, quantity: 1 }];
     });
+    trackEvent("add_to_cart", {
+      product_id: item.id,
+      product_title: item.title,
+      product_price: item.price,
+    });
   };
 
-  const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (item) {
+      trackEvent("remove_from_cart", {
+        product_id: item.id,
+        product_title: item.title,
+        product_price: item.price,
+      });
+    }
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  };
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) return removeItem(id);

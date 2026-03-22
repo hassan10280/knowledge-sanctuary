@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X, Tag, Truck, Loader2, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 const Cart = () => {
   const { getSetting } = useSettingsGetter();
@@ -68,6 +69,11 @@ const Cart = () => {
         isWholesale,
       });
       setAppliedCoupon(coupon);
+      trackEvent("apply_coupon", {
+        coupon_code: coupon.code,
+        subtotal: cartDiscounts.discountedSubtotal,
+        items: items.map((i) => ({ id: i.id, price: i.price, quantity: i.quantity })),
+      }, user?.id);
       toast.success(`Coupon "${coupon.code}" applied!`);
     } catch (e: any) {
       toast.error(e.message);
