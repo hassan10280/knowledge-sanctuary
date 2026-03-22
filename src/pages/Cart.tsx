@@ -253,6 +253,15 @@ const Cart = () => {
                       <span>-£{cartDiscounts.quantityTierAmount.toFixed(2)}</span>
                     </div>
                   )}
+                  {cartDiscounts.bundleDiscountAmount > 0.01 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        <span>Bundle: {cartDiscounts.bundleDiscountName}</span>
+                      </span>
+                      <span>-£{cartDiscounts.bundleDiscountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   {couponDiscount > 0 && (
                     <div className="flex justify-between text-sm text-primary">
                       <span>Coupon Discount</span>

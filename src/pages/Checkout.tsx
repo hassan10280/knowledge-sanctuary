@@ -314,7 +314,7 @@ const Checkout = () => {
       }
 
       const rawSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-      const totalDiscountAmount = rawSubtotal - cartDiscounts.subtotalAfterItemDiscounts + cartDiscounts.quantityTierAmount;
+      const totalDiscountAmount = rawSubtotal - cartDiscounts.subtotalAfterItemDiscounts + cartDiscounts.quantityTierAmount + cartDiscounts.bundleDiscountAmount;
 
       // 6. Use server-validated total for the order
       const serverTotal = validation.server.total;
