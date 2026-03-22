@@ -901,6 +901,7 @@ const Admin = () => {
           <TabsContent value="orders"><AdminOrdersTab /></TabsContent>
           <TabsContent value="settings"><AdminSettingsTab /></TabsContent>
           <TabsContent value="layout"><LayoutSettingsTab /></TabsContent>
+          <TabsContent value="content"><ContentEditorTab /></TabsContent>
         </Tabs>
       </div>
     </div>
