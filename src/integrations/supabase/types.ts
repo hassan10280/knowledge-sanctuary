@@ -328,9 +328,13 @@ export type Database = {
           billing_country: string | null
           billing_name: string | null
           billing_postcode: string | null
+          coupon_discount: number | null
+          coupon_id: string | null
           created_at: string
+          discount_amount: number | null
           id: string
           payment_method: string
+          shipping_cost: number | null
           shipping_override: number | null
           status: string
           total: number
@@ -344,9 +348,13 @@ export type Database = {
           billing_country?: string | null
           billing_name?: string | null
           billing_postcode?: string | null
+          coupon_discount?: number | null
+          coupon_id?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           payment_method?: string
+          shipping_cost?: number | null
           shipping_override?: number | null
           status?: string
           total?: number
@@ -360,9 +368,13 @@ export type Database = {
           billing_country?: string | null
           billing_name?: string | null
           billing_postcode?: string | null
+          coupon_discount?: number | null
+          coupon_id?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           payment_method?: string
+          shipping_cost?: number | null
           shipping_override?: number | null
           status?: string
           total?: number
@@ -370,7 +382,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
