@@ -353,8 +353,8 @@ const Admin = () => {
 
   const renderContent = () => {
     switch (activeSection) {
-      case "header": return <HeaderSettings />;
-      case "hero": return <HeroSettings />;
+      case "header": return <HeaderSettingsTab />;
+      case "hero": return <HeroSettingsTab />;
       case "books": return <BooksManagement editingBook={editingBook} setEditingBook={setEditingBook} books={books} categories={categories} publishers={publishers} handleSaveBook={handleSaveBook} handleCoverImageUpload={handleCoverImageUpload} handleSampleUpload={handleSampleUpload} deleteBook={deleteBook} />;
       case "categories": return <CategoriesManagement editingCategory={editingCategory} setEditingCategory={setEditingCategory} categories={categories} handleSaveCategory={handleSaveCategory} deleteCategory={deleteCategory} />;
       case "publishers": return <PublishersTab />;
