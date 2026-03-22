@@ -7,6 +7,9 @@ import { usePublishers } from "@/hooks/usePublishers";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image, Layers, Ticket, Truck, Bell, Package, Cog, PenLine, BarChart3, ShoppingCart, X, Home } from "lucide-react";
+import HeaderSettingsTab from "@/components/admin/HeaderSettingsTab";
+import HeroSettingsTab from "@/components/admin/HeroSettingsTab";
+import WhatsAppSettingsTab from "@/components/admin/WhatsAppSettingsTab";
 import { Button } from "@/components/ui/button";
 import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
@@ -341,84 +344,7 @@ const Admin = () => {
     );
   };
 
-  /* ─── Section content renderers ─── */
-  const HeaderSettings = () => {
-    const logoSizePx = getSettingNum("header", "logo_size_px", 56);
-    return (
-      <Card>
-        <CardHeader><CardTitle className="font-serif">Header & Navigation</CardTitle></CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <label className="text-sm font-medium text-foreground block mb-2">Upload Logo</label>
-            <div className="flex items-center gap-4">
-              <Input type="file" accept="image/*" onChange={handleLogoUpload} className="max-w-xs" />
-              {getSetting("header", "logo_url") && <img src={getSetting("header", "logo_url") as string} alt="Logo" className="h-12 rounded" />}
-            </div>
-          </div>
-          {/* Custom logo size slider */}
-          <div className="space-y-3">
-            <Label className="text-xs font-medium text-foreground">Logo Size (px)</Label>
-            <div className="flex items-center gap-3">
-              <Slider value={[logoSizePx]} onValueChange={([v]) => setSetting("header", "logo_size_px", v)} min={20} max={120} step={1} className="flex-1" />
-              <Input type="number" value={logoSizePx} onChange={(e) => setSetting("header", "logo_size_px", Math.min(120, Math.max(20, parseInt(e.target.value) || 56)))} className="w-20 h-9 text-xs text-center font-mono" />
-              <span className="text-xs text-muted-foreground">px</span>
-            </div>
-            {getSetting("header", "logo_url") && (
-              <div className="p-3 bg-muted/30 rounded-lg border border-dashed border-border">
-                <p className="text-[10px] text-muted-foreground mb-2">Preview</p>
-                <img src={getSetting("header", "logo_url") as string} alt="Preview" style={{ height: `${logoSizePx}px` }} className="object-contain" />
-              </div>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-foreground">Navigation Links</Label>
-            <p className="text-xs text-muted-foreground mb-2">Edit labels and URLs for nav links</p>
-            {(() => {
-              const links = (getSetting("header", "nav_links") || []) as Array<{ label: string; href: string }>;
-              return (
-                <div className="space-y-2">
-                  {links.map((link, i) => (
-                    <div key={i} className="flex gap-2 items-center">
-                      <Input value={link.label} placeholder="Label" className="flex-1 h-8 text-xs" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => { const updated = [...links]; updated[i] = { ...updated[i], label: e.target.value }; setSetting("header", "nav_links", updated); }} />
-                      <Input value={link.href} placeholder="/path" className="flex-1 h-8 text-xs" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => { const updated = [...links]; updated[i] = { ...updated[i], href: e.target.value }; setSetting("header", "nav_links", updated); }} />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => { const updated = links.filter((_, idx) => idx !== i); setSetting("header", "nav_links", updated); }}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setSetting("header", "nav_links", [...links, { label: "", href: "/" }])}><Plus className="h-3 w-3" /> Add Link</Button>
-                </div>
-              );
-            })()}
-          </div>
-          <Button onClick={() => saveAllSection("header")} className="gap-2"><Save className="h-4 w-4" /> Save Header</Button>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const HeroSettings = () => (
-    <Card>
-      <CardHeader><CardTitle className="font-serif">Hero Section</CardTitle></CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-1.5"><Label className="text-xs font-medium">Badge Text</Label><Input value={(getSetting("hero", "badge_text") as string) || ""} onChange={(e) => setSetting("hero", "badge_text", e.target.value)} className="h-9 text-xs" /></div>
-        <div className="space-y-1.5"><Label className="text-xs font-medium">Title</Label><Input value={(getSetting("hero", "title") as string) || ""} onChange={(e) => setSetting("hero", "title", e.target.value)} className="h-9 text-xs" /></div>
-        <div className="space-y-1.5"><Label className="text-xs font-medium">Title Accent</Label><Input value={(getSetting("hero", "title_accent") as string) || ""} onChange={(e) => setSetting("hero", "title_accent", e.target.value)} className="h-9 text-xs" /></div>
-        <div className="space-y-1.5"><Label className="text-xs font-medium">Description</Label><Textarea value={(getSetting("hero", "description") as string) || ""} onChange={(e) => setSetting("hero", "description", e.target.value)} rows={3} className="text-xs" /></div>
-        <div className="space-y-1.5"><Label className="text-xs font-medium">Search Placeholder</Label><Input value={(getSetting("hero", "search_placeholder") as string) || ""} onChange={(e) => setSetting("hero", "search_placeholder", e.target.value)} className="h-9 text-xs" /></div>
-        <Button onClick={() => saveAllSection("hero")} className="gap-2"><Save className="h-4 w-4" /> Save Hero</Button>
-      </CardContent>
-    </Card>
-  );
-
-  const WhatsAppSettings = () => (
-    <Card>
-      <CardHeader><CardTitle className="font-serif flex items-center gap-2"><MessageCircle className="h-5 w-5 text-[#25D366]" /> WhatsApp Contact</CardTitle></CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-1.5"><Label className="text-xs font-medium">WhatsApp Number</Label><Input value={(getSetting("whatsapp", "number") as string) || "+8801703396108"} onChange={(e) => setSetting("whatsapp", "number", e.target.value)} className="h-9 text-xs" placeholder="+8801703396108" /><p className="text-xs text-muted-foreground">Include country code</p></div>
-        <div className="space-y-1.5"><Label className="text-xs font-medium">Default Message</Label><Textarea value={(getSetting("whatsapp", "message") as string) || "Hello! I have a question."} onChange={(e) => setSetting("whatsapp", "message", e.target.value)} rows={2} className="text-xs" /></div>
-        <Button onClick={() => saveAllSection("whatsapp")} className="gap-2"><Save className="h-4 w-4" /> Save WhatsApp</Button>
-      </CardContent>
-    </Card>
-  );
+  /* HeaderSettings, HeroSettings, WhatsAppSettings extracted to separate components */
 
   const handleNavClick = (id: string) => {
     setActiveSection(id);
@@ -427,8 +353,8 @@ const Admin = () => {
 
   const renderContent = () => {
     switch (activeSection) {
-      case "header": return <HeaderSettings />;
-      case "hero": return <HeroSettings />;
+      case "header": return <HeaderSettingsTab />;
+      case "hero": return <HeroSettingsTab />;
       case "books": return <BooksManagement editingBook={editingBook} setEditingBook={setEditingBook} books={books} categories={categories} publishers={publishers} handleSaveBook={handleSaveBook} handleCoverImageUpload={handleCoverImageUpload} handleSampleUpload={handleSampleUpload} deleteBook={deleteBook} />;
       case "categories": return <CategoriesManagement editingCategory={editingCategory} setEditingCategory={setEditingCategory} categories={categories} handleSaveCategory={handleSaveCategory} deleteCategory={deleteCategory} />;
       case "publishers": return <PublishersTab />;
@@ -448,7 +374,7 @@ const Admin = () => {
           </Card>
         </div>
       );
-      case "whatsapp": return <WhatsAppSettings />;
+      case "whatsapp": return <WhatsAppSettingsTab />;
       case "footer": return <FooterEditorTab />;
       case "users": return <UsersManagement />;
       case "wholesale-requests": return <WholesaleRequestsTab />;
