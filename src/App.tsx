@@ -46,6 +46,7 @@ const App = () => (
     <DataSyncProvider>
       <TooltipProvider>
         <CartProvider>
+          <AbandonedCartTracker />
           <Toaster />
           <Sonner />
           <BrowserRouter>
