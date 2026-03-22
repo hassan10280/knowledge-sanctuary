@@ -126,13 +126,18 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
           {/* Add to Cart Button - rounded-full, prominent like reference */}
           <button
             onClick={handleAddToCart}
+            disabled={isOutOfStock}
             className={`mt-3 w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-full transition-all ${
-              isInCart
-                ? "bg-[hsl(var(--mint))]/15 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 hover:bg-[hsl(var(--mint))]/25"
-                : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
+              isOutOfStock
+                ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                : isInCart
+                  ? "bg-[hsl(var(--mint))]/15 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 hover:bg-[hsl(var(--mint))]/25"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
             }`}
           >
-            {isInCart ? (
+            {isOutOfStock ? (
+              "Out of Stock"
+            ) : isInCart ? (
               <>
                 <ArrowRight className="h-4 w-4" />
                 Go to Cart
