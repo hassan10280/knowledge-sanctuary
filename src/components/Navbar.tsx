@@ -6,7 +6,7 @@ import ProfileDropdown from "@/components/ProfileDropdown";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/contexts/CartContext";
-import logoWhite from "@/assets/logo-white.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -44,7 +44,8 @@ const Navbar = () => {
   const logoVersion = logoUrlSetting?.updated_at ? encodeURIComponent(logoUrlSetting.updated_at) : "local";
   const logoSrc = rawLogoUrl
     ? `${rawLogoUrl}${rawLogoUrl.includes("?") ? "&" : "?"}v=${logoVersion}`
-    : logoWhite;
+    : logoTransparent;
+  const isUsingFallbackLogo = !rawLogoUrl || logoLoadFailed;
 
   useEffect(() => {
     setLogoLoadFailed(false);
@@ -68,9 +69,9 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20 sm:h-24 gap-3 sm:gap-6">
           <Link to="/" className="flex items-center shrink-0 min-w-0">
             <img
-              src={logoLoadFailed ? logoWhite : logoSrc}
+              src={logoLoadFailed ? logoTransparent : logoSrc}
               alt="Madrasah Matters"
-              className={`${logoSize} w-auto max-w-[160px] sm:max-w-[220px] object-contain`}
+              className={`${logoSize} w-auto max-w-[160px] sm:max-w-[220px] object-contain ${isUsingFallbackLogo ? "brightness-0 invert" : ""}`}
               onError={() => setLogoLoadFailed(true)}
             />
           </Link>
