@@ -673,6 +673,9 @@ const Admin = () => {
             <TabsTrigger value="content" className="text-xs sm:text-sm gap-1.5">
               <PenLine className="h-3.5 w-3.5" /> Content
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs sm:text-sm gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5" /> Analytics
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
