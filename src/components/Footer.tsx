@@ -4,14 +4,21 @@ import logoWhite from "@/assets/logo-white.png";
 
 const Footer = () => {
   const { data: settings } = useSiteSettings("footer");
-  const { data: headerSettings } = useSiteSettings("header");
+  const { data: headerSettings, isLoading: headerLoading } = useSiteSettings("header");
 
   const get = (key: string, fallback: any) => {
     const s = settings?.find((s) => s.key === key);
     return s?.value ?? fallback;
   };
 
-  const logoUrl = headerSettings?.find((s) => s.key === "logo_url")?.value as string | null;
+  const logoSetting = headerSettings?.find((s) => s.key === "logo_url");
+  const rawLogoUrl = typeof logoSetting?.value === "string" ? logoSetting.value.trim() : "";
+  const logoVersion = logoSetting?.updated_at
+    ? encodeURIComponent(`${logoSetting.updated_at}-${rawLogoUrl}`)
+    : "local";
+  const logoUrl = rawLogoUrl
+    ? `${rawLogoUrl}${rawLogoUrl.includes("?") ? "&" : "?"}v=${logoVersion}`
+    : null;
   const description = get("description", "A curated digital sanctuary of Islamic scholarship for the UK community.") as string;
   const copyright = get("copyright", "© 2026 MadrasahMatters. All rights reserved.") as string;
   const tagline = get("tagline", "Made with reverence for knowledge.") as string;
@@ -40,7 +47,11 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="md:col-span-1">
-              <img src={logoUrl || logoWhite} alt="MadrasahMatters" className="h-14 w-auto mb-4" />
+              {headerLoading ? (
+                <div className="h-14 w-40 mb-4 rounded-md bg-white/10 animate-pulse" aria-label="Loading footer logo" />
+              ) : (
+                <img src={logoUrl || logoWhite} alt="MadrasahMatters" className="h-14 w-auto mb-4" />
+              )}
               <p className="text-sm text-white/50 leading-relaxed">{description}</p>
             </div>
             <LinkList title="Library" links={libraryLinks} />
