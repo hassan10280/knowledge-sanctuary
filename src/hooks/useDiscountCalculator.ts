@@ -216,6 +216,8 @@ export interface CartDiscountSummary {
   bundleDiscountAmount: number;
   bundleDiscountName: string;
   discountedSubtotal: number;
+  totalSavings: number;
+  globalCapApplied: boolean;
 }
 
 /**
