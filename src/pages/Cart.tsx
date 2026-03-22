@@ -261,6 +261,12 @@ const Cart = () => {
                     <span>Subtotal</span>
                     <span>£{originalSubtotal.toFixed(2)}</span>
                   </div>
+                  {role === "wholesale" && (
+                    <div className="flex items-center gap-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200 mb-1">
+                      <Building2 className="h-3.5 w-3.5 text-amber-700" />
+                      <span className="text-xs font-semibold text-amber-800">Wholesale Price Applied</span>
+                    </div>
+                  )}
                   {totalItemSavings > 0.01 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span className="flex items-center gap-1">
