@@ -317,6 +317,15 @@ const Cart = () => {
                     <span className="font-semibold text-foreground">Estimated Total</span>
                     <span className="text-xl font-bold text-primary">£{grandTotal.toFixed(2)}</span>
                   </div>
+                  {totalSaved > 0.01 && (
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-primary/5 border border-primary/10">
+                      <span className="text-xs font-medium text-primary">🎉 You saved</span>
+                      <span className="text-sm font-bold text-primary">£{totalSaved.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cartDiscounts.globalCapApplied && (
+                    <p className="text-[10px] text-muted-foreground text-right">Global discount cap applied</p>
+                  )}
                 </div>
                 {user && wholesaleStatus === "pending" ? (
                   <div className="space-y-3">
