@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +13,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
@@ -25,7 +25,7 @@ const BANK_DETAILS = {
 };
 
 const Checkout = () => {
-  const { items, totalPrice, clearCart, appliedCoupon } = useCart();
+  const { items, totalPrice, clearCart, appliedCoupon, pricesSyncing } = useCart();
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
@@ -39,6 +39,9 @@ const Checkout = () => {
   const [submitting, setSubmitting] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
+
+  // Price lock: snapshot prices when entering payment step
+  const [lockedSubtotal, setLockedSubtotal] = useState<number | null>(null);
 
   const [address, setAddress] = useState({
     full_name: "",
@@ -79,6 +82,27 @@ const Checkout = () => {
 
   const subtotalAfterCoupon = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount);
   const grandTotal = subtotalAfterCoupon + shipping;
+
+  // Lock prices when entering step 2, detect drift
+  useEffect(() => {
+    if (step === 2 && lockedSubtotal === null) {
+      setLockedSubtotal(cartDiscounts.discountedSubtotal);
+    }
+    if (step === 1) {
+      setLockedSubtotal(null);
+    }
+  }, [step]);
+
+  // Detect price changes during payment step
+  const priceChanged = lockedSubtotal !== null && Math.abs(lockedSubtotal - cartDiscounts.discountedSubtotal) > 0.01;
+
+  useEffect(() => {
+    if (priceChanged && step === 2) {
+      toast.warning("Prices or discounts have changed. Please review your order.", { duration: 6000 });
+      setLockedSubtotal(null);
+      setStep(1);
+    }
+  }, [priceChanged, step]);
 
   // Auto-select cheapest available method
   useEffect(() => {
@@ -213,7 +237,6 @@ const Checkout = () => {
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
 
-      // Increment coupon usage if a coupon was applied
       if (appliedCoupon?.id) {
         await incrementCouponUsage(appliedCoupon.id);
       }

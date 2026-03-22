@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CartItem {
   id: string;
@@ -26,6 +27,7 @@ interface CartContextType {
   totalPrice: number;
   appliedCoupon: AppliedCoupon | null;
   setAppliedCoupon: (coupon: AppliedCoupon | null) => void;
+  pricesSyncing: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -33,6 +35,56 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [pricesSyncing, setPricesSyncing] = useState(false);
+  const [itemCount, setItemCount] = useState(0);
+
+  // Track item count separately to avoid infinite loops
+  useEffect(() => {
+    setItemCount(items.length);
+  }, [items.length]);
+
+  // Sync cart prices with latest DB prices
+  const syncPrices = useCallback(async () => {
+    if (items.length === 0) return;
+    const ids = items.map((i) => i.id);
+    setPricesSyncing(true);
+    try {
+      const { data } = await supabase.from("books").select("id, price, title, author").in("id", ids);
+      if (data && data.length > 0) {
+        setItems((prev) => {
+          let changed = false;
+          const next = prev.map((item) => {
+            const fresh = data.find((b: any) => b.id === item.id);
+            if (fresh && Number(fresh.price) !== item.price) {
+              changed = true;
+              return { ...item, price: Number(fresh.price), title: fresh.title, author: fresh.author };
+            }
+            return item;
+          });
+          return changed ? next : prev;
+        });
+      }
+    } catch {
+      // silent
+    }
+    setPricesSyncing(false);
+  }, [itemCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync on mount & when items are added/removed
+  useEffect(() => {
+    if (itemCount > 0) syncPrices();
+  }, [itemCount, syncPrices]);
+
+  // Sync when tab becomes visible
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && items.length > 0) {
+        syncPrices();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [syncPrices, items.length]);
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
@@ -60,7 +112,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, appliedCoupon, setAppliedCoupon }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, appliedCoupon, setAppliedCoupon, pricesSyncing }}>
       {children}
     </CartContext.Provider>
   );
