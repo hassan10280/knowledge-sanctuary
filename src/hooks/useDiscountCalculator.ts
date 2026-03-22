@@ -4,6 +4,7 @@ import { useQuantityTiers } from "@/hooks/useAdvancedDiscounts";
 import { useBundleDiscounts } from "@/hooks/useBundleDiscounts";
 import { useStackingRules, isStackingAllowed } from "@/hooks/useStackingRules";
 import { useUserRole } from "@/hooks/useWholesale";
+import { useSettingsGetter } from "@/hooks/useAppSettings";
 import type { CartItem } from "@/contexts/CartContext";
 
 export interface DiscountResult {
