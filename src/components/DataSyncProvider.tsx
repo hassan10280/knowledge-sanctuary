@@ -29,10 +29,18 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let invalidateTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const scheduleSync = () => {
+    const scheduleSync = (table?: string) => {
       if (invalidateTimer) clearTimeout(invalidateTimer);
 
       invalidateTimer = setTimeout(() => {
+        if (table === "site_settings") {
+          void Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["site_settings"] }),
+            queryClient.refetchQueries({ queryKey: ["site_settings"], type: "active" }),
+          ]);
+          return;
+        }
+
         queryClient.invalidateQueries();
         queryClient.refetchQueries({ type: "active" });
       }, 120);
@@ -48,7 +56,7 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
           schema: "public",
           table,
         },
-        scheduleSync,
+        () => scheduleSync(table),
       );
     });
 
