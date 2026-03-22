@@ -179,6 +179,12 @@ const Checkout = () => {
         .insert({
           user_id: user.id,
           total: grandTotal,
+          shipping_cost: shipping,
+          coupon_id: appliedCoupon?.id || null,
+          coupon_discount: couponDiscount,
+          discount_amount: cartDiscounts.subtotalAfterItemDiscounts < items.reduce((s, i) => s + i.price * i.quantity, 0)
+            ? items.reduce((s, i) => s + i.price * i.quantity, 0) - cartDiscounts.subtotalAfterItemDiscounts + cartDiscounts.quantityTierAmount
+            : 0,
           payment_method: "bank_transfer",
           transaction_id: transactionId.trim(),
           billing_name: currentAddress.full_name,
@@ -186,7 +192,7 @@ const Checkout = () => {
           billing_city: currentAddress.city,
           billing_postcode: currentAddress.postcode,
           billing_country: "United Kingdom",
-        })
+        } as any)
         .select("id")
         .single();
 
