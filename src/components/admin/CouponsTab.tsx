@@ -219,8 +219,11 @@ const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
                   <div>
                     <p className="text-xs text-muted-foreground">
                       {c.discount_type === "percentage" ? `${c.discount_value}% off` : `£${Number(c.discount_value).toFixed(2)} off`}
+                      {(c as any).max_discount_amount ? ` • Cap £${Number((c as any).max_discount_amount).toFixed(2)}` : ""}
                       {c.min_order_amount ? ` • Min £${Number(c.min_order_amount).toFixed(2)}` : ""}
-                      {c.wholesale_only ? " • Wholesale only" : ""}
+                      {c.wholesale_only ? " • Wholesale" : ""}
+                      {(c as any).auto_apply ? " • Auto" : ""}
+                      {(c as any).first_order_only ? " • 1st order" : ""}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
                       Used: {c.used_count}{c.usage_limit ? `/${c.usage_limit}` : ""}
