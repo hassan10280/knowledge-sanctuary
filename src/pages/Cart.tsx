@@ -16,7 +16,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const Cart = () => {
-  const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, totalItems, pricesSyncing } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
@@ -39,7 +39,6 @@ const Cart = () => {
 
   const cartDiscounts = getCartDiscounts(items, bookDetails);
 
-  // Use original prices from discount calculator for accurate subtotal display
   const originalSubtotal = items.reduce((sum, item) => {
     const disc = cartDiscounts.itemPrices.get(item.id);
     return sum + (disc?.originalPrice ?? item.price) * item.quantity;
@@ -229,7 +228,7 @@ const Cart = () => {
                   )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      Shipping
+                      Shipping (est.)
                       {shippingResult.zoneName !== "Default" && (
                         <span className="text-xs text-muted-foreground/70">({shippingResult.zoneName})</span>
                       )}
@@ -239,8 +238,9 @@ const Cart = () => {
                   {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
                     <p className="text-xs text-green-600 text-right">{shippingResult.freeShippingReason}</p>
                   )}
+                  <p className="text-xs text-muted-foreground/70 italic">Final shipping calculated at checkout based on your address</p>
                   <div className="border-t border-border pt-3 flex justify-between">
-                    <span className="font-semibold text-foreground">Total</span>
+                    <span className="font-semibold text-foreground">Estimated Total</span>
                     <span className="text-xl font-bold text-primary">£{grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
