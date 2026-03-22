@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useRetailDiscounts } from "@/hooks/useRetailDiscounts";
 import { useAppSetting } from "@/hooks/useAppSettings";
+import { trackEvent } from "@/lib/analytics";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 import DiscountCountdown from "./DiscountCountdown";
