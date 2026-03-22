@@ -59,14 +59,23 @@ const Cart = () => {
   const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
   const shipping = shippingResult.shippingCost;
 
-  const couponDiscount = appliedCoupon
-    ? appliedCoupon.discount_type === "percentage"
-      ? cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100)
-      : Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal)
-    : 0;
+  // Apply max_discount_amount cap on coupon
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === "percentage") {
+      couponDiscount = cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100);
+    } else {
+      couponDiscount = Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal);
+    }
+    const maxCap = Number((appliedCoupon as any).max_discount_amount);
+    if (maxCap > 0 && couponDiscount > maxCap) {
+      couponDiscount = maxCap;
+    }
+  }
 
   const grandTotal = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount + shipping);
   const totalItemSavings = originalSubtotal - cartDiscounts.subtotalAfterItemDiscounts;
+  const totalSaved = cartDiscounts.totalSavings + couponDiscount;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
