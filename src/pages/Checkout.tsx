@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
@@ -14,7 +14,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Check, Loader2, Clock, Truck, Tag } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
@@ -26,7 +26,7 @@ const BANK_DETAILS = {
 };
 
 const Checkout = () => {
-  const { items, totalPrice, clearCart, appliedCoupon, pricesSyncing } = useCart();
+  const { items, clearCart, appliedCoupon, pricesSyncing } = useCart();
   const { user, loading: authLoading } = useAuth();
   const { wholesaleStatus, wholesaleLoading } = useWholesaleStatus(user);
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
@@ -34,15 +34,12 @@ const Checkout = () => {
   const { getCartDiscounts } = useDiscountCalculator();
   const { getSetting } = useSettingsGetter();
   const navigate = useNavigate();
-  const location = useLocation();
   const [step, setStep] = useState(1);
   const [savedAddress, setSavedAddress] = useState<any>(null);
   const [useSaved, setUseSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
-
-  // Item-level price lock: snapshot per-item prices when entering payment step
   const [lockedPrices, setLockedPrices] = useState<Map<string, number> | null>(null);
 
   const [address, setAddress] = useState({
@@ -64,11 +61,9 @@ const Checkout = () => {
     category: b.category || "",
   }));
 
-  const cartDiscounts = getCartDiscounts(items, bookDetails);
-
   const addrCity = (useSaved && savedAddress) ? savedAddress.city : address.city;
   const shippingResult = calcNewShipping(
-    cartDiscounts.discountedSubtotal,
+    0, // will be recalculated
     isWholesale,
     addrCity,
     undefined,
@@ -76,23 +71,8 @@ const Checkout = () => {
   );
   const shipping = shippingResult.shippingCost;
 
-  // Apply max_discount_amount cap on coupon
-  let couponDiscount = 0;
-  if (appliedCoupon) {
-    if (appliedCoupon.discount_type === "percentage") {
-      couponDiscount = cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100);
-    } else {
-      couponDiscount = Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal);
-    }
-    const maxCap = Number((appliedCoupon as any).max_discount_amount);
-    if (maxCap > 0 && couponDiscount > maxCap) {
-      couponDiscount = maxCap;
-    }
-  }
-
-  const subtotalAfterCoupon = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount);
-  const grandTotal = subtotalAfterCoupon + shipping;
-  const totalSaved = cartDiscounts.totalSavings + couponDiscount;
+  // Single source of truth: all calculations from one function
+  const cartDiscounts = getCartDiscounts(items, bookDetails, appliedCoupon, shipping);
 
   // Lock item prices when entering step 2
   const lockPrices = useCallback(() => {
@@ -236,7 +216,7 @@ const Checkout = () => {
 
     setSubmitting(true);
     try {
-      // 1. Server-side price validation
+      // 1. Server-side validation — backend is the final authority
       const { data: validation, error: valErr } = await supabase.functions.invoke("validate-order", {
         body: {
           items: items.map((item) => {
@@ -252,20 +232,28 @@ const Checkout = () => {
           city: addrCity,
           is_wholesale: isWholesale,
           claimed_subtotal: cartDiscounts.discountedSubtotal,
-          claimed_coupon_discount: couponDiscount,
+          claimed_coupon_discount: cartDiscounts.couponDiscount,
           claimed_shipping: shipping,
-          claimed_total: grandTotal,
+          claimed_total: cartDiscounts.grandTotal,
         },
       });
 
       if (valErr) {
-        toast.error("Order validation failed. Please try again.");
+        // Graceful fallback for auth/network errors
+        if (valErr.message?.includes("401") || valErr.message?.includes("Unauthorized")) {
+          toast.error("Your session has expired. Please log in again.", { duration: 5000 });
+          navigate("/auth", { state: { from: "/checkout" } });
+        } else {
+          toast.error("Could not verify order. Please try again.");
+        }
         setSubmitting(false);
         return;
       }
 
       if (!validation?.valid) {
-        toast.error(validation?.error || "Price mismatch detected. Please refresh and try again.", { duration: 8000 });
+        toast.warning(validation?.error || "Prices have changed. Please review your order.", { duration: 6000 });
+        setLockedPrices(null);
+        setStep(1);
         setSubmitting(false);
         return;
       }
@@ -322,11 +310,9 @@ const Checkout = () => {
         });
       }
 
-      const rawSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-      const totalDiscountAmount = rawSubtotal - cartDiscounts.subtotalAfterItemDiscounts + cartDiscounts.quantityTierAmount + cartDiscounts.bundleDiscountAmount;
-
-      // 6. Use server-validated total for the order
+      // 6. Use SERVER-VALIDATED values for order (not frontend values)
       const serverTotal = validation.server.total;
+      const serverDiscountAmount = validation.server.discount_amount || 0;
 
       const { data: order, error: orderError } = await supabase
         .from("orders")
@@ -336,7 +322,7 @@ const Checkout = () => {
           shipping_cost: validation.server.shipping,
           coupon_id: appliedCoupon?.id || null,
           coupon_discount: validation.server.coupon_discount,
-          discount_amount: totalDiscountAmount > 0 ? totalDiscountAmount : 0,
+          discount_amount: serverDiscountAmount > 0 ? serverDiscountAmount : 0,
           payment_method: "bank_transfer",
           transaction_id: txnId,
           billing_name: currentAddress.full_name,
@@ -350,7 +336,7 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // 7. Insert order items
+      // 7. Insert order items with server-validated prices
       const orderItems = items.map((item) => {
         const disc = cartDiscounts.itemPrices.get(item.id);
         const finalPrice = disc ? disc.finalPrice : item.price;
@@ -387,7 +373,8 @@ const Checkout = () => {
       toast.success(String(getSetting("messages", "order_placed")));
       navigate(`/order-success?id=${order.id}`);
     } catch (e: any) {
-      toast.error(e.message || "Failed to place order");
+      console.error("Order error:", e);
+      toast.error("Failed to place order. Please try again.");
     }
     setSubmitting(false);
   };
@@ -399,6 +386,9 @@ const Checkout = () => {
       </div>
     );
   }
+
+  const totalSaved = cartDiscounts.totalSavings + cartDiscounts.couponDiscount;
+  const itemLevelSavings = cartDiscounts.originalSubtotal - cartDiscounts.subtotalAfterItemDiscounts;
 
   return (
     <div className="min-h-screen bg-background">
@@ -632,30 +622,39 @@ const Checkout = () => {
                   )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Subtotal</span>
-                    <span>£{cartDiscounts.discountedSubtotal.toFixed(2)}</span>
+                    <span>£{cartDiscounts.originalSubtotal.toFixed(2)}</span>
                   </div>
-                  {cartDiscounts.totalSavings > 0.01 && (
-                    <div className="flex justify-between text-sm text-primary">
-                      <span>Product Discounts</span>
-                      <span>-£{(cartDiscounts.totalSavings - cartDiscounts.quantityTierAmount - cartDiscounts.bundleDiscountAmount).toFixed(2)}</span>
+                  {itemLevelSavings > 0.01 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        <span>Product Discounts</span>
+                      </span>
+                      <span>-£{itemLevelSavings.toFixed(2)}</span>
                     </div>
                   )}
                   {cartDiscounts.quantityTierAmount > 0.01 && (
-                    <div className="flex justify-between text-sm text-primary">
-                      <span>Qty Tier ({cartDiscounts.quantityTierName})</span>
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        <span>Qty Tier ({cartDiscounts.quantityTierName})</span>
+                      </span>
                       <span>-£{cartDiscounts.quantityTierAmount.toFixed(2)}</span>
                     </div>
                   )}
                   {cartDiscounts.bundleDiscountAmount > 0.01 && (
-                    <div className="flex justify-between text-sm text-primary">
-                      <span>Bundle: {cartDiscounts.bundleDiscountName}</span>
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        <span>Bundle: {cartDiscounts.bundleDiscountName}</span>
+                      </span>
                       <span>-£{cartDiscounts.bundleDiscountAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  {couponDiscount > 0 && (
+                  {cartDiscounts.couponDiscount > 0 && (
                     <div className="flex justify-between text-sm text-primary">
                       <span>Coupon ({appliedCoupon?.code})</span>
-                      <span>-£{couponDiscount.toFixed(2)}</span>
+                      <span>-£{cartDiscounts.couponDiscount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm text-muted-foreground">
@@ -670,7 +669,7 @@ const Checkout = () => {
                   </div>
                   <div className="flex justify-between font-semibold text-foreground border-t border-border pt-2">
                     <span>Total</span>
-                    <span className="text-lg text-primary">£{grandTotal.toFixed(2)}</span>
+                    <span className="text-lg text-primary">£{cartDiscounts.grandTotal.toFixed(2)}</span>
                   </div>
                   {totalSaved > 0.01 && (
                     <div className="flex justify-between items-center p-2 rounded-lg bg-primary/5 border border-primary/10">
@@ -739,7 +738,7 @@ const Checkout = () => {
                     ) : (
                       <>
                         <Check className="h-4 w-4" />
-                        <span>Place Order — £{grandTotal.toFixed(2)}</span>
+                        <span>Place Order — £{cartDiscounts.grandTotal.toFixed(2)}</span>
                       </>
                     )}
                   </Button>

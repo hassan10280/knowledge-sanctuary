@@ -47,20 +47,30 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
+    // Use getClaims for JWT verification (faster, no network call)
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData, error: userError } = await userClient.auth.getUser();
-    if (userError || !userData?.user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = userData.user.id;
+    const userId = claimsData.claims.sub as string;
 
     const payload: OrderPayload = await req.json();
     const admin = createClient(supabaseUrl, serviceKey);
+
+    // Validate payload
+    if (!payload.items || !Array.isArray(payload.items) || payload.items.length === 0) {
+      return new Response(
+        JSON.stringify({ valid: false, error: "Empty order" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // 1. Fetch books
     const bookIds = payload.items.map((i) => i.book_id);
@@ -70,7 +80,17 @@ Deno.serve(async (req) => {
       .in("id", bookIds);
     if (booksErr) throw booksErr;
 
-    const outOfStock = (books || []).filter((b: any) => !b.in_stock);
+    // Validate all books exist
+    if (!books || books.length !== bookIds.length) {
+      const foundIds = (books || []).map((b: any) => b.id);
+      const missing = bookIds.filter((id) => !foundIds.includes(id));
+      return new Response(
+        JSON.stringify({ valid: false, error: `Books not found: ${missing.join(", ")}` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const outOfStock = books.filter((b: any) => !b.in_stock);
     if (outOfStock.length > 0) {
       return new Response(
         JSON.stringify({ valid: false, error: `Out of stock: ${outOfStock.map((b: any) => b.id).join(", ")}` }),
@@ -80,8 +100,8 @@ Deno.serve(async (req) => {
 
     // 2. Fetch all discount data in parallel
     const [
-      { data: wholesaleDiscounts },
-      { data: retailDiscounts },
+      wholesaleResult,
+      retailResult,
       { data: stackingRules },
       { data: bundleDiscounts },
       { data: bundleItems },
@@ -90,10 +110,10 @@ Deno.serve(async (req) => {
     ] = await Promise.all([
       payload.is_wholesale
         ? admin.from("wholesale_discounts").select("*")
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [] as any[] }),
       !payload.is_wholesale
         ? admin.from("retail_discounts").select("*").eq("is_active", true)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [] as any[] }),
       admin.from("discount_stacking_rules").select("*"),
       admin.from("bundle_discounts").select("*").eq("is_active", true),
       admin.from("bundle_items").select("*"),
@@ -101,28 +121,24 @@ Deno.serve(async (req) => {
       admin.from("site_settings").select("*").eq("section", "business"),
     ]);
 
+    const wholesaleDiscounts = wholesaleResult.data || [];
+    const retailDiscounts = retailResult.data || [];
     const rules = stackingRules || [];
     const now = new Date();
 
-    // 3. Per-item discount calculation (same priority as frontend)
+    // 3. Per-item discount calculation — strict priority order
     const itemPrices = new Map<string, { originalPrice: number; finalPrice: number; discountSource: string }>();
     let subtotalAfterItemDiscounts = 0;
     let totalItems = 0;
 
     for (const item of payload.items) {
-      const book = (books || []).find((b: any) => b.id === item.book_id);
-      if (!book) {
-        return new Response(
-          JSON.stringify({ valid: false, error: `Book ${item.book_id} not found` }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      const book = books.find((b: any) => b.id === item.book_id)!;
       const originalPrice = Number(book.price);
       let unitPrice = originalPrice;
       let discountSource = "none";
 
-      if (payload.is_wholesale && wholesaleDiscounts) {
+      if (payload.is_wholesale) {
+        // Fixed Price Override
         const fixedPrice = wholesaleDiscounts.find(
           (d: any) => d.discount_type === "product" && d.book_id === book.id && d.fixed_price && Number(d.fixed_price) > 0
         );
@@ -130,40 +146,53 @@ Deno.serve(async (req) => {
           unitPrice = Number(fixedPrice.fixed_price);
           discountSource = "fixed_price";
         } else {
+          // Product-based
           const productDisc = wholesaleDiscounts.find(
             (d: any) => d.discount_type === "product" && d.book_id === book.id && Number(d.discount_percent) > 0
           );
           if (productDisc) {
-            unitPrice = originalPrice * (1 - Number(productDisc.discount_percent) / 100);
+            let disc = originalPrice * (Number(productDisc.discount_percent) / 100);
+            if (productDisc.max_discount_amount && disc > Number(productDisc.max_discount_amount)) {
+              disc = Number(productDisc.max_discount_amount);
+            }
+            unitPrice = originalPrice - disc;
             discountSource = "product";
-          } else if (book.publisher) {
-            const pubDisc = wholesaleDiscounts.find(
-              (d: any) => d.discount_type === "publisher" && d.reference_value === book.publisher
-            );
-            if (pubDisc && Number(pubDisc.discount_percent) > 0) {
-              unitPrice = originalPrice * (1 - Number(pubDisc.discount_percent) / 100);
-              discountSource = "publisher";
-            } else if (book.category) {
+          } else {
+            // Publisher-based
+            let applied = false;
+            if (book.publisher) {
+              const pubDisc = wholesaleDiscounts.find(
+                (d: any) => d.discount_type === "publisher" && d.reference_value === book.publisher
+              );
+              if (pubDisc && Number(pubDisc.discount_percent) > 0) {
+                let disc = originalPrice * (Number(pubDisc.discount_percent) / 100);
+                if (pubDisc.max_discount_amount && disc > Number(pubDisc.max_discount_amount)) {
+                  disc = Number(pubDisc.max_discount_amount);
+                }
+                unitPrice = originalPrice - disc;
+                discountSource = "publisher";
+                applied = true;
+              }
+            }
+            // Category-based
+            if (!applied && book.category) {
               const catDisc = wholesaleDiscounts.find(
                 (d: any) => d.discount_type === "category" && d.reference_value === book.category
               );
               if (catDisc && Number(catDisc.discount_percent) > 0) {
-                unitPrice = originalPrice * (1 - Number(catDisc.discount_percent) / 100);
+                let disc = originalPrice * (Number(catDisc.discount_percent) / 100);
+                if (catDisc.max_discount_amount && disc > Number(catDisc.max_discount_amount)) {
+                  disc = Number(catDisc.max_discount_amount);
+                }
+                unitPrice = originalPrice - disc;
                 discountSource = "category";
               }
             }
-          } else if (book.category) {
-            const catDisc = wholesaleDiscounts.find(
-              (d: any) => d.discount_type === "category" && d.reference_value === book.category
-            );
-            if (catDisc && Number(catDisc.discount_percent) > 0) {
-              unitPrice = originalPrice * (1 - Number(catDisc.discount_percent) / 100);
-              discountSource = "category";
-            }
           }
         }
-      } else if (retailDiscounts) {
-        const activeRetail = (retailDiscounts as any[]).filter((d: any) => {
+      } else {
+        // Retail discounts with date validation
+        const activeRetail = retailDiscounts.filter((d: any) => {
           if (!d.is_active) return false;
           if (d.start_date && new Date(d.start_date) > now) return false;
           if (d.end_date && new Date(d.end_date) < now) return false;
@@ -173,18 +202,29 @@ Deno.serve(async (req) => {
           (d: any) => d.discount_type === "product" && d.book_id === book.id
         );
         if (productDisc && Number(productDisc.discount_percent) > 0) {
-          unitPrice = originalPrice * (1 - Number(productDisc.discount_percent) / 100);
+          let disc = originalPrice * (Number(productDisc.discount_percent) / 100);
+          if (productDisc.max_discount_amount && disc > Number(productDisc.max_discount_amount)) {
+            disc = Number(productDisc.max_discount_amount);
+          }
+          unitPrice = originalPrice - disc;
           discountSource = "retail_product";
         } else if (book.category) {
           const catDisc = activeRetail.find(
             (d: any) => d.discount_type === "category" && d.reference_value === book.category
           );
           if (catDisc && Number(catDisc.discount_percent) > 0) {
-            unitPrice = originalPrice * (1 - Number(catDisc.discount_percent) / 100);
+            let disc = originalPrice * (Number(catDisc.discount_percent) / 100);
+            if (catDisc.max_discount_amount && disc > Number(catDisc.max_discount_amount)) {
+              disc = Number(catDisc.max_discount_amount);
+            }
+            unitPrice = originalPrice - disc;
             discountSource = "retail_category";
           }
         }
       }
+
+      // Ensure price never goes below 0
+      unitPrice = Math.max(0, unitPrice);
 
       itemPrices.set(item.book_id, { originalPrice, finalPrice: unitPrice, discountSource });
       subtotalAfterItemDiscounts += unitPrice * item.quantity;
@@ -200,7 +240,7 @@ Deno.serve(async (req) => {
     const wholesaleHasDiscount = payload.is_wholesale && Array.from(itemPrices.values()).some((d) => d.discountSource !== "none");
     const wholesaleCanStack = isStackingAllowed(rules, "wholesale_plus_other");
 
-    // 4. Bundle discount
+    // 4. Bundle discount (only if stacking allowed)
     let bundleDiscountAmount = 0;
     if (!wholesaleHasDiscount || wholesaleCanStack) {
       const bundleCanStack = isStackingAllowed(rules, "bundle_plus_category");
@@ -218,6 +258,7 @@ Deno.serve(async (req) => {
           return true;
         });
 
+        let bestDiscount = 0;
         for (const bundle of activeBundles) {
           const bItems = (bundleItems || []).filter((bi: any) => bi.bundle_id === bundle.id);
           const bundleBookIds = bItems.map((bi: any) => bi.book_id);
@@ -241,11 +282,10 @@ Deno.serve(async (req) => {
             if (bundle.max_discount_amount && discount > Number(bundle.max_discount_amount)) {
               discount = Number(bundle.max_discount_amount);
             }
-            if (discount > bundleDiscountAmount) {
-              bundleDiscountAmount = discount;
-            }
+            if (discount > bestDiscount) bestDiscount = discount;
           }
         }
+        bundleDiscountAmount = bestDiscount;
       }
     }
 
@@ -261,14 +301,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 6. Calculate total discount with global cap
+    // 6. Apply global cap
     const itemLevelSavings = originalSubtotal - subtotalAfterItemDiscounts;
     let totalDiscount = itemLevelSavings + quantityTierAmount + bundleDiscountAmount;
 
-    // Global cap from site_settings
     const getSettingValue = (key: string): number => {
       const setting = (siteSettings || []).find((s: any) => s.key === key);
-      return setting ? Number(setting.value) || 0 : 0;
+      if (!setting) return 0;
+      const val = setting.value;
+      return typeof val === "number" ? val : Number(val) || 0;
     };
     const globalCapPercent = getSettingValue("global_max_discount_percent");
     const globalCapAmount = getSettingValue("global_max_discount_amount");
@@ -286,49 +327,56 @@ Deno.serve(async (req) => {
     // 7. Coupon validation
     let serverCouponDiscount = 0;
     if (payload.coupon_code) {
-      const { data: coupon } = await admin
-        .from("coupons")
-        .select("*")
-        .eq("code", payload.coupon_code.toUpperCase().trim())
-        .eq("is_active", true)
-        .maybeSingle();
+      const couponCanStack = isStackingAllowed(rules, "coupon_plus_wholesale");
+      // If wholesale has discount and coupon+wholesale stacking is not allowed, skip coupon
+      if (wholesaleHasDiscount && !couponCanStack) {
+        serverCouponDiscount = 0;
+      } else {
+        const { data: coupon } = await admin
+          .from("coupons")
+          .select("*")
+          .eq("code", payload.coupon_code.toUpperCase().trim())
+          .eq("is_active", true)
+          .maybeSingle();
 
-      if (coupon) {
-        const valid =
-          (!coupon.wholesale_only || payload.is_wholesale) &&
-          (!coupon.expiry_date || new Date(coupon.expiry_date) >= now) &&
-          (!coupon.usage_limit || coupon.used_count < coupon.usage_limit);
+        if (coupon) {
+          const valid =
+            (!coupon.wholesale_only || payload.is_wholesale) &&
+            (!coupon.expiry_date || new Date(coupon.expiry_date) >= now) &&
+            (!coupon.usage_limit || coupon.used_count < coupon.usage_limit);
 
-        if (valid) {
-          if (!coupon.min_order_amount || serverSubtotal >= Number(coupon.min_order_amount)) {
-            if (coupon.discount_type === "percentage") {
-              serverCouponDiscount = serverSubtotal * (Number(coupon.discount_value) / 100);
-            } else {
-              serverCouponDiscount = Math.min(Number(coupon.discount_value), serverSubtotal);
-            }
+          if (valid) {
+            if (!coupon.min_order_amount || serverSubtotal >= Number(coupon.min_order_amount)) {
+              if (coupon.discount_type === "percentage") {
+                serverCouponDiscount = serverSubtotal * (Number(coupon.discount_value) / 100);
+              } else {
+                serverCouponDiscount = Math.min(Number(coupon.discount_value), serverSubtotal);
+              }
 
-            // Max cap on coupon
-            if (coupon.max_discount_amount && serverCouponDiscount > Number(coupon.max_discount_amount)) {
-              serverCouponDiscount = Number(coupon.max_discount_amount);
-            }
+              // Per-discount cap
+              if (coupon.max_discount_amount && serverCouponDiscount > Number(coupon.max_discount_amount)) {
+                serverCouponDiscount = Number(coupon.max_discount_amount);
+              }
 
-            // First order only check
-            if (coupon.first_order_only) {
-              const { count } = await admin
-                .from("orders")
-                .select("*", { count: "exact", head: true })
-                .eq("user_id", userId);
-              if (count && count > 0) serverCouponDiscount = 0;
-            }
+              // First order only
+              if (coupon.first_order_only) {
+                const { count } = await admin
+                  .from("orders")
+                  .select("*", { count: "exact", head: true })
+                  .eq("user_id", userId)
+                  .neq("status", "cancelled");
+                if (count && count > 0) serverCouponDiscount = 0;
+              }
 
-            // Per-user usage check
-            if (serverCouponDiscount > 0) {
-              const { count } = await admin
-                .from("coupon_user_usage")
-                .select("*", { count: "exact", head: true })
-                .eq("coupon_id", coupon.id)
-                .eq("user_id", userId);
-              if (count && count > 0) serverCouponDiscount = 0;
+              // Per-user usage
+              if (serverCouponDiscount > 0) {
+                const { count } = await admin
+                  .from("coupon_user_usage")
+                  .select("*", { count: "exact", head: true })
+                  .eq("coupon_id", coupon.id)
+                  .eq("user_id", userId);
+                if (count && count > 0) serverCouponDiscount = 0;
+              }
             }
           }
         }
@@ -341,9 +389,15 @@ Deno.serve(async (req) => {
     const shippingBase = serverSubtotal;
     let serverShipping = 3.99;
 
-    const { data: zones } = await admin.from("shipping_zones").select("*").eq("is_active", true).order("sort_order");
-    const { data: rates } = await admin.from("shipping_rates").select("*").eq("is_active", true);
-    const { data: freeRules } = await admin.from("free_shipping_rules").select("*").eq("is_active", true).eq("is_wholesale", payload.is_wholesale);
+    const [
+      { data: zones },
+      { data: rates },
+      { data: freeRules },
+    ] = await Promise.all([
+      admin.from("shipping_zones").select("*").eq("is_active", true).order("sort_order"),
+      admin.from("shipping_rates").select("*").eq("is_active", true),
+      admin.from("free_shipping_rules").select("*").eq("is_active", true).eq("is_wholesale", payload.is_wholesale),
+    ]);
 
     let isFree = false;
     if (freeRules && freeRules.length > 0) {
@@ -416,9 +470,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    const serverTotal = subtotalAfterCoupon + serverShipping;
+    const serverTotal = Math.round((subtotalAfterCoupon + serverShipping) * 100) / 100;
 
-    // 9. Compare with tolerance
+    // 9. Compare with frontend (tolerance for floating point)
     const tolerance = 0.10;
     const totalMatch = Math.abs(serverTotal - payload.claimed_total) <= tolerance;
 
@@ -429,7 +483,8 @@ Deno.serve(async (req) => {
           subtotal: Math.round(serverSubtotal * 100) / 100,
           coupon_discount: Math.round(serverCouponDiscount * 100) / 100,
           shipping: Math.round(serverShipping * 100) / 100,
-          total: Math.round(serverTotal * 100) / 100,
+          total: serverTotal,
+          discount_amount: Math.round(totalDiscount * 100) / 100,
         },
         claimed: {
           subtotal: payload.claimed_subtotal,
@@ -437,12 +492,13 @@ Deno.serve(async (req) => {
           shipping: payload.claimed_shipping,
           total: payload.claimed_total,
         },
-        error: totalMatch ? null : "Price mismatch detected. Order rejected for security.",
+        error: totalMatch ? null : "Price mismatch detected. Please refresh and try again.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    return new Response(JSON.stringify({ valid: false, error: err.message }), {
+    console.error("validate-order error:", err.message);
+    return new Response(JSON.stringify({ valid: false, error: "Order validation failed. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

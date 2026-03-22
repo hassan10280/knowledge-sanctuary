@@ -49,33 +49,12 @@ const Cart = () => {
     category: b.category || "",
   }));
 
-  const cartDiscounts = getCartDiscounts(items, bookDetails);
+  // Estimate shipping for cart page
+  const shippingEstimate = calcNewShipping(0, isWholesale, undefined, undefined, undefined);
+  const estimatedShipping = shippingEstimate.shippingCost;
 
-  const originalSubtotal = items.reduce((sum, item) => {
-    const disc = cartDiscounts.itemPrices.get(item.id);
-    return sum + (disc?.originalPrice ?? item.price) * item.quantity;
-  }, 0);
-
-  const shippingResult = calcNewShipping(cartDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
-  const shipping = shippingResult.shippingCost;
-
-  // Apply max_discount_amount cap on coupon
-  let couponDiscount = 0;
-  if (appliedCoupon) {
-    if (appliedCoupon.discount_type === "percentage") {
-      couponDiscount = cartDiscounts.discountedSubtotal * (Number(appliedCoupon.discount_value) / 100);
-    } else {
-      couponDiscount = Math.min(Number(appliedCoupon.discount_value), cartDiscounts.discountedSubtotal);
-    }
-    const maxCap = Number((appliedCoupon as any).max_discount_amount);
-    if (maxCap > 0 && couponDiscount > maxCap) {
-      couponDiscount = maxCap;
-    }
-  }
-
-  const grandTotal = Math.max(0, cartDiscounts.discountedSubtotal - couponDiscount + shipping);
-  const totalItemSavings = originalSubtotal - cartDiscounts.subtotalAfterItemDiscounts;
-  const totalSaved = cartDiscounts.totalSavings + couponDiscount;
+  // Single source of truth: all calculations from one function
+  const cartDiscounts = getCartDiscounts(items, bookDetails, appliedCoupon, estimatedShipping);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -94,8 +73,10 @@ const Cart = () => {
 
   // Auto-apply coupon
   const { data: allCoupons } = useCoupons();
+  const autoApplyAttemptedRef = useRef(false);
   useEffect(() => {
-    if (appliedCoupon || !allCoupons || items.length === 0) return;
+    if (appliedCoupon || !allCoupons || items.length === 0 || autoApplyAttemptedRef.current) return;
+    autoApplyAttemptedRef.current = true;
     const autoApplyCoupon = allCoupons.find((c: any) =>
       c.is_active && c.auto_apply &&
       (!c.wholesale_only || isWholesale) &&
@@ -107,7 +88,12 @@ const Cart = () => {
       setAppliedCoupon(autoApplyCoupon);
       toast.success(`Coupon "${autoApplyCoupon.code}" auto-applied!`);
     }
-  }, [allCoupons, appliedCoupon, items.length, isWholesale, cartDiscounts.discountedSubtotal]);
+  }, [allCoupons, appliedCoupon, items.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset auto-apply when cart empties
+  useEffect(() => {
+    if (items.length === 0) autoApplyAttemptedRef.current = false;
+  }, [items.length]);
 
   useEffect(() => {
     if (location.state?.scrollToCart && cartContentRef.current) {
@@ -220,10 +206,10 @@ const Cart = () => {
               })}
 
               <div className="mt-8 bg-card border border-border rounded-xl p-6 space-y-4">
-                {shippingResult.smartSuggestion && (
+                {shippingEstimate.smartSuggestion && (
                   <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                     <Truck className="h-4 w-4 text-primary shrink-0" />
-                    <p className="text-sm text-primary font-medium">{shippingResult.smartSuggestion}</p>
+                    <p className="text-sm text-primary font-medium">{shippingEstimate.smartSuggestion}</p>
                   </div>
                 )}
 
@@ -257,23 +243,23 @@ const Cart = () => {
                 </div>
 
                 <div className="border-t border-border pt-4 space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Subtotal</span>
-                    <span>£{originalSubtotal.toFixed(2)}</span>
-                  </div>
                   {role === "wholesale" && (
                     <div className="flex items-center gap-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200 mb-1">
                       <Building2 className="h-3.5 w-3.5 text-amber-700" />
                       <span className="text-xs font-semibold text-amber-800">Wholesale Price Applied</span>
                     </div>
                   )}
-                  {totalItemSavings > 0.01 && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>£{cartDiscounts.originalSubtotal.toFixed(2)}</span>
+                  </div>
+                  {(cartDiscounts.originalSubtotal - cartDiscounts.subtotalAfterItemDiscounts) > 0.01 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span className="flex items-center gap-1">
                         <Tag className="h-3 w-3" />
                         <span>{role === "wholesale" ? "Wholesale" : "Retail"} Discount</span>
                       </span>
-                      <span>-£{totalItemSavings.toFixed(2)}</span>
+                      <span>-£{(cartDiscounts.originalSubtotal - cartDiscounts.subtotalAfterItemDiscounts).toFixed(2)}</span>
                     </div>
                   )}
                   {cartDiscounts.quantityTierAmount > 0.01 && (
@@ -294,39 +280,39 @@ const Cart = () => {
                       <span>-£{cartDiscounts.bundleDiscountAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  {couponDiscount > 0 && (
+                  {cartDiscounts.couponDiscount > 0 && (
                     <div className="flex justify-between text-sm text-primary">
                       <span>Coupon Discount</span>
-                      <span>-£{couponDiscount.toFixed(2)}</span>
+                      <span>-£{cartDiscounts.couponDiscount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <span>Shipping (est.)</span>
-                      {shippingResult.zoneName !== "Default" && (
-                        <span className="text-xs text-muted-foreground/70">({shippingResult.zoneName})</span>
+                      {shippingEstimate.zoneName !== "Default" && (
+                        <span className="text-xs text-muted-foreground/70">({shippingEstimate.zoneName})</span>
                       )}
                     </span>
                     <span>
-                      {shipping === 0 ? (
+                      {estimatedShipping === 0 ? (
                         <span className="text-green-600 font-medium">Free</span>
                       ) : (
-                        <span>£{shipping.toFixed(2)}</span>
+                        <span>£{estimatedShipping.toFixed(2)}</span>
                       )}
                     </span>
                   </div>
-                  {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
-                    <p className="text-xs text-green-600 text-right">{shippingResult.freeShippingReason}</p>
+                  {shippingEstimate.isFreeShipping && shippingEstimate.freeShippingReason && (
+                    <p className="text-xs text-green-600 text-right">{shippingEstimate.freeShippingReason}</p>
                   )}
                   <p className="text-xs text-muted-foreground/70 italic">{String(getSetting("messages", "shipping_estimate_note"))}</p>
                   <div className="border-t border-border pt-3 flex justify-between">
                     <span className="font-semibold text-foreground">Estimated Total</span>
-                    <span className="text-xl font-bold text-primary">£{grandTotal.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-primary">£{cartDiscounts.grandTotal.toFixed(2)}</span>
                   </div>
-                  {totalSaved > 0.01 && (
+                  {(cartDiscounts.totalSavings + cartDiscounts.couponDiscount) > 0.01 && (
                     <div className="flex justify-between items-center p-2 rounded-lg bg-primary/5 border border-primary/10">
                       <span className="text-xs font-medium text-primary">🎉 You saved</span>
-                      <span className="text-sm font-bold text-primary">£{totalSaved.toFixed(2)}</span>
+                      <span className="text-sm font-bold text-primary">£{(cartDiscounts.totalSavings + cartDiscounts.couponDiscount).toFixed(2)}</span>
                     </div>
                   )}
                   {cartDiscounts.globalCapApplied && (
