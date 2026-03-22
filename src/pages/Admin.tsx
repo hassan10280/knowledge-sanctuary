@@ -19,6 +19,7 @@ import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
 import LayoutSettingsTab from "@/components/admin/LayoutSettingsTab";
 import FooterEditorTab from "@/components/admin/FooterEditorTab";
 import DesignSystemTab from "@/components/admin/DesignSystemTab";
+import ContentEditorTab from "@/components/admin/ContentEditorTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
