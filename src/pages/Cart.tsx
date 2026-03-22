@@ -277,7 +277,7 @@ const Cart = () => {
                   {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
                     <p className="text-xs text-green-600 text-right">{shippingResult.freeShippingReason}</p>
                   )}
-                  <p className="text-xs text-muted-foreground/70 italic">Final shipping calculated at checkout based on your address</p>
+                  <p className="text-xs text-muted-foreground/70 italic">{String(getSetting("messages", "shipping_estimate_note"))}</p>
                   <div className="border-t border-border pt-3 flex justify-between">
                     <span className="font-semibold text-foreground">Estimated Total</span>
                     <span className="text-xl font-bold text-primary">£{grandTotal.toFixed(2)}</span>
