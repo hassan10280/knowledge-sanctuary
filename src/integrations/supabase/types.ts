@@ -195,6 +195,87 @@ export type Database = {
         }
         Relationships: []
       }
+      bundle_discounts: {
+        Row: {
+          created_at: string
+          discount_type: string
+          discount_value: number
+          end_date: string | null
+          id: string
+          is_active: boolean
+          is_wholesale: boolean
+          max_discount_amount: number | null
+          min_qty: number
+          name: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          max_discount_amount?: number | null
+          min_qty?: number
+          name?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          is_wholesale?: boolean
+          max_discount_amount?: number | null
+          min_qty?: number
+          name?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bundle_items: {
+        Row: {
+          book_id: string
+          bundle_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          book_id: string
+          bundle_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          book_id?: string
+          bundle_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundle_discounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -303,6 +384,30 @@ export type Database = {
           usage_limit?: number | null
           used_count?: number
           wholesale_only?: boolean
+        }
+        Relationships: []
+      }
+      discount_stacking_rules: {
+        Row: {
+          allowed: boolean
+          description: string
+          id: string
+          rule_key: string
+          updated_at: string
+        }
+        Insert: {
+          allowed?: boolean
+          description?: string
+          id?: string
+          rule_key: string
+          updated_at?: string
+        }
+        Update: {
+          allowed?: boolean
+          description?: string
+          id?: string
+          rule_key?: string
+          updated_at?: string
         }
         Relationships: []
       }
