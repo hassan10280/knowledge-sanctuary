@@ -215,6 +215,7 @@ export type Database = {
           in_stock: boolean | null
           isbn: string | null
           original_price: number | null
+          preview_files: Json | null
           price: number | null
           publisher: string | null
           rating: number | null
@@ -238,6 +239,7 @@ export type Database = {
           in_stock?: boolean | null
           isbn?: string | null
           original_price?: number | null
+          preview_files?: Json | null
           price?: number | null
           publisher?: string | null
           rating?: number | null
@@ -261,6 +263,7 @@ export type Database = {
           in_stock?: boolean | null
           isbn?: string | null
           original_price?: number | null
+          preview_files?: Json | null
           price?: number | null
           publisher?: string | null
           rating?: number | null
