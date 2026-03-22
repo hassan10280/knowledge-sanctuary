@@ -103,7 +103,7 @@ const LayoutSettingsTab = () => {
   }, [device]);
 
   const menuItems = (get("menu_items") as MenuItem[] | undefined) || DEFAULT_MENU;
-  const setMenuItems = (items: MenuItem[]) => set("menu_items", items);
+  const setMenuItems = useCallback((items: MenuItem[]) => set("menu_items", items), [set]);
 
   const saveDevice = async () => {
     setSaving(true);
