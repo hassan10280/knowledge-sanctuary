@@ -6,15 +6,17 @@ import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight }
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { useCart } from "@/contexts/CartContext";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
+import { useRetailDiscounts } from "@/hooks/useRetailDiscounts";
 import { useAppSetting } from "@/hooks/useAppSettings";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
+import DiscountCountdown from "./DiscountCountdown";
 
 interface BookGridProps {
   searchQuery?: string;
 }
 
-const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number }) => {
+const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, discountEndDate }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number; discountEndDate?: string }) => {
   const { items, addItem } = useCart();
   const navigate = useNavigate();
   const addToCartText = useAppSetting("ui_text", "add_to_cart");
@@ -127,8 +129,8 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
             </>
           )}
         </div>
+        {discountEndDate && <DiscountCountdown endDate={discountEndDate} />}
 
-        {/* Visible action buttons below card */}
         <div className="flex gap-2 mt-2">
           <button
             onClick={() => onViewDetails(book)}
@@ -176,6 +178,7 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
   const { data: books, isLoading: booksLoading } = useBooks();
   const { data: categories, isLoading: catsLoading } = useCategories();
   const { getBookDiscount } = useDiscountCalculator();
+  const { data: retailDiscounts } = useRetailDiscounts();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [sampleBook, setSampleBook] = useState<any>(null);
 
@@ -183,6 +186,16 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
     const result = getBookDiscount(book);
     if (result.discountSource === "none") return undefined;
     return Math.round(result.finalPrice * 100) / 100;
+  };
+
+  const getEndDate = (book: any): string | undefined => {
+    const rd = retailDiscounts?.find(
+      (d) => d.is_active && d.end_date && (
+        (d.discount_type === "product" && d.book_id === book.id) ||
+        (d.discount_type === "category" && d.reference_value === book.category)
+      )
+    );
+    return rd?.end_date ?? undefined;
   };
 
   if (booksLoading || catsLoading) {
@@ -252,7 +265,7 @@ const BookGrid = ({ searchQuery = "" }: BookGridProps) => {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
               {category.books.map((book: any, i: number) => (
-                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} wholesalePrice={getDiscountedPrice(book)} />
+                <BookCard key={book.id} book={book} index={i} onViewDetails={setSelectedBook} onReadSample={setSampleBook} wholesalePrice={getDiscountedPrice(book)} discountEndDate={getEndDate(book)} />
               ))}
             </div>
           </div>
