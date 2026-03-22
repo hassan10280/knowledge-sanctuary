@@ -6,9 +6,11 @@ import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight }
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { useCart } from "@/contexts/CartContext";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
+import { useRetailDiscounts } from "@/hooks/useRetailDiscounts";
 import { useAppSetting } from "@/hooks/useAppSettings";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
+import DiscountCountdown from "./DiscountCountdown";
 
 interface BookGridProps {
   searchQuery?: string;
