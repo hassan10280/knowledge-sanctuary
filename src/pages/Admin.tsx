@@ -6,7 +6,7 @@ import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategor
 import { usePublishers } from "@/hooks/usePublishers";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image, Layers, Ticket, Truck, Bell } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image, Layers, Ticket, Truck, Bell, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
@@ -14,6 +14,7 @@ import DiscountsTab from "@/components/admin/DiscountsTab";
 import PublishersTab from "@/components/admin/PublishersTab";
 import ShippingSettingsTab from "@/components/admin/ShippingSettingsTab";
 import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
+import AdminOrdersTab from "@/components/admin/AdminOrdersTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -654,6 +655,9 @@ const Admin = () => {
             <TabsTrigger value="notifications" className="text-xs sm:text-sm gap-1.5">
               <Bell className="h-3.5 w-3.5" /> Notifications
             </TabsTrigger>
+            <TabsTrigger value="orders" className="text-xs sm:text-sm gap-1.5">
+              <Package className="h-3.5 w-3.5" /> Orders
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
@@ -877,6 +881,7 @@ const Admin = () => {
           <TabsContent value="publishers"><PublishersTab /></TabsContent>
           <TabsContent value="shipping"><ShippingSettingsTab /></TabsContent>
           <TabsContent value="notifications"><AdminNotificationsTab /></TabsContent>
+          <TabsContent value="orders"><AdminOrdersTab /></TabsContent>
         </Tabs>
       </div>
     </div>
