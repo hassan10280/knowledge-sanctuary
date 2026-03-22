@@ -130,8 +130,8 @@ const Cart = () => {
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
                 <ShoppingBag className="h-9 w-9 text-muted-foreground" />
               </div>
-              <h2 className="font-serif text-2xl text-foreground mb-2">Your cart is empty</h2>
-              <p className="text-muted-foreground mb-6">Browse our collection and add some books.</p>
+              <h2 className="font-serif text-2xl text-foreground mb-2">{String(getSetting("ui_text", "empty_cart"))}</h2>
+              <p className="text-muted-foreground mb-6">{String(getSetting("ui_text", "empty_cart_desc"))}</p>
               <Button asChild>
                 <Link to="/" className="gap-2">
                   <BookOpen className="h-4 w-4" />
