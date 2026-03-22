@@ -137,11 +137,7 @@ export function useValidateCoupon() {
 export async function incrementCouponUsage(couponId: string) {
   const { error } = await supabase.rpc("increment_coupon_usage" as any, { coupon_id: couponId });
   if (error) {
-    // Fallback: direct update
-    console.warn("RPC fallback: incrementing coupon usage directly", error.message);
-    await supabase
-      .from("coupons")
-      .update({ used_count: undefined } as any) // Will fail on RLS for non-admin
-      .eq("id", couponId);
+    console.error("Failed to increment coupon usage:", error.message);
+    throw new Error("Failed to update coupon usage. Please contact support.");
   }
 }
