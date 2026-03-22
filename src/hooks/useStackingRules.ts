@@ -18,7 +18,7 @@ export function useStackingRules() {
         .select("*")
         .order("rule_key");
       if (error) throw error;
-      return data as StackingRule[];
+      return data as unknown as StackingRule[];
     },
   });
 }
