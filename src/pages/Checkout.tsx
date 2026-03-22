@@ -219,6 +219,41 @@ const Checkout = () => {
 
     setSubmitting(true);
     try {
+      // Validate transaction ID format (alphanumeric, 4-50 chars)
+      const txnId = transactionId.trim();
+      if (txnId.length < 4 || txnId.length > 50) {
+        toast.error("Transaction ID must be 4-50 characters");
+        setSubmitting(false);
+        return;
+      }
+
+      // Check duplicate transaction ID
+      const { data: existingTxn } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("transaction_id", txnId)
+        .maybeSingle();
+      if (existingTxn) {
+        toast.error("This transaction ID has already been used");
+        setSubmitting(false);
+        return;
+      }
+
+      // Stock validation
+      const bookIds = items.map((i) => i.id);
+      const { data: stockData } = await supabase
+        .from("books")
+        .select("id, title, in_stock")
+        .in("id", bookIds);
+      if (stockData) {
+        const outOfStock = stockData.filter((b) => !b.in_stock);
+        if (outOfStock.length > 0) {
+          toast.error(`Out of stock: ${outOfStock.map((b) => b.title).join(", ")}`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
       if (!useSaved && isAddressValid) {
         await supabase.from("billing_addresses").insert({
           user_id: user.id,
@@ -241,7 +276,7 @@ const Checkout = () => {
           coupon_discount: couponDiscount,
           discount_amount: totalDiscountAmount > 0 ? totalDiscountAmount : 0,
           payment_method: "bank_transfer",
-          transaction_id: transactionId.trim(),
+          transaction_id: txnId,
           billing_name: currentAddress.full_name,
           billing_address: `${currentAddress.address_line1}${currentAddress.address_line2 ? ", " + currentAddress.address_line2 : ""}`,
           billing_city: currentAddress.city,
@@ -272,9 +307,16 @@ const Checkout = () => {
         await incrementCouponUsage(appliedCoupon.id);
       }
 
+      // Admin notification
+      await supabase.from("admin_notifications").insert({
+        order_id: order.id,
+        user_id: user.id,
+        message: `New order #${order.id.slice(0, 8)} — £${grandTotal.toFixed(2)} via bank transfer`,
+      } as any);
+
       clearCart();
-      toast.success("Order placed successfully! We will verify your payment shortly.");
-      navigate("/");
+      toast.success("Order placed successfully!");
+      navigate(`/order-success?id=${order.id}`);
     } catch (e: any) {
       toast.error(e.message || "Failed to place order");
     }
