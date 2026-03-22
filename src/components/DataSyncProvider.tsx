@@ -46,6 +46,9 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
       }, 120);
     };
 
+    const scheduleFullSync = () => scheduleSync();
+    const scheduleSiteSettingsSync = () => scheduleSync("site_settings");
+
     const channel = supabase.channel("app-live-sync");
 
     SYNC_TABLES.forEach((table) => {
@@ -64,16 +67,16 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        scheduleSync();
+        scheduleFullSync();
       }
     };
 
-    window.addEventListener("focus", scheduleSync);
+    window.addEventListener("focus", scheduleFullSync);
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       if (invalidateTimer) clearTimeout(invalidateTimer);
-      window.removeEventListener("focus", scheduleSync);
+      window.removeEventListener("focus", scheduleFullSync);
       document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
