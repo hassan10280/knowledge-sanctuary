@@ -628,6 +628,24 @@ const Checkout = () => {
                     <span>Subtotal</span>
                     <span>£{cartDiscounts.discountedSubtotal.toFixed(2)}</span>
                   </div>
+                  {cartDiscounts.totalSavings > 0.01 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Product Discounts</span>
+                      <span>-£{(cartDiscounts.totalSavings - cartDiscounts.quantityTierAmount - cartDiscounts.bundleDiscountAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cartDiscounts.quantityTierAmount > 0.01 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Qty Tier ({cartDiscounts.quantityTierName})</span>
+                      <span>-£{cartDiscounts.quantityTierAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cartDiscounts.bundleDiscountAmount > 0.01 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Bundle: {cartDiscounts.bundleDiscountName}</span>
+                      <span>-£{cartDiscounts.bundleDiscountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   {couponDiscount > 0 && (
                     <div className="flex justify-between text-sm text-primary">
                       <span>Coupon ({appliedCoupon?.code})</span>
@@ -648,6 +666,15 @@ const Checkout = () => {
                     <span>Total</span>
                     <span className="text-lg text-primary">£{grandTotal.toFixed(2)}</span>
                   </div>
+                  {totalSaved > 0.01 && (
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-primary/5 border border-primary/10">
+                      <span className="text-xs font-medium text-primary">🎉 You saved</span>
+                      <span className="text-sm font-bold text-primary">£{totalSaved.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cartDiscounts.globalCapApplied && (
+                    <p className="text-[10px] text-muted-foreground text-right">Global discount cap applied</p>
+                  )}
                 </div>
               </div>
 
