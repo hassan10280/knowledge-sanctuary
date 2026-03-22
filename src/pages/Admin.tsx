@@ -851,30 +851,33 @@ const Admin = () => {
 
           {/* DESIGN TAB */}
           <TabsContent value="design">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif flex items-center gap-2">
-                  <Paintbrush className="h-5 w-5 text-primary" />
-                  Section Design Controls
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Use sliders, colour pickers and dropdowns to customise every section — no CSS knowledge needed.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <VisualDesignPanel section="design_header" label="Header" />
-                <VisualDesignPanel section="design_hero" label="Hero Section" />
-                <VisualDesignPanel section="design_books" label="Books Grid" />
-                <VisualDesignPanel section="design_book_card" label="Book Card" />
-                <VisualDesignPanel section="design_book_modal" label="Book Detail Modal" />
-                <VisualDesignPanel section="design_cart" label="Cart Page" />
-                <VisualDesignPanel section="design_checkout" label="Checkout Page" />
-                <VisualDesignPanel section="design_footer" label="Footer" />
-                <VisualDesignPanel section="design_auth" label="Auth / Login Page" />
-                <VisualDesignPanel section="design_logo" label="Logo" />
-                <VisualDesignPanel section="design_buttons_global" label="Global Buttons" />
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <DesignSystemTab />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Paintbrush className="h-5 w-5 text-primary" />
+                    Section Design Controls
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Per-section colour, spacing, and typography overrides.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <VisualDesignPanel section="design_header" label="Header" />
+                  <VisualDesignPanel section="design_hero" label="Hero Section" />
+                  <VisualDesignPanel section="design_books" label="Books Grid" />
+                  <VisualDesignPanel section="design_book_card" label="Book Card" />
+                  <VisualDesignPanel section="design_book_modal" label="Book Detail Modal" />
+                  <VisualDesignPanel section="design_cart" label="Cart Page" />
+                  <VisualDesignPanel section="design_checkout" label="Checkout Page" />
+                  <VisualDesignPanel section="design_footer" label="Footer" />
+                  <VisualDesignPanel section="design_auth" label="Auth / Login Page" />
+                  <VisualDesignPanel section="design_logo" label="Logo" />
+                  <VisualDesignPanel section="design_buttons_global" label="Global Buttons" />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="whatsapp"><WhatsAppSettings /></TabsContent>
