@@ -6,7 +6,7 @@ import { useBooks, useCategories, useUpsertBook, useDeleteBook, useUpsertCategor
 import { usePublishers } from "@/hooks/usePublishers";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image, Layers, Ticket, Truck, Bell, Package, Cog, PenLine, BarChart3 } from "lucide-react";
+import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Upload, Image, Layers, Ticket, Truck, Bell, Package, Cog, PenLine, BarChart3, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FormBuilderTab from "@/components/admin/FormBuilderTab";
 import WholesaleRequestsTab from "@/components/admin/WholesaleRequestsTab";
@@ -21,6 +21,7 @@ import FooterEditorTab from "@/components/admin/FooterEditorTab";
 import DesignSystemTab from "@/components/admin/DesignSystemTab";
 import ContentEditorTab from "@/components/admin/ContentEditorTab";
 import AnalyticsDashboardTab from "@/components/admin/AnalyticsDashboardTab";
+import AbandonedCartsTab from "@/components/admin/AbandonedCartsTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -676,6 +677,9 @@ const Admin = () => {
             <TabsTrigger value="analytics" className="text-xs sm:text-sm gap-1.5">
               <BarChart3 className="h-3.5 w-3.5" /> Analytics
             </TabsTrigger>
+            <TabsTrigger value="abandoned-carts" className="text-xs sm:text-sm gap-1.5">
+              <ShoppingCart className="h-3.5 w-3.5" /> Abandoned
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
@@ -907,6 +911,7 @@ const Admin = () => {
           <TabsContent value="layout"><LayoutSettingsTab /></TabsContent>
           <TabsContent value="content"><ContentEditorTab /></TabsContent>
           <TabsContent value="analytics"><AnalyticsDashboardTab /></TabsContent>
+          <TabsContent value="abandoned-carts"><AbandonedCartsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
