@@ -16,7 +16,7 @@ interface BookGridProps {
   searchQuery?: string;
 }
 
-const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number }) => {
+const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, discountEndDate }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number; discountEndDate?: string }) => {
   const { items, addItem } = useCart();
   const navigate = useNavigate();
   const addToCartText = useAppSetting("ui_text", "add_to_cart");
