@@ -7,6 +7,7 @@ import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
 import { incrementCouponUsage } from "@/hooks/useAdvancedDiscounts";
+import { useSettingsGetter } from "@/hooks/useAppSettings";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -31,6 +32,7 @@ const Checkout = () => {
   const { calculateShipping: calcNewShipping } = useShippingCalculator();
   const { data: books } = useBooks();
   const { getCartDiscounts } = useDiscountCalculator();
+  const { getSetting } = useSettingsGetter();
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(1);
@@ -205,21 +207,21 @@ const Checkout = () => {
   const handlePlaceOrder = async () => {
     if (!user) return;
     if (items.length === 0) {
-      toast.error("Your cart is empty");
+      toast.error(String(getSetting("ui_text", "empty_cart")));
       return;
     }
     if (!transactionId.trim()) {
-      toast.error("Please enter your transaction ID");
+      toast.error(String(getSetting("messages", "txn_id_required")));
       return;
     }
     if (!isAddressValid) {
-      toast.error("Please provide a valid address");
+      toast.error(String(getSetting("messages", "address_required")));
       return;
     }
 
     const txnId = transactionId.trim();
     if (txnId.length < 4 || txnId.length > 50) {
-      toast.error("Transaction ID must be 4-50 characters");
+      toast.error(String(getSetting("messages", "txn_id_invalid")));
       return;
     }
 
@@ -266,7 +268,7 @@ const Checkout = () => {
         .eq("transaction_id", txnId)
         .maybeSingle();
       if (existingTxn) {
-        toast.error("This transaction ID has already been used");
+        toast.error(String(getSetting("messages", "txn_id_duplicate")));
         setSubmitting(false);
         return;
       }
@@ -295,7 +297,7 @@ const Checkout = () => {
           .eq("user_id", user.id)
           .maybeSingle();
         if (usageCheck) {
-          toast.error("You have already used this coupon");
+          toast.error(String(getSetting("messages", "coupon_already_used")));
           setSubmitting(false);
           return;
         }
@@ -373,7 +375,7 @@ const Checkout = () => {
       } as any);
 
       clearCart();
-      toast.success("Order placed successfully!");
+      toast.success(String(getSetting("messages", "order_placed")));
       navigate(`/order-success?id=${order.id}`);
     } catch (e: any) {
       toast.error(e.message || "Failed to place order");

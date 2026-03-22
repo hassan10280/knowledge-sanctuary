@@ -7,6 +7,7 @@ import { useValidateCoupon } from "@/hooks/useAdvancedDiscounts";
 import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
+import { useSettingsGetter } from "@/hooks/useAppSettings";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const Cart = () => {
+  const { getSetting } = useSettingsGetter();
   const { items, removeItem, updateQuantity, totalPrice, totalItems, pricesSyncing, lastSyncedAt } = useCart();
   const { user, loading } = useAuth();
   const { wholesaleStatus } = useWholesaleStatus(user);
@@ -104,7 +106,7 @@ const Cart = () => {
               )}
               {showSyncBadge && !pricesSyncing && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                  Prices updated
+                  {String(getSetting("messages", "price_updated"))}
                 </span>
               )}
             </div>
@@ -128,8 +130,8 @@ const Cart = () => {
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
                 <ShoppingBag className="h-9 w-9 text-muted-foreground" />
               </div>
-              <h2 className="font-serif text-2xl text-foreground mb-2">Your cart is empty</h2>
-              <p className="text-muted-foreground mb-6">Browse our collection and add some books.</p>
+              <h2 className="font-serif text-2xl text-foreground mb-2">{String(getSetting("ui_text", "empty_cart"))}</h2>
+              <p className="text-muted-foreground mb-6">{String(getSetting("ui_text", "empty_cart_desc"))}</p>
               <Button asChild>
                 <Link to="/" className="gap-2">
                   <BookOpen className="h-4 w-4" />
@@ -275,7 +277,7 @@ const Cart = () => {
                   {shippingResult.isFreeShipping && shippingResult.freeShippingReason && (
                     <p className="text-xs text-green-600 text-right">{shippingResult.freeShippingReason}</p>
                   )}
-                  <p className="text-xs text-muted-foreground/70 italic">Final shipping calculated at checkout based on your address</p>
+                  <p className="text-xs text-muted-foreground/70 italic">{String(getSetting("messages", "shipping_estimate_note"))}</p>
                   <div className="border-t border-border pt-3 flex justify-between">
                     <span className="font-semibold text-foreground">Estimated Total</span>
                     <span className="text-xl font-bold text-primary">£{grandTotal.toFixed(2)}</span>
@@ -294,7 +296,7 @@ const Cart = () => {
                 ) : user ? (
                   <Button asChild className="w-full h-12 text-base font-semibold gap-2">
                     <Link to="/checkout">
-                      <span>Proceed to Checkout</span>
+                      <span>{String(getSetting("ui_text", "checkout"))}</span>
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>

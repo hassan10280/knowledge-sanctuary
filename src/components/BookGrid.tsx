@@ -6,6 +6,7 @@ import { BookOpen, ChevronRight, Star, Eye, BookText, ShoppingCart, ArrowRight }
 import { useBooks, useCategories } from "@/hooks/useBooks";
 import { useCart } from "@/contexts/CartContext";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
+import { useAppSetting } from "@/hooks/useAppSettings";
 import BookDetailModal from "./BookDetailModal";
 import SampleReader from "./SampleReader";
 
@@ -16,6 +17,7 @@ interface BookGridProps {
 const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: { book: any; index: number; onViewDetails: (book: any) => void; onReadSample: (book: any) => void; wholesalePrice?: number }) => {
   const { items, addItem } = useCart();
   const navigate = useNavigate();
+  const addToCartText = useAppSetting("ui_text", "add_to_cart");
   const isInCart = items.some((i) => i.id === book.id);
   const coverAccent = book.cover_color ? book.cover_color + "cc" : "#2980b9";
 
@@ -161,7 +163,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice }: 
           ) : (
             <>
               <ShoppingCart className="h-3.5 w-3.5" />
-              Add to Cart
+              {addToCartText}
             </>
           )}
         </button>
