@@ -92,6 +92,23 @@ const Cart = () => {
     }
   };
 
+  // Auto-apply coupon
+  const { data: allCoupons } = useCoupons();
+  useEffect(() => {
+    if (appliedCoupon || !allCoupons || items.length === 0) return;
+    const autoApplyCoupon = allCoupons.find((c: any) =>
+      c.is_active && c.auto_apply &&
+      (!c.wholesale_only || isWholesale) &&
+      (!c.expiry_date || new Date(c.expiry_date) > new Date()) &&
+      (!c.usage_limit || c.used_count < c.usage_limit) &&
+      (!c.min_order_amount || cartDiscounts.discountedSubtotal >= Number(c.min_order_amount))
+    );
+    if (autoApplyCoupon) {
+      setAppliedCoupon(autoApplyCoupon);
+      toast.success(`Coupon "${autoApplyCoupon.code}" auto-applied!`);
+    }
+  }, [allCoupons, appliedCoupon, items.length, isWholesale, cartDiscounts.discountedSubtotal]);
+
   useEffect(() => {
     if (location.state?.scrollToCart && cartContentRef.current) {
       cartContentRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
