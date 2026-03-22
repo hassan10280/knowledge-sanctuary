@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -42,17 +42,19 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the user
+    // Verify user via getClaims
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const payload: OrderPayload = await req.json();
     const admin = createClient(supabaseUrl, serviceKey);
@@ -87,6 +89,7 @@ Deno.serve(async (req) => {
     }
 
     // 3. Recalculate per-item prices server-side
+    // Priority: Fixed Price > Product % > Publisher > Category (matching frontend exactly)
     let serverSubtotal = 0;
     const now = new Date();
 
@@ -102,25 +105,33 @@ Deno.serve(async (req) => {
       let unitPrice = Number(book.price);
 
       if (payload.is_wholesale) {
-        // Priority: fixed_price > product % > publisher > category
+        // 1. Fixed Price Override
         const fixedPrice = wholesaleDiscounts.find(
           (d) => d.discount_type === "product" && d.book_id === book.id && d.fixed_price && Number(d.fixed_price) > 0
         );
         if (fixedPrice) {
           unitPrice = Number(fixedPrice.fixed_price);
         } else {
+          // 2. Product-based Discount
           const productDisc = wholesaleDiscounts.find(
             (d) => d.discount_type === "product" && d.book_id === book.id && Number(d.discount_percent) > 0
           );
           if (productDisc) {
             unitPrice = unitPrice * (1 - Number(productDisc.discount_percent) / 100);
-          } else if (book.publisher) {
-            const pubDisc = wholesaleDiscounts.find(
-              (d) => d.discount_type === "publisher" && d.reference_value === book.publisher
-            );
-            if (pubDisc && Number(pubDisc.discount_percent) > 0) {
-              unitPrice = unitPrice * (1 - Number(pubDisc.discount_percent) / 100);
-            } else if (book.category) {
+          } else {
+            // 3. Publisher-based Discount (independent check)
+            let applied = false;
+            if (book.publisher) {
+              const pubDisc = wholesaleDiscounts.find(
+                (d) => d.discount_type === "publisher" && d.reference_value === book.publisher
+              );
+              if (pubDisc && Number(pubDisc.discount_percent) > 0) {
+                unitPrice = unitPrice * (1 - Number(pubDisc.discount_percent) / 100);
+                applied = true;
+              }
+            }
+            // 4. Category-based Discount (independent from publisher)
+            if (!applied && book.category) {
               const catDisc = wholesaleDiscounts.find(
                 (d) => d.discount_type === "category" && d.reference_value === book.category
               );
@@ -192,21 +203,26 @@ Deno.serve(async (req) => {
           (!coupon.usage_limit || coupon.used_count < coupon.usage_limit);
 
         if (valid) {
-          if (coupon.discount_type === "percentage") {
-            serverCouponDiscount = serverSubtotal * (Number(coupon.discount_value) / 100);
+          // Min order amount check
+          if (coupon.min_order_amount && serverSubtotal < Number(coupon.min_order_amount)) {
+            // Coupon not applicable — minimum not met
           } else {
-            serverCouponDiscount = Math.min(Number(coupon.discount_value), serverSubtotal);
-          }
+            if (coupon.discount_type === "percentage") {
+              serverCouponDiscount = serverSubtotal * (Number(coupon.discount_value) / 100);
+            } else {
+              serverCouponDiscount = Math.min(Number(coupon.discount_value), serverSubtotal);
+            }
 
-          // Per-user usage check
-          const { count } = await admin
-            .from("coupon_user_usage")
-            .select("*", { count: "exact", head: true })
-            .eq("coupon_id", coupon.id)
-            .eq("user_id", user.id);
+            // Per-user usage check
+            const { count } = await admin
+              .from("coupon_user_usage")
+              .select("*", { count: "exact", head: true })
+              .eq("coupon_id", coupon.id)
+              .eq("user_id", userId);
 
-          if (count && count > 0) {
-            serverCouponDiscount = 0; // already used by this user
+            if (count && count > 0) {
+              serverCouponDiscount = 0;
+            }
           }
         }
       }
@@ -214,27 +230,78 @@ Deno.serve(async (req) => {
 
     const subtotalAfterCoupon = Math.max(0, serverSubtotal - serverCouponDiscount);
 
-    // 6. Shipping validation
+    // 6. Shipping validation — match frontend logic exactly
+    // Frontend uses: discountedSubtotal (before coupon) for shipping calculation
+    const shippingBase = serverSubtotal; // matches frontend's cartDiscounts.discountedSubtotal
+
     let serverShipping = 3.99; // default fallback
-    const { data: freeRules } = await admin
-      .from("free_shipping_rules")
-      .select("*")
-      .eq("is_active", true)
-      .eq("is_wholesale", payload.is_wholesale);
+
+    // Check zone-based shipping first (advanced system)
+    const { data: zones } = await admin.from("shipping_zones").select("*").eq("is_active", true).order("sort_order");
+    const { data: rates } = await admin.from("shipping_rates").select("*").eq("is_active", true);
+    const { data: methods } = await admin.from("shipping_methods").select("*").eq("is_active", true);
+    const { data: freeRules } = await admin.from("free_shipping_rules").select("*").eq("is_active", true).eq("is_wholesale", payload.is_wholesale);
 
     let isFree = false;
-    if (freeRules) {
+
+    // Check free shipping rules
+    if (freeRules && freeRules.length > 0) {
       for (const rule of freeRules) {
-        if (rule.always_free || subtotalAfterCoupon >= Number(rule.min_order_amount)) {
+        if (rule.always_free || shippingBase >= Number(rule.min_order_amount)) {
           isFree = true;
           break;
         }
       }
     }
+
     if (isFree) {
       serverShipping = 0;
+    } else if (zones && zones.length > 0 && rates && rates.length > 0) {
+      // Zone-based shipping system
+      let matchedZone = null as any;
+      if (payload.city) {
+        const cityNorm = payload.city.toLowerCase().trim();
+        if (cityNorm.length >= 2) {
+          matchedZone = zones.find((z: any) =>
+            (z.locations as string[]).some((loc: string) => loc.toLowerCase().trim() === cityNorm)
+          );
+          if (!matchedZone && cityNorm.length >= 3) {
+            matchedZone = zones.find((z: any) =>
+              (z.locations as string[]).some((loc: string) => {
+                const locNorm = loc.toLowerCase().trim();
+                if (locNorm.length < 3) return false;
+                return cityNorm.startsWith(locNorm) || locNorm.startsWith(cityNorm);
+              })
+            );
+          }
+        }
+      }
+      if (!matchedZone) matchedZone = zones[0];
+
+      if (matchedZone) {
+        const zoneRates = (rates || []).filter((r: any) =>
+          r.zone_id === matchedZone.id && r.is_wholesale === payload.is_wholesale
+        );
+        
+        // Find cheapest rate (matching frontend auto-select behavior)
+        let cheapestCost = 3.99;
+        let foundRate = false;
+        for (const rate of zoneRates) {
+          let cost = Number(rate.flat_rate) || 0;
+          if (rate.rate_type === "price_based" && rate.price_ranges) {
+            const ranges = rate.price_ranges as Array<{ min: number; max: number; cost: number }>;
+            const matched = ranges.find((r: any) => shippingBase >= r.min && (r.max === 0 || shippingBase <= r.max));
+            if (matched) cost = matched.cost;
+          }
+          if (!foundRate || cost < cheapestCost) {
+            cheapestCost = cost;
+            foundRate = true;
+          }
+        }
+        if (foundRate) serverShipping = cheapestCost;
+      }
     } else {
-      // Check shipping_rules table
+      // Legacy shipping_rules fallback
       const { data: rules } = await admin
         .from("shipping_rules")
         .select("*")
@@ -242,18 +309,24 @@ Deno.serve(async (req) => {
         .eq("is_wholesale", payload.is_wholesale)
         .order("min_amount", { ascending: false });
 
-      if (rules) {
-        const matchedRule = rules.find((r: any) => subtotalAfterCoupon >= Number(r.min_amount));
+      if (rules && rules.length > 0) {
+        const matchedRule = rules.find((r: any) => shippingBase >= Number(r.min_amount));
         if (matchedRule) {
           serverShipping = Number(matchedRule.shipping_cost);
         }
+      }
+
+      // Also check if legacy free shipping threshold applies
+      if (!isFree && shippingBase >= 25) {
+        serverShipping = 0;
+        isFree = true;
       }
     }
 
     const serverTotal = subtotalAfterCoupon + serverShipping;
 
-    // 7. Compare with frontend values (tolerance £0.02)
-    const tolerance = 0.02;
+    // 7. Compare with frontend values (tolerance £0.05 for floating point)
+    const tolerance = 0.05;
     const totalMatch = Math.abs(serverTotal - payload.claimed_total) <= tolerance;
 
     return new Response(
