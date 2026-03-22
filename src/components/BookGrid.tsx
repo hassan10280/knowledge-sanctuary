@@ -22,6 +22,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
   const navigate = useNavigate();
   const addToCartText = useAppSetting("ui_text", "add_to_cart");
   const isInCart = items.some((i) => i.id === book.id);
+  const isOutOfStock = book.stock_quantity !== null && book.stock_quantity !== undefined && book.stock_quantity <= 0;
   const coverAccent = book.cover_color ? book.cover_color + "cc" : "#2980b9";
 
   const handleAddToCart = (e: React.MouseEvent) => {

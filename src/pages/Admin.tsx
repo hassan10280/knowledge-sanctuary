@@ -535,7 +535,7 @@ const BooksManagement = ({ editingBook, setEditingBook, books, categories, publi
   <Card>
     <CardHeader className="flex flex-row items-center justify-between">
       <CardTitle className="font-serif">Books Management</CardTitle>
-      <Button size="sm" onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", cover_image: "", rating: 4.5, sort_order: 0, sample_url: "", show_ratings: true, publisher: "" })} className="gap-1.5">
+      <Button size="sm" onClick={() => setEditingBook({ title: "", author: "", category: categories?.[0]?.name || "", price: 0, cover_color: "#1a5276", cover_image: "", rating: 4.5, sort_order: 0, sample_url: "", show_ratings: true, publisher: "", isbn: "", stock_quantity: 100, in_stock: true, description: "" })} className="gap-1.5">
         <Plus className="h-4 w-4" /> Add Book
       </Button>
     </CardHeader>
@@ -549,9 +549,11 @@ const BooksManagement = ({ editingBook, setEditingBook, books, categories, publi
             <select value={editingBook.category} onChange={(e) => setEditingBook({ ...editingBook, category: e.target.value })} className="px-3 py-2 border rounded-md text-sm bg-background">
               {categories?.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
+            <Input placeholder="ISBN" value={editingBook.isbn || ""} onChange={(e) => setEditingBook({ ...editingBook, isbn: e.target.value })} />
             <Input type="number" step="0.01" placeholder="Price" value={editingBook.price || ""} onChange={(e) => setEditingBook({ ...editingBook, price: parseFloat(e.target.value) || null })} />
-            <Input type="number" step="0.01" placeholder="Original Price" value={editingBook.original_price || ""} onChange={(e) => setEditingBook({ ...editingBook, original_price: parseFloat(e.target.value) || null })} />
+            <Input type="number" step="0.01" placeholder="Sale/Discount Price (Original)" value={editingBook.original_price || ""} onChange={(e) => setEditingBook({ ...editingBook, original_price: parseFloat(e.target.value) || null })} />
             <Input type="number" placeholder="Discount %" value={editingBook.discount_percent || ""} onChange={(e) => setEditingBook({ ...editingBook, discount_percent: parseInt(e.target.value) || 0 })} />
+            <Input type="number" placeholder="Stock Quantity" value={editingBook.stock_quantity ?? 100} onChange={(e) => setEditingBook({ ...editingBook, stock_quantity: parseInt(e.target.value) || 0 })} />
             <div className="space-y-1.5">
               <Label className="text-xs">Publisher</Label>
               <Select value={editingBook.publisher || "__none__"} onValueChange={(v) => setEditingBook({ ...editingBook, publisher: v === "__none__" ? "" : v })}>
@@ -579,9 +581,15 @@ const BooksManagement = ({ editingBook, setEditingBook, books, categories, publi
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3 py-2">
-            <Switch checked={editingBook.show_ratings !== false} onCheckedChange={(checked) => setEditingBook({ ...editingBook, show_ratings: checked })} />
-            <Label className="text-sm font-medium flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-[hsl(var(--gold))]" /> Show Ratings</Label>
+          <div className="flex items-center gap-6 py-2">
+            <div className="flex items-center gap-3">
+              <Switch checked={editingBook.show_ratings !== false} onCheckedChange={(checked) => setEditingBook({ ...editingBook, show_ratings: checked })} />
+              <Label className="text-sm font-medium flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-[hsl(var(--gold))]" /> Show Ratings</Label>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={editingBook.in_stock !== false} onCheckedChange={(checked) => setEditingBook({ ...editingBook, in_stock: checked })} />
+              <Label className="text-sm font-medium">Active (Visible)</Label>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Sample Preview</label>
@@ -598,10 +606,22 @@ const BooksManagement = ({ editingBook, setEditingBook, books, categories, publi
       )}
       <div className="space-y-2">
         {books?.map((book: any) => (
-          <div key={book.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+          <div key={book.id} className={`flex items-center justify-between p-3 rounded-lg ${!book.in_stock ? "bg-destructive/5 border border-destructive/20" : "bg-muted/50"}`}>
             <div className="flex items-center gap-3">
               {book.cover_image ? <img src={book.cover_image} alt={book.title} className="w-8 h-10 rounded object-cover" /> : <div className="w-8 h-10 rounded" style={{ backgroundColor: book.cover_color || "#3b82f6" }} />}
-              <div><p className="text-sm font-medium">{book.title}</p><p className="text-xs text-muted-foreground">{book.author} • {book.category} • £{book.price}</p></div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">{book.title}</p>
+                  {!book.in_stock && <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">INACTIVE</span>}
+                  {book.stock_quantity !== null && book.stock_quantity !== undefined && book.stock_quantity < 5 && book.stock_quantity > 0 && (
+                    <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">LOW STOCK: {book.stock_quantity}</span>
+                  )}
+                  {book.stock_quantity === 0 && (
+                    <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">OUT OF STOCK</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">{book.author} • {book.category} • £{book.price} • Stock: {book.stock_quantity ?? "N/A"}{book.isbn ? ` • ISBN: ${book.isbn}` : ""}</p>
+              </div>
             </div>
             <div className="flex gap-1.5">
               <Button size="sm" variant="ghost" onClick={() => setEditingBook({ ...book })}>Edit</Button>
