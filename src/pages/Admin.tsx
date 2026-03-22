@@ -374,7 +374,7 @@ const Admin = () => {
           </Card>
         </div>
       );
-      case "whatsapp": return <WhatsAppSettings />;
+      case "whatsapp": return <WhatsAppSettingsTab />;
       case "footer": return <FooterEditorTab />;
       case "users": return <UsersManagement />;
       case "wholesale-requests": return <WholesaleRequestsTab />;
