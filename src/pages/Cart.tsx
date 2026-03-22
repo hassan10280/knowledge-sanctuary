@@ -49,11 +49,14 @@ const Cart = () => {
     category: b.category || "",
   }));
 
-  // Estimate shipping for cart page
-  const shippingEstimate = calcNewShipping(0, isWholesale, undefined, undefined, undefined);
+  // Step 1: Calculate discounts without shipping to get discountedSubtotal
+  const preShipDiscounts = getCartDiscounts(items, bookDetails, appliedCoupon, 0);
+
+  // Step 2: Use discountedSubtotal for accurate shipping calculation
+  const shippingEstimate = calcNewShipping(preShipDiscounts.discountedSubtotal, isWholesale, undefined, undefined, undefined);
   const estimatedShipping = shippingEstimate.shippingCost;
 
-  // Single source of truth: all calculations from one function
+  // Step 3: Final calculations with correct shipping
   const cartDiscounts = getCartDiscounts(items, bookDetails, appliedCoupon, estimatedShipping);
 
   const handleApplyCoupon = async () => {
