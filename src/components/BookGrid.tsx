@@ -51,10 +51,11 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
       transition={{ duration: 0.45, delay: index * 0.06, ease: [0.2, 0.8, 0.2, 1] }}
       className="group"
     >
-      <div className="bg-card rounded-2xl shadow-card hover:shadow-book transition-all duration-500 overflow-hidden flex flex-col">
-        {/* Cover Image Area */}
+      <div className="bg-card rounded-2xl shadow-card hover:shadow-book transition-all duration-500 overflow-hidden flex flex-col border border-border/40">
+        {/* Cover Image Area - dark background like reference */}
         <div
-          className="relative aspect-[3/4] bg-muted/30 flex items-center justify-center p-6 cursor-pointer overflow-hidden"
+          className="relative aspect-[4/5] flex items-center justify-center p-8 cursor-pointer overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, hsl(var(--muted)/0.4) 0%, hsl(var(--muted)/0.6) 100%)' }}
           onClick={() => onViewDetails(book)}
         >
           {book.discount_percent > 0 && (
@@ -66,11 +67,11 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
             <img
               src={(book as any).cover_image}
               alt={book.title}
-              className="max-h-full max-w-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500"
+              className="max-h-full max-w-[75%] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.3)] group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div
-              className="w-[70%] aspect-[2/3] rounded-md shadow-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-500"
+              className="w-[65%] aspect-[2/3] rounded-md shadow-[0_8px_24px_rgba(0,0,0,0.3)] flex items-center justify-center group-hover:scale-105 transition-transform duration-500"
               style={{ background: `linear-gradient(145deg, ${book.cover_color || "#1a5276"} 0%, ${coverAccent} 100%)` }}
             >
               <div className="text-center px-4">
@@ -85,29 +86,29 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
         </div>
 
         {/* Info Area */}
-        <div className="p-4 pt-3 flex flex-col items-center text-center gap-2 flex-1">
-          <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{book.title}</h4>
-          <p className="text-xs text-muted-foreground">{book.author}</p>
+        <div className="px-5 pt-5 pb-5 flex flex-col items-center text-center gap-1.5 flex-1">
+          <h4 className="text-base font-bold text-foreground leading-snug line-clamp-2 font-serif">{book.title}</h4>
+          <p className="text-xs text-muted-foreground italic">{book.author}</p>
 
           {book.show_ratings !== false && book.rating && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 mt-1">
               <Star className="h-3 w-3 fill-[hsl(var(--gold))] text-[hsl(var(--gold))]" />
               <span className="text-xs font-medium text-foreground">{book.rating}</span>
             </div>
           )}
 
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2.5 mt-2">
             {wholesalePrice !== undefined ? (
               <>
-                <span className="text-base font-bold text-foreground">£{wholesalePrice.toFixed(2)}</span>
-                <span className="text-xs text-muted-foreground line-through">£{Number(book.price).toFixed(2)}</span>
+                <span className="text-lg font-bold text-foreground">£{wholesalePrice.toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground line-through">£{Number(book.price).toFixed(2)}</span>
                 <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Wholesale</span>
               </>
             ) : (
               <>
-                <span className="text-base font-bold text-foreground">£{Number(book.price).toFixed(2)}</span>
+                <span className="text-lg font-bold text-foreground">£{Number(book.price).toFixed(2)}</span>
                 {book.original_price && (
-                  <span className="text-xs text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
+                  <span className="text-sm text-muted-foreground line-through">£{Number(book.original_price).toFixed(2)}</span>
                 )}
               </>
             )}
@@ -115,13 +116,13 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
 
           {discountEndDate && <DiscountCountdown endDate={discountEndDate} />}
 
-          {/* Add to Cart Button */}
+          {/* Add to Cart Button - rounded-full, prominent like reference */}
           <button
             onClick={handleAddToCart}
-            className={`mt-auto w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+            className={`mt-3 w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-full transition-all ${
               isInCart
                 ? "bg-[hsl(var(--mint))]/15 text-[hsl(var(--mint))] border border-[hsl(var(--mint))]/30 hover:bg-[hsl(var(--mint))]/25"
-                : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
             }`}
           >
             {isInCart ? (
@@ -137,8 +138,8 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
             )}
           </button>
 
-          {/* View Details & Preview */}
-          <div className="flex gap-2 w-full">
+          {/* View Details & Preview - outlined buttons like reference */}
+          <div className="flex gap-2.5 w-full mt-1.5">
             <button
               onClick={() => {
                 trackEvent("product_view", {
@@ -148,16 +149,14 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
                 });
                 onViewDetails(book);
               }}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground border border-border rounded-lg hover:bg-muted/50 transition-all"
+              className="flex-1 px-3 py-2 text-xs font-medium text-muted-foreground border border-border rounded-lg hover:bg-muted/50 hover:text-foreground transition-all text-center"
             >
-              <Eye className="h-3.5 w-3.5" />
               View Details
             </button>
             <button
               onClick={() => onReadSample(book)}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground border border-border rounded-lg hover:bg-muted/50 transition-all"
+              className="flex-1 px-3 py-2 text-xs font-medium text-muted-foreground border border-border rounded-lg hover:bg-muted/50 hover:text-foreground transition-all text-center"
             >
-              <BookText className="h-3.5 w-3.5" />
               Preview
             </button>
           </div>
