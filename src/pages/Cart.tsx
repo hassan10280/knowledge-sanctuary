@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, BookOpen, LogIn, Clock, Ticket, X, Tag, Truck, Loader2, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 const Cart = () => {
   const { getSetting } = useSettingsGetter();
