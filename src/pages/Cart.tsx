@@ -69,6 +69,11 @@ const Cart = () => {
         isWholesale,
       });
       setAppliedCoupon(coupon);
+      trackEvent("apply_coupon", {
+        coupon_code: coupon.code,
+        subtotal: cartDiscounts.discountedSubtotal,
+        items: items.map((i) => ({ id: i.id, price: i.price, quantity: i.quantity })),
+      }, user?.id);
       toast.success(`Coupon "${coupon.code}" applied!`);
     } catch (e: any) {
       toast.error(e.message);
