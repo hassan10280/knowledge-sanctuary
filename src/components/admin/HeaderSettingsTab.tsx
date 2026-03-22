@@ -104,11 +104,15 @@ const HeaderSettingsTab = () => {
   }, [settings, isDirty]);
 
   const get = useCallback((key: string) => local[key] ?? "", [local]);
-  const set = useCallback((key: string, value: any) => {
+  const markDirty = useCallback(() => {
     setIsDirty(true);
     setLastSavedAt(null);
-    setLocal((prev) => ({ ...prev, [key]: value }));
   }, []);
+
+  const set = useCallback((key: string, value: any) => {
+    markDirty();
+    setLocal((prev) => ({ ...prev, [key]: value }));
+  }, [markDirty]);
 
   const saveAll = async () => {
     const entries = Object.entries(local).filter(([, value]) => value !== undefined);
@@ -145,32 +149,36 @@ const HeaderSettingsTab = () => {
   const links = (local.nav_links || []) as NavLink[];
 
   const handleUpdate = useCallback((path: number[], field: "label" | "href", val: string) => {
+    markDirty();
     setLocal((prev) => ({
       ...prev,
       nav_links: deepUpdateLinks((prev.nav_links || []) as NavLink[], path, field, val),
     }));
-  }, []);
+  }, [markDirty]);
 
   const handleRemove = useCallback((path: number[]) => {
+    markDirty();
     setLocal((prev) => ({
       ...prev,
       nav_links: deepRemoveLink((prev.nav_links || []) as NavLink[], path),
     }));
-  }, []);
+  }, [markDirty]);
 
   const handleAddChild = useCallback((path: number[]) => {
+    markDirty();
     setLocal((prev) => ({
       ...prev,
       nav_links: deepAddChild((prev.nav_links || []) as NavLink[], path),
     }));
-  }, []);
+  }, [markDirty]);
 
   const addTopLink = useCallback(() => {
+    markDirty();
     setLocal((prev) => ({
       ...prev,
       nav_links: [...((prev.nav_links || []) as NavLink[]), { label: "", href: "/" }],
     }));
-  }, []);
+  }, [markDirty]);
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading…</p>;
 
