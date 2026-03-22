@@ -27,6 +27,7 @@ const BookCard = ({ book, index, onViewDetails, onReadSample, wholesalePrice, di
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isOutOfStock) return;
     if (isInCart) {
       navigate("/cart", { state: { scrollToCart: true } });
       return;
