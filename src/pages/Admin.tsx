@@ -154,58 +154,6 @@ const Admin = () => {
   };
 
 
-  const handleSaveBook = async () => {
-    if (!editingBook) {
-      toast.error("No book data found.");
-      return;
-    }
-
-    if (isBlank(editingBook.title)) {
-      toast.error("Title is required.");
-      return;
-    }
-
-    if (isBlank(editingBook.author)) {
-      toast.error("Author is required.");
-      return;
-    }
-
-    if (isBlank(editingBook.category)) {
-      toast.error("Category is required.");
-      return;
-    }
-
-    if (!isValidNumber(Number(editingBook.price), { min: 0 })) {
-      toast.error("Price must be a valid number.");
-      return;
-    }
-
-    if (editingBook.original_price !== null && editingBook.original_price !== undefined && editingBook.original_price !== "") {
-      if (!isValidNumber(Number(editingBook.original_price), { min: 0 })) {
-        toast.error("Original Price must be a valid number.");
-        return;
-      }
-    }
-
-    if (editingBook.discount_percent !== null && editingBook.discount_percent !== undefined && editingBook.discount_percent !== "") {
-      if (!isValidNumber(Number(editingBook.discount_percent), { min: 0, max: 100 })) {
-        toast.error("Discount % must be between 0 and 100.");
-        return;
-      }
-    }
-
-    setSavingBook(true);
-    try {
-      await upsertBook.mutateAsync(editingBook);
-      toast.success("Book saved!");
-      setEditingBook(null);
-    } catch (e: unknown) {
-      toast.error(getErrorMessage(e));
-    } finally {
-      setSavingBook(false);
-    }
-  };
-
   const handleSaveCategory = async () => {
     if (!editingCategory) {
       toast.error("No category data found.");
