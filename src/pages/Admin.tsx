@@ -86,12 +86,9 @@ const Admin = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data: settings, isLoading: settingsLoading } = useSiteSettings();
-  const { data: books } = useBooks();
   const { data: categories } = useCategories();
   const { data: publishers } = usePublishers();
   const updateSetting = useUpdateSetting();
-  const upsertBook = useUpsertBook();
-  const deleteBook = useDeleteBook();
   const upsertCategory = useUpsertCategory();
   const deleteCategory = useDeleteCategory();
 
