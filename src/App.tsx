@@ -23,11 +23,11 @@ const Orders = lazy(() => import("./pages/Orders.tsx"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0,
+      staleTime: 5_000,
       gcTime: 5 * 60 * 1000,
       retry: 2,
-      refetchOnMount: "always",
-      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
     },
   },

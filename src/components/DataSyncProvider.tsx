@@ -29,14 +29,25 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let invalidateTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const scheduleSync = () => {
+    const scheduleSync = (table?: string) => {
       if (invalidateTimer) clearTimeout(invalidateTimer);
 
       invalidateTimer = setTimeout(() => {
+        if (table === "site_settings") {
+          void Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["site_settings"] }),
+            queryClient.refetchQueries({ queryKey: ["site_settings"], type: "active" }),
+          ]);
+          return;
+        }
+
         queryClient.invalidateQueries();
         queryClient.refetchQueries({ type: "active" });
       }, 120);
     };
+
+    const scheduleFullSync = () => scheduleSync();
+    const scheduleSiteSettingsSync = () => scheduleSync("site_settings");
 
     const channel = supabase.channel("app-live-sync");
 
@@ -48,7 +59,7 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
           schema: "public",
           table,
         },
-        scheduleSync,
+        () => scheduleSync(table),
       );
     });
 
@@ -56,16 +67,16 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        scheduleSync();
+        scheduleFullSync();
       }
     };
 
-    window.addEventListener("focus", scheduleSync);
+    window.addEventListener("focus", scheduleFullSync);
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       if (invalidateTimer) clearTimeout(invalidateTimer);
-      window.removeEventListener("focus", scheduleSync);
+      window.removeEventListener("focus", scheduleFullSync);
       document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
