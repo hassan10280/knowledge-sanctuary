@@ -16,6 +16,7 @@ import ShippingSettingsTab from "@/components/admin/ShippingSettingsTab";
 import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
 import AdminOrdersTab from "@/components/admin/AdminOrdersTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
+import LayoutSettingsTab from "@/components/admin/LayoutSettingsTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -662,6 +663,9 @@ const Admin = () => {
             <TabsTrigger value="settings" className="text-xs sm:text-sm gap-1.5">
               <Cog className="h-3.5 w-3.5" /> Settings
             </TabsTrigger>
+            <TabsTrigger value="layout" className="text-xs sm:text-sm gap-1.5">
+              <Layers className="h-3.5 w-3.5" /> Layout
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="header"><HeaderSettings /></TabsContent>
@@ -887,6 +891,7 @@ const Admin = () => {
           <TabsContent value="notifications"><AdminNotificationsTab /></TabsContent>
           <TabsContent value="orders"><AdminOrdersTab /></TabsContent>
           <TabsContent value="settings"><AdminSettingsTab /></TabsContent>
+          <TabsContent value="layout"><LayoutSettingsTab /></TabsContent>
         </Tabs>
       </div>
     </div>
