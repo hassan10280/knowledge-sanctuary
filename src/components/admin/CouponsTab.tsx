@@ -151,13 +151,27 @@ const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 flex-wrap">
               <div className="flex items-center gap-2">
                 <Switch
                   checked={editing.is_active}
                   onCheckedChange={v => setEditing({ ...editing, is_active: v })}
                 />
                 <Label className="text-xs">Active</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={editing.auto_apply ?? false}
+                  onCheckedChange={v => setEditing({ ...editing, auto_apply: v })}
+                />
+                <Label className="text-xs">Auto Apply</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={editing.first_order_only ?? false}
+                  onCheckedChange={v => setEditing({ ...editing, first_order_only: v })}
+                />
+                <Label className="text-xs">First Order Only</Label>
               </div>
               {!wholesaleOnly && !retailOnly && (
                 <div className="flex items-center gap-2">
@@ -168,6 +182,17 @@ const CouponsTab = ({ wholesaleOnly, retailOnly }: CouponsTabProps) => {
                   <Label className="text-xs">Wholesale Only</Label>
                 </div>
               )}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Max Discount Amount (£, optional)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={editing.max_discount_amount || ""}
+                onChange={e => setEditing({ ...editing, max_discount_amount: e.target.value ? parseFloat(e.target.value) : null })}
+                className="h-9 text-xs"
+                placeholder="No cap"
+              />
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
