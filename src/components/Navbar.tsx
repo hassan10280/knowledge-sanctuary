@@ -136,7 +136,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
-  const { data: settings } = useSiteSettings("header");
+  const { data: settings, isLoading: headerSettingsLoading } = useSiteSettings("header");
   const { user, isAdmin, loading, signOut } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
@@ -168,10 +168,14 @@ const Navbar = () => {
 
   const logoUrlSetting = settings?.find((item) => item.key === "logo_url");
   const rawLogoUrl = typeof logoUrlSetting?.value === "string" ? logoUrlSetting.value.trim() : "";
-  const logoVersion = logoUrlSetting?.updated_at ? encodeURIComponent(logoUrlSetting.updated_at) : "local";
+  const logoVersion = logoUrlSetting?.updated_at
+    ? encodeURIComponent(`${logoUrlSetting.updated_at}-${rawLogoUrl}`)
+    : "local";
   const logoSrc = rawLogoUrl
     ? `${rawLogoUrl}${rawLogoUrl.includes("?") ? "&" : "?"}v=${logoVersion}`
     : logoHeader;
+  const showResolvedLogo = !headerSettingsLoading;
+  const activeLogoSrc = !showResolvedLogo || logoLoadFailed ? logoHeader : logoSrc;
 
   useEffect(() => {
     setLogoLoadFailed(false);
@@ -194,13 +198,21 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 sm:h-24 gap-3 sm:gap-6">
           <Link to="/" className="flex items-center shrink-0 min-w-0">
-            <img
-              src={logoLoadFailed ? logoHeader : logoSrc}
-              alt="Madrasah Matters"
-              style={{ height: logoHeight }}
-              className="w-auto max-w-[160px] sm:max-w-[220px] object-contain"
-              onError={() => setLogoLoadFailed(true)}
-            />
+            {showResolvedLogo ? (
+              <img
+                key={activeLogoSrc}
+                src={activeLogoSrc}
+                alt="Madrasah Matters"
+                style={{ height: logoHeight }}
+                className="w-auto max-w-[160px] sm:max-w-[220px] object-contain"
+                onError={() => setLogoLoadFailed(true)}
+              />
+            ) : (
+              <div
+                className="h-10 sm:h-12 w-[132px] sm:w-[180px] rounded-md bg-white/10 animate-pulse"
+                aria-label="Loading logo"
+              />
+            )}
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -227,23 +239,24 @@ const Navbar = () => {
               )}
             </Link>
 
-            {!loading && (
-              <>
-                {user ? (
-                  <div className="hidden sm:flex items-center">
-                    <ProfileDropdown />
-                  </div>
-                ) : (
-                  <div className="hidden sm:flex items-center gap-2">
-                    <Link to="/auth" className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors">
-                      <LogOut className="h-4 w-4" /> Log In
-                    </Link>
-                    <Link to="/auth?intent=signup" className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-white/15 text-white border border-white/25 rounded-lg hover:bg-white/25 transition-all duration-300 backdrop-blur-sm">
-                      <User className="h-4 w-4" /> Sign Up
-                    </Link>
-                  </div>
-                )}
-              </>
+            {user ? (
+              <div className="hidden sm:flex items-center min-w-[120px] justify-end">
+                <ProfileDropdown />
+              </div>
+            ) : loading ? (
+              <div className="hidden sm:flex items-center gap-2 min-w-[190px] justify-end">
+                <div className="h-10 w-20 rounded-lg bg-white/10 animate-pulse" />
+                <div className="h-10 w-24 rounded-lg bg-white/10 animate-pulse" />
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2 min-w-[190px] justify-end">
+                <Link to="/auth" className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors">
+                  <LogOut className="h-4 w-4" /> Log In
+                </Link>
+                <Link to="/auth?intent=signup" className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-white/15 text-white border border-white/25 rounded-lg hover:bg-white/25 transition-all duration-300 backdrop-blur-sm">
+                  <User className="h-4 w-4" /> Sign Up
+                </Link>
+              </div>
             )}
 
             <button className="md:hidden p-2 text-white/90" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -273,38 +286,39 @@ const Navbar = () => {
               </Link>
 
               <div className="border-t border-white/10 pt-3 space-y-2">
-                {!loading && (
+                {user ? (
                   <>
-                    {user ? (
-                      <>
-                        <p className="text-xs text-white/40 truncate">{user.email}</p>
-                        <Link to="/profile" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg"
-                          onClick={() => setMobileOpen(false)}>
-                          <User className="h-4 w-4" /> My Profile
-                        </Link>
-                        {isAdmin && (
-                          <Link to="/admin" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/30 rounded-lg"
-                            onClick={() => setMobileOpen(false)}>
-                            <Shield className="h-4 w-4" /> Admin Panel
-                          </Link>
-                        )}
-                        <button onClick={handleSignOut}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg">
-                          <LogOut className="h-4 w-4" /> Logout
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Link to="/auth" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/15 text-white border border-white/25 rounded-lg backdrop-blur-sm"
-                          onClick={() => setMobileOpen(false)}>
-                          <LogOut className="h-4 w-4" /> Log In
-                        </Link>
-                        <Link to="/auth?intent=signup" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-white text-[hsl(var(--sky-deep))] rounded-lg hover:bg-white/90 transition-all"
-                          onClick={() => setMobileOpen(false)}>
-                          <User className="h-4 w-4" /> Create Account
-                        </Link>
-                      </>
+                    <p className="text-xs text-white/40 truncate">{user.email}</p>
+                    <Link to="/profile" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg"
+                      onClick={() => setMobileOpen(false)}>
+                      <User className="h-4 w-4" /> My Profile
+                    </Link>
+                    {isAdmin && (
+                      <Link to="/admin" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/30 rounded-lg"
+                        onClick={() => setMobileOpen(false)}>
+                        <Shield className="h-4 w-4" /> Admin Panel
+                      </Link>
                     )}
+                    <button onClick={handleSignOut}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg">
+                      <LogOut className="h-4 w-4" /> Logout
+                    </button>
+                  </>
+                ) : loading ? (
+                  <div className="space-y-2">
+                    <div className="h-10 rounded-lg bg-white/10 animate-pulse" />
+                    <div className="h-10 rounded-lg bg-white/10 animate-pulse" />
+                  </div>
+                ) : (
+                  <>
+                    <Link to="/auth" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/15 text-white border border-white/25 rounded-lg backdrop-blur-sm"
+                      onClick={() => setMobileOpen(false)}>
+                      <LogOut className="h-4 w-4" /> Log In
+                    </Link>
+                    <Link to="/auth?intent=signup" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-white text-[hsl(var(--sky-deep))] rounded-lg hover:bg-white/90 transition-all"
+                      onClick={() => setMobileOpen(false)}>
+                      <User className="h-4 w-4" /> Create Account
+                    </Link>
                   </>
                 )}
               </div>
