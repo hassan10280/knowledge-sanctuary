@@ -31,18 +31,40 @@ interface CartContextType {
   lastSyncedAt: number | null;
 }
 
+const CART_STORAGE_KEY = "madrasah_cart";
+const COUPON_STORAGE_KEY = "madrasah_coupon";
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [items, setItems] = useState<CartItem[]>(() => loadFromStorage(CART_STORAGE_KEY, []));
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(() => loadFromStorage(COUPON_STORAGE_KEY, null));
   const [pricesSyncing, setPricesSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
-  const [itemCount, setItemCount] = useState(0);
+  const [itemCount, setItemCount] = useState(items.length);
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    setItemCount(items.length);
+  }, [items]);
 
   useEffect(() => {
-    setItemCount(items.length);
-  }, [items.length]);
+    if (appliedCoupon) {
+      localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(appliedCoupon));
+    } else {
+      localStorage.removeItem(COUPON_STORAGE_KEY);
+    }
+  }, [appliedCoupon]);
 
   const syncPrices = useCallback(async () => {
     if (items.length === 0) return;
@@ -54,7 +76,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems((prev) => {
           let changed = false;
           const next = prev.map((item) => {
-            const fresh = data.find((b: any) => b.id === item.id);
+            const fresh = data.find((b: { id: string; price: number | null; title: string; author: string }) => b.id === item.id);
             if (fresh && Number(fresh.price) !== item.price) {
               changed = true;
               return { ...item, price: Number(fresh.price), title: fresh.title, author: fresh.author };
@@ -106,6 +128,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
     setAppliedCoupon(null);
     setLastSyncedAt(null);
+    localStorage.removeItem(CART_STORAGE_KEY);
+    localStorage.removeItem(COUPON_STORAGE_KEY);
   };
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
