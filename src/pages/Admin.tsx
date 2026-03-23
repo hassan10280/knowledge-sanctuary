@@ -86,7 +86,6 @@ const Admin = () => {
   const isMobile = useIsMobile();
   const { data: settings, isLoading: settingsLoading } = useSiteSettings();
   const updateSetting = useUpdateSetting();
-  const updateSetting = useUpdateSetting();
 
 
   const [activeSection, setActiveSection] = useState("header");
