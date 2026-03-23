@@ -327,7 +327,7 @@ const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-[hsl(207,68%,16%)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] flex flex-col mobile-drawer-scrollbar"
+              className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-white shadow-[-8px_0_30px_rgba(0,0,0,0.15)] flex flex-col mobile-drawer-scrollbar"
             >
               {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
