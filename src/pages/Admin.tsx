@@ -345,7 +345,7 @@ const Admin = () => {
       case "header": return <HeaderSettingsTab />;
       case "hero": return <HeroSettingsTab />;
       case "books": return <BooksManagementTab />;
-      case "categories": return <CategoriesManagement editingCategory={editingCategory} setEditingCategory={setEditingCategory} categories={categories} handleSaveCategory={handleSaveCategory} deleteCategory={deleteCategory} savingCategory={savingCategory} />;
+      case "categories": return <CategoriesManagementTab />;
       case "publishers": return <PublishersTab />;
       case "design": return (
         <div className="space-y-6">
