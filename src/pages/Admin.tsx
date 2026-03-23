@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Layers, Truck, Bell, Package, Cog, PenLine, BarChart3, ShoppingCart, X, Home } from "lucide-react";
 import HeaderSettingsTab from "@/components/admin/HeaderSettingsTab";
+import MobileMenuSettingsTab from "@/components/admin/MobileMenuSettingsTab";
 import HeroSettingsTab from "@/components/admin/HeroSettingsTab";
 import WhatsAppSettingsTab from "@/components/admin/WhatsAppSettingsTab";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,8 @@ interface SidebarItem {
 }
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
-  { id: "header", label: "Header", icon: Layout, group: "Content" },
+  { id: "header", label: "Desktop Menu", icon: Layout, group: "Content" },
+  { id: "mobile-menu", label: "Mobile & Tablet Menu", icon: Menu, group: "Content" },
   { id: "hero", label: "Hero", icon: Globe, group: "Content" },
   { id: "books", label: "Books", icon: BookOpen, group: "Content" },
   { id: "categories", label: "Categories", icon: BookOpen, group: "Content" },
@@ -309,6 +311,7 @@ const Admin = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "header": return <HeaderSettingsTab />;
+      case "mobile-menu": return <MobileMenuSettingsTab />;
       case "hero": return <HeroSettingsTab />;
       case "books": return <BooksManagementTab />;
       case "categories": return <CategoriesManagementTab />;

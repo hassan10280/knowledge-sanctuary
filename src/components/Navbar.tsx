@@ -398,7 +398,7 @@ const Navbar = () => {
                       <LogOut className="h-3.5 w-3.5" /> Log In
                     </Link>
                     <Link to="/auth?intent=signup"
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-semibold bg-[hsl(var(--gold))] text-[hsl(207,68%,20%)] rounded-xl hover:brightness-105 transition-all duration-200 shadow-sm"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-semibold bg-[hsl(207,68%,28%)] text-white rounded-xl hover:bg-[hsl(207,68%,24%)] transition-all duration-200 shadow-sm"
                       onClick={() => setMobileOpen(false)}>
                       <User className="h-3.5 w-3.5" /> Create Account
                     </Link>
