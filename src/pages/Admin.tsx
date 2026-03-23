@@ -153,33 +153,6 @@ const Admin = () => {
   };
 
 
-  const handleSaveCategory = async () => {
-    if (!editingCategory) {
-      toast.error("No category data found.");
-      return;
-    }
-
-    if (isBlank(editingCategory.name)) {
-      toast.error("Name (English) is required.");
-      return;
-    }
-
-    if (!isValidNumber(Number(editingCategory.sort_order ?? 0), { min: 0 })) {
-      toast.error("Sort Order must be a valid number.");
-      return;
-    }
-
-    setSavingCategory(true);
-    try {
-      await upsertCategory.mutateAsync(editingCategory);
-      toast.success("Category saved!");
-      setEditingCategory(null);
-    } catch (e: unknown) {
-      toast.error(getErrorMessage(e));
-    } finally {
-      setSavingCategory(false);
-    }
-  };
 
   if (loading || settingsLoading) {
     return (
