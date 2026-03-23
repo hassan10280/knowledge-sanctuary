@@ -57,6 +57,8 @@ const Profile = () => {
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   // Wholesale status
   const [wholesaleApp, setWholesaleApp] = useState<any>(null);
