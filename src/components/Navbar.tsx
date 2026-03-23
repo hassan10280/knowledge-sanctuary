@@ -318,7 +318,7 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden fixed inset-0 top-0 bg-black/50 backdrop-blur-sm z-40"
+              className="lg:hidden fixed inset-0 top-0 bg-black/60 backdrop-blur-md z-40"
               onClick={() => setMobileOpen(false)}
             />
             {/* Slide-in panel */}
@@ -327,7 +327,7 @@ const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-[hsl(207,68%,22%)] shadow-[-8px_0_30px_rgba(0,0,0,0.3)] flex flex-col mobile-drawer-scrollbar"
+              className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-[hsl(207,68%,16%)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] flex flex-col mobile-drawer-scrollbar"
             >
               {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
@@ -351,7 +351,7 @@ const Navbar = () => {
               </div>
 
               {/* Scrollable nav links */}
-              <div className="flex-1 overflow-y-auto py-3 px-2">
+              <div className="flex-1 overflow-y-auto py-3 px-2 pb-24">
                 {navLinks.map((link, i) => (
                   <MobileNavItem key={i} link={link} depth={0} onClose={() => setMobileOpen(false)} />
                 ))}
@@ -361,50 +361,51 @@ const Navbar = () => {
                   onClick={() => setMobileOpen(false)}>
                   <Building2 className="h-4.5 w-4.5" /> Wholesale
                 </Link>
+
+                {/* Auth actions — flow naturally after nav */}
+                <div className="mt-6 mx-2 pt-5 border-t border-white/10 space-y-3">
+                  {user ? (
+                    <>
+                      <p className="text-xs text-white/40 truncate mb-2 px-1">{user.email}</p>
+                      <Link to="/profile"
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200"
+                        onClick={() => setMobileOpen(false)}>
+                        <User className="h-4 w-4" /> My Profile
+                      </Link>
+                      {isAdmin && (
+                        <Link to="/admin"
+                          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-xl hover:bg-[hsl(var(--gold))]/20 transition-all duration-200"
+                          onClick={() => setMobileOpen(false)}>
+                          <Shield className="h-4 w-4" /> Admin Panel
+                        </Link>
+                      )}
+                      <button onClick={handleSignOut}
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200">
+                        <LogOut className="h-4 w-4" /> Logout
+                      </button>
+                    </>
+                  ) : loading ? (
+                    <div className="space-y-3">
+                      <div className="h-12 rounded-xl bg-white/10 animate-pulse" />
+                      <div className="h-12 rounded-xl bg-white/10 animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <Link to="/auth"
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium text-white border border-white/25 rounded-xl hover:bg-white/10 transition-all duration-200"
+                        onClick={() => setMobileOpen(false)}>
+                        <LogOut className="h-4 w-4" /> Log In
+                      </Link>
+                      <Link to="/auth?intent=signup"
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-semibold bg-white text-[hsl(207,68%,28%)] rounded-xl hover:bg-white/90 transition-all duration-200 shadow-md"
+                        onClick={() => setMobileOpen(false)}>
+                        <User className="h-4 w-4" /> Create Account
+                      </Link>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* Bottom actions — always visible */}
-              <div className="shrink-0 border-t border-white/10 p-5 space-y-3 bg-[hsl(207,68%,18%)]">
-                {user ? (
-                  <>
-                    <p className="text-xs text-white/40 truncate mb-2 px-1">{user.email}</p>
-                    <Link to="/profile"
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200"
-                      onClick={() => setMobileOpen(false)}>
-                      <User className="h-4 w-4" /> My Profile
-                    </Link>
-                    {isAdmin && (
-                      <Link to="/admin"
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-xl hover:bg-[hsl(var(--gold))]/20 transition-all duration-200"
-                        onClick={() => setMobileOpen(false)}>
-                        <Shield className="h-4 w-4" /> Admin Panel
-                      </Link>
-                    )}
-                    <button onClick={handleSignOut}
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200">
-                      <LogOut className="h-4 w-4" /> Logout
-                    </button>
-                  </>
-                ) : loading ? (
-                  <div className="space-y-3">
-                    <div className="h-12 rounded-xl bg-white/10 animate-pulse" />
-                    <div className="h-12 rounded-xl bg-white/10 animate-pulse" />
-                  </div>
-                ) : (
-                  <>
-                    <Link to="/auth"
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium text-white border border-white/25 rounded-xl hover:bg-white/10 transition-all duration-200"
-                      onClick={() => setMobileOpen(false)}>
-                      <LogOut className="h-4 w-4" /> Log In
-                    </Link>
-                    <Link to="/auth?intent=signup"
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-semibold bg-white text-[hsl(207,68%,28%)] rounded-xl hover:bg-white/90 transition-all duration-200 shadow-md"
-                      onClick={() => setMobileOpen(false)}>
-                      <User className="h-4 w-4" /> Create Account
-                    </Link>
-                  </>
-                )}
-              </div>
             </motion.div>
           </>
         )}
