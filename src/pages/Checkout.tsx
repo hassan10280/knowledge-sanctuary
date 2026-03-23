@@ -150,11 +150,11 @@ const Checkout = () => {
       .from("billing_addresses")
       .select("*")
       .eq("user_id", user.id)
-      .eq("is_default", true)
-      .maybeSingle()
+      .order("is_default", { ascending: false })
       .then(({ data }) => {
-        if (data) {
-          setSavedAddress(data);
+        if (data && data.length > 0) {
+          setSavedAddresses(data);
+          setSelectedAddressId(data[0].id); // default address first
           setUseSaved(true);
         }
       });
