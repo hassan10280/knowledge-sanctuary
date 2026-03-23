@@ -608,7 +608,7 @@ const BooksManagementTab = () => {
             </FormField>
 
             <div className="flex gap-2 pt-2">
-              <Button size="sm" onClick={handleSave} disabled={saving || Object.keys(errors).length > 0} className="gap-1.5">
+              <Button size="sm" onClick={handleSave} disabled={saving || uploadingCover || uploadingPreview || Object.keys(errors).length > 0} className="gap-1.5">
                 <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => { setEditingBook(null); setErrors({}); }}>Cancel</Button>
