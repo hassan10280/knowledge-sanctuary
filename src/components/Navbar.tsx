@@ -330,12 +330,12 @@ const Navbar = () => {
               className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-white shadow-[-8px_0_30px_rgba(0,0,0,0.15)] flex flex-col mobile-drawer-scrollbar"
             >
               {/* Drawer header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
                   <img src={activeLogoSrc} alt="Madrasah Matters" className="h-8 w-auto object-contain" />
                 </Link>
                 <div className="flex items-center gap-3">
-                  <Link to="/cart" className="relative p-2 text-white/80 hover:text-white transition-colors" onClick={() => setMobileOpen(false)}>
+                  <Link to="/cart" className="relative p-2 text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] transition-colors" onClick={() => setMobileOpen(false)}>
                     <ShoppingCart className="h-5 w-5" />
                     {totalItems > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-[hsl(var(--coral))] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
@@ -343,7 +343,7 @@ const Navbar = () => {
                       </span>
                     )}
                   </Link>
-                  <button className="p-2 text-white/80 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                  <button className="p-2 text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] transition-colors rounded-lg hover:bg-slate-100"
                     onClick={() => setMobileOpen(false)}>
                     <X className="h-5 w-5" />
                   </button>
