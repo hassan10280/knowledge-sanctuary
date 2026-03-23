@@ -54,6 +54,8 @@ const Checkout = () => {
     phone: "",
   });
 
+  const savedAddress = savedAddresses.find((a) => a.id === selectedAddressId) || null;
+
   const isWholesale = wholesaleStatus === "approved";
 
   const bookDetails = (books || []).map((b: any) => ({
