@@ -132,7 +132,8 @@ const Auth = () => {
           );
         }
       } else {
-        toast.success("Check your email to verify your account!");
+        // Retail signup - auto-confirm is enabled so user is logged in immediately
+        toast.success("Account created successfully! Welcome to MadrasahMatters!", { duration: 5000 });
       }
     } else {
       // Login

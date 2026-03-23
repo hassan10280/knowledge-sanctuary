@@ -47,8 +47,12 @@ const WholesaleRequestsTab = () => {
 
   const handleApprove = async (appId: string, userId: string) => {
     try {
-      await updateApp.mutateAsync({ id: appId, status: "approved", reviewed_by: user?.id });
-      await supabase.from("user_roles").upsert({ user_id: userId, role: "wholesale" as any });
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "approve_wholesale", application_id: appId, target_user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      queryClient.invalidateQueries({ queryKey: ["wholesale-applications"] });
       toast.success("Application approved!");
     } catch (e: any) {
       toast.error(e.message);
@@ -57,7 +61,12 @@ const WholesaleRequestsTab = () => {
 
   const handleReject = async (appId: string) => {
     try {
-      await updateApp.mutateAsync({ id: appId, status: "rejected", admin_notes: rejectNotes[appId] || "", reviewed_by: user?.id });
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "reject_wholesale", application_id: appId, admin_notes: rejectNotes[appId] || "" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      queryClient.invalidateQueries({ queryKey: ["wholesale-applications"] });
       toast.success("Application rejected.");
     } catch (e: any) {
       toast.error(e.message);
