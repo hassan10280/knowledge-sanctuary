@@ -36,7 +36,8 @@ const Checkout = () => {
   const { getSetting } = useSettingsGetter();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [savedAddress, setSavedAddress] = useState<any>(null);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [useSaved, setUseSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transactionId, setTransactionId] = useState("");
@@ -52,6 +53,8 @@ const Checkout = () => {
     postcode: "",
     phone: "",
   });
+
+  const savedAddress = savedAddresses.find((a) => a.id === selectedAddressId) || null;
 
   const isWholesale = wholesaleStatus === "approved";
 
@@ -147,11 +150,11 @@ const Checkout = () => {
       .from("billing_addresses")
       .select("*")
       .eq("user_id", user.id)
-      .eq("is_default", true)
-      .maybeSingle()
+      .order("is_default", { ascending: false })
       .then(({ data }) => {
-        if (data) {
-          setSavedAddress(data);
+        if (data && data.length > 0) {
+          setSavedAddresses(data);
+          setSelectedAddressId(data[0].id); // default address first
           setUseSaved(true);
         }
       });
@@ -452,22 +455,28 @@ const Checkout = () => {
               <div className="bg-card border border-border rounded-xl p-6 space-y-5">
                 <h2 className="font-serif text-xl text-foreground">Billing Address</h2>
 
-                {savedAddress && (
+                {savedAddresses.length > 0 && (
                   <div className="space-y-3">
-                    <button
-                      onClick={() => setUseSaved(true)}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
-                        useSaved ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-foreground">Use this address</span>
-                        {useSaved && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {savedAddress.full_name}, {savedAddress.address_line1}, {savedAddress.city}, {savedAddress.postcode}
-                      </p>
-                    </button>
+                    {savedAddresses.map((addr) => (
+                      <button
+                        key={addr.id}
+                        onClick={() => { setSelectedAddressId(addr.id); setUseSaved(true); }}
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
+                          useSaved && selectedAddressId === addr.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-foreground">
+                            {addr.full_name}
+                            {addr.is_default && <span className="ml-2 text-[10px] text-primary font-normal">(Default)</span>}
+                          </span>
+                          {useSaved && selectedAddressId === addr.id && <Check className="h-4 w-4 text-primary" />}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {addr.address_line1}, {addr.city}, {addr.postcode}
+                        </p>
+                      </button>
+                    ))}
                     <button
                       onClick={() => setUseSaved(false)}
                       className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
@@ -479,7 +488,7 @@ const Checkout = () => {
                   </div>
                 )}
 
-                {(!savedAddress || !useSaved) && (
+                {(savedAddresses.length === 0 || !useSaved) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                       <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name *</label>
