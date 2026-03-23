@@ -171,12 +171,10 @@ const Navbar = () => {
     { label: "Gifts", href: "/gifts" },
   ]) as NavLink[];
 
-  const logoWidth = getLayoutVal("logo_width", 200) as number;
-  const logoHeight = getLayoutVal("logo_height", 56) as number;
   const logoOffsetX = getLayoutVal("logo_offset_x", 0) as number;
   const logoOffsetY = getLayoutVal("logo_offset_y", 0) as number;
   const logoScale = getLayoutVal("logo_scale", 100) as number;
-  const headerHeight = getLayoutVal("header_height", 72) as number;
+  const headerHeight = getLayoutVal("header_height", 68) as number;
 
   const logoUrlSetting = settings?.find((item) => item.key === "logo_url");
   const rawLogoUrl = typeof logoUrlSetting?.value === "string" ? logoUrlSetting.value.trim() : "";
@@ -207,13 +205,14 @@ const Navbar = () => {
           : "bg-transparent"
       }`}
     >
-      {/* Full-width container with edge-to-edge padding */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+      {/* Balanced container — max-width keeps things from flying to edges on ultrawide, 
+          but wide enough to breathe on normal screens */}
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-5 lg:px-8">
         <div className="flex items-center justify-between"
           style={{ height: `${headerHeight}px` }}>
 
-          {/* ── Left: Logo + Brand Name ── */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0">
+          {/* ── Left: Logo ── */}
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             {showResolvedLogo ? (
               <img
                 key={activeLogoSrc}
@@ -221,8 +220,9 @@ const Navbar = () => {
                 alt="Madrasah Matters"
                 className="object-contain"
                 style={{
-                  width: `clamp(${Math.round(logoWidth * 0.55)}px, ${logoWidth}px, ${logoWidth}px)`,
-                  height: `clamp(${Math.round(logoHeight * 0.6)}px, ${logoHeight}px, ${logoHeight}px)`,
+                  /* Responsive logo: scales from ~32px on mobile to ~48px on desktop */
+                  height: "clamp(32px, 5vw, 48px)",
+                  width: "auto",
                   transform: `translate(${logoOffsetX}px, ${logoOffsetY}px) scale(${logoScale / 100})`,
                 }}
                 onError={() => setLogoLoadFailed(true)}
@@ -230,15 +230,15 @@ const Navbar = () => {
             ) : (
               <div
                 className="rounded-md bg-white/10 animate-pulse"
-                style={{ width: `${logoWidth}px`, height: `${logoHeight}px` }}
+                style={{ width: "140px", height: "40px" }}
                 aria-label="Loading logo"
               />
             )}
           </Link>
 
-          {/* ── Center: Navigation Links (Desktop only) ── */}
-          <div className="hidden lg:flex items-center justify-center flex-1 mx-4">
-            <div className="flex items-center gap-5 xl:gap-7 2xl:gap-9">
+          {/* ── Center: Navigation (Desktop only) ── */}
+          <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 mx-6">
+            <div className="flex items-center gap-4 xl:gap-6">
               {navLinks.map((link, i) => (
                 <DesktopNavItem key={i} link={link} />
               ))}
@@ -246,49 +246,49 @@ const Navbar = () => {
           </div>
 
           {/* ── Right: Actions ── */}
-          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
-            {/* Wholesale Button */}
+          <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 shrink-0">
+            {/* Wholesale */}
             <Link
               to="/auth?intent=wholesale"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/40 rounded-md hover:bg-[hsl(var(--gold))]/10 transition-all duration-200"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/40 rounded-md hover:bg-[hsl(var(--gold))]/10 transition-all duration-200"
             >
               <Building2 className="h-3.5 w-3.5" />
               Wholesale
             </Link>
 
             {/* Cart */}
-            <Link to="/cart" className="relative p-2 text-white/80 hover:text-white transition-colors duration-200">
-              <ShoppingCart className="h-5 w-5" />
+            <Link to="/cart" className="relative p-1.5 sm:p-2 text-white/80 hover:text-white transition-colors duration-200">
+              <ShoppingCart className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
               {totalItems > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-[hsl(var(--coral))] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-[18px] sm:h-[18px] bg-[hsl(var(--coral))] text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
                   {totalItems}
                 </span>
               )}
             </Link>
 
-            {/* Auth Section */}
+            {/* Auth */}
             {user ? (
               <div className="hidden sm:flex items-center">
                 <ProfileDropdown />
               </div>
             ) : loading ? (
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="h-8 w-16 rounded-md bg-white/10 animate-pulse" />
-                <div className="h-8 w-20 rounded-md bg-white/10 animate-pulse" />
+              <div className="hidden sm:flex items-center gap-1.5">
+                <div className="h-7 w-14 rounded-md bg-white/10 animate-pulse" />
+                <div className="h-7 w-16 rounded-md bg-white/10 animate-pulse" />
               </div>
             ) : (
-              <div className="hidden sm:flex items-center gap-2">
-                <Link to="/auth" className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white/85 hover:text-white border border-white/20 rounded-md hover:border-white/40 transition-all duration-200">
-                  <LogOut className="h-3.5 w-3.5" /> Log In
+              <div className="hidden sm:flex items-center gap-1.5">
+                <Link to="/auth" className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-white/85 hover:text-white border border-white/20 rounded-md hover:border-white/40 transition-all duration-200">
+                  <LogOut className="h-3 w-3" /> Log In
                 </Link>
-                <Link to="/auth?intent=signup" className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-white text-[hsl(207,68%,28%)] rounded-md hover:bg-white/90 transition-all duration-200 shadow-sm">
-                  <User className="h-3.5 w-3.5" /> Sign Up
+                <Link to="/auth?intent=signup" className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-white text-[hsl(207,68%,28%)] rounded-md hover:bg-white/90 transition-all duration-200 shadow-sm">
+                  <User className="h-3 w-3" /> Sign Up
                 </Link>
               </div>
             )}
 
-            {/* Mobile Toggle */}
-            <button className="lg:hidden p-2 text-white/90 hover:text-white transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
+            {/* Mobile menu toggle */}
+            <button className="lg:hidden p-1.5 text-white/90 hover:text-white transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
@@ -304,7 +304,7 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="lg:hidden border-t border-white/10 bg-[hsl(207,68%,25%)] backdrop-blur-xl"
           >
-            <div className="px-5 py-4 space-y-1">
+            <div className="px-4 py-3 space-y-1">
               {navLinks.map((link, i) => (
                 <MobileNavItem key={i} link={link} depth={0} onClose={() => setMobileOpen(false)} />
               ))}
