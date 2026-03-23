@@ -361,6 +361,7 @@ const Profile = () => {
                         await supabase.from("billing_addresses").update({ ...data, updated_at: new Date().toISOString() }).eq("id", editingAddress.id);
                         setEditingAddress(null);
                         loadAddresses();
+                        invalidateAddresses();
                         toast.success("Address updated!");
                       }}
                       onCancel={() => setEditingAddress(null)}
