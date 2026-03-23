@@ -144,263 +144,234 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black/40 backdrop-blur-sm">
       <Navbar />
-      <div className="pt-28 pb-16 px-4 max-w-4xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <Avatar className="h-16 w-16 border-2 border-primary/10">
-              {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} /> : null}
-              <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">{getInitials()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{profile?.full_name || "Your Profile"}</h1>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-              <div className="flex gap-2 mt-1">
-                {isWholesale && <Badge variant="secondary" className="text-xs"><Building2 className="h-3 w-3 mr-1" />Wholesale</Badge>}
-                {isAdmin && <Badge variant="secondary" className="text-xs"><Shield className="h-3 w-3 mr-1" />Admin</Badge>}
-                {!isWholesale && !isAdmin && <Badge variant="outline" className="text-xs">Retail</Badge>}
+
+      {/* Centered floating card */}
+      <div className="pt-24 pb-12 px-3 sm:px-6 flex items-start justify-center min-h-screen">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-[420px] sm:max-w-[520px] md:max-w-[640px] lg:max-w-[720px] bg-white rounded-2xl sm:rounded-3xl shadow-[0_25px_80px_-12px_rgba(0,0,0,0.3)] border border-slate-200/60 overflow-hidden"
+        >
+          {/* ── Navy Header ── */}
+          <div className="bg-[hsl(207,68%,28%)] px-5 sm:px-7 py-5 sm:py-6">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-2 border-white/25 shrink-0">
+                {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} /> : null}
+                <AvatarFallback className="bg-white/15 text-white text-lg font-semibold">{getInitials()}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold text-white truncate">{profile?.full_name || "Your Profile"}</h1>
+                <p className="text-xs sm:text-sm text-white/50 truncate mt-0.5">{user.email}</p>
+                <div className="flex gap-2 mt-2">
+                  {isWholesale && <Badge className="bg-white/15 text-white text-[10px] border-0"><Building2 className="h-3 w-3 mr-1" />Wholesale</Badge>}
+                  {isAdmin && <Badge className="bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] text-[10px] border-0"><Shield className="h-3 w-3 mr-1" />Admin</Badge>}
+                  {!isWholesale && !isAdmin && <Badge className="bg-white/10 text-white/70 text-[10px] border-0">Retail</Badge>}
+                </div>
               </div>
             </div>
           </div>
 
+          {/* ── Tab Navigation ── */}
           <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="w-full grid grid-cols-4 mb-6">
-              <TabsTrigger value="profile" className="gap-1.5 text-xs sm:text-sm"><User className="h-3.5 w-3.5 hidden sm:block" />Profile</TabsTrigger>
-              <TabsTrigger value="orders" className="gap-1.5 text-xs sm:text-sm"><Package className="h-3.5 w-3.5 hidden sm:block" />Orders</TabsTrigger>
-              <TabsTrigger value="addresses" className="gap-1.5 text-xs sm:text-sm"><MapPin className="h-3.5 w-3.5 hidden sm:block" />Addresses</TabsTrigger>
-              <TabsTrigger value="settings" className="gap-1.5 text-xs sm:text-sm"><Settings className="h-3.5 w-3.5 hidden sm:block" />Settings</TabsTrigger>
-            </TabsList>
+            <div className="border-b border-slate-100 px-3 sm:px-5">
+              <TabsList className="w-full bg-transparent h-12 p-0 gap-0">
+                {[
+                  { val: "profile" as TabValue, icon: User, label: "Profile" },
+                  { val: "orders" as TabValue, icon: Package, label: "Orders" },
+                  { val: "addresses" as TabValue, icon: MapPin, label: "Addresses" },
+                  { val: "settings" as TabValue, icon: Settings, label: "Settings" },
+                ].map((t) => (
+                  <TabsTrigger
+                    key={t.val}
+                    value={t.val}
+                    className="flex-1 gap-1.5 text-[11px] sm:text-[13px] font-medium text-slate-400 data-[state=active]:text-[hsl(207,68%,28%)] data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--gold))] transition-all h-12"
+                  >
+                    <t.icon className="h-3.5 w-3.5 hidden sm:block" />
+                    {t.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
-            {/* PROFILE TAB */}
-            <TabsContent value="profile">
-              <div className="grid gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Personal Information</CardTitle>
-                    <CardDescription>Update your name and contact details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
-                        <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
+            {/* ── Tab Content Area ── */}
+            <div className="px-4 sm:px-6 py-5 sm:py-6 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto mobile-drawer-scrollbar">
+
+              {/* PROFILE TAB */}
+              <TabsContent value="profile" className="mt-0">
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)] mb-3">Personal Information</h3>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="fullName" className="text-xs text-slate-500">Full Name</Label>
+                        <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" className="h-10 rounded-xl border-slate-200 focus:border-[hsl(var(--gold))] focus:ring-[hsl(var(--gold))]/20" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" value={user.email || ""} disabled className="bg-muted" />
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email" className="text-xs text-slate-500">Email</Label>
+                        <Input id="email" value={user.email || ""} disabled className="h-10 rounded-xl bg-slate-50 border-slate-200" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+44 7xxx xxx xxx" />
+                      <div className="space-y-1.5">
+                        <Label htmlFor="phone" className="text-xs text-slate-500">Phone</Label>
+                        <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+44 7xxx xxx xxx" className="h-10 rounded-xl border-slate-200 focus:border-[hsl(var(--gold))] focus:ring-[hsl(var(--gold))]/20" />
                       </div>
                     </div>
-                    <Button onClick={handleSaveProfile} disabled={saving} className="gap-2">
+                    <Button onClick={handleSaveProfile} disabled={saving} className="mt-4 w-full gap-2 rounded-xl bg-[hsl(207,68%,28%)] hover:bg-[hsl(207,68%,24%)] h-10">
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       Save Changes
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
 
-                {/* Account Type */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Account Type</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                  <div className="border-t border-slate-100 pt-4">
+                    <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)] mb-3">Account Type</h3>
                     {isWholesale ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-5 w-5 text-primary" />
-                          <span className="font-medium">Wholesale Account</span>
-                          <Badge className={statusColor("approved")}>Approved</Badge>
-                        </div>
-                        {wholesaleApp?.form_data && (
-                          <div className="text-sm text-muted-foreground space-y-1 pl-7">
-                            {Object.entries(wholesaleApp.form_data as Record<string, string>).slice(0, 3).map(([k, v]) => (
-                              <p key={k}><span className="font-medium capitalize">{k.replace(/_/g, " ")}:</span> {v}</p>
-                            ))}
-                          </div>
-                        )}
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50">
+                        <Building2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                        <span className="text-sm font-medium text-emerald-700">Wholesale — Approved</span>
                       </div>
                     ) : wholesaleApp ? (
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-medium">Wholesale Application</span>
-                        <Badge className={statusColor(wholesaleApp.status)}>{wholesaleApp.status}</Badge>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50">
+                        <Building2 className="h-5 w-5 text-amber-600 shrink-0" />
+                        <span className="text-sm font-medium text-amber-700">Wholesale — {wholesaleApp.status}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="h-5 w-5 text-muted-foreground" />
-                          <span className="font-medium">Retail Account</span>
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => navigate("/auth?intent=wholesale")} className="gap-1.5">
-                          <Building2 className="h-3.5 w-3.5" />
-                          Apply for Wholesale
-                        </Button>
-                      </div>
+                      <Button variant="outline" onClick={() => navigate("/auth?intent=wholesale")} className="w-full rounded-xl gap-2 h-10 border-slate-200 hover:border-[hsl(var(--gold))] hover:text-[hsl(var(--gold))]">
+                        <Building2 className="h-4 w-4" /> Apply for Wholesale
+                      </Button>
                     )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* ORDERS TAB */}
-            <TabsContent value="orders">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Order History</CardTitle>
-                  <CardDescription>{orders.length} order{orders.length !== 1 ? "s" : ""} found</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {ordersLoading ? (
-                    <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-                  ) : orders.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                      <p className="font-medium">No orders yet</p>
-                      <p className="text-sm mt-1">Your order history will appear here</p>
-                      <Button variant="outline" className="mt-4" onClick={() => navigate("/")}>Browse Books</Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((order) => (
-                        <div key={order.id} className="border rounded-lg p-4 hover:bg-muted/30 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">{new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
-                            </div>
-                            <Badge className={order.status === "completed" ? "bg-emerald-100 text-emerald-700" : order.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-muted text-muted-foreground"}>
-                              {order.status}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            {order.order_items?.map((item: any) => (
-                              <p key={item.id}>{item.title} × {item.quantity} — £{(item.price * item.quantity).toFixed(2)}</p>
-                            ))}
-                          </div>
-                          <Separator className="my-2" />
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Total</span>
-                            <span className="font-semibold">£{Number(order.total).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* ADDRESSES TAB */}
-            <TabsContent value="addresses">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">Address Book</CardTitle>
-                    <CardDescription>Manage your billing addresses</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/checkout")} className="gap-1.5">
-                    <Plus className="h-3.5 w-3.5" />
-                    Add New
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {addressesLoading ? (
-                    <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-                  ) : addresses.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <MapPin className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                      <p className="font-medium">No saved addresses</p>
-                      <p className="text-sm mt-1">Addresses will be saved during checkout</p>
-                    </div>
-                  ) : (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {addresses.map((addr) => (
-                        <div key={addr.id} className="border rounded-lg p-4 relative group">
-                          {addr.is_default && <Badge variant="secondary" className="absolute top-2 right-2 text-[10px]">Default</Badge>}
-                          <p className="font-medium text-sm">{addr.full_name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{addr.address_line1}</p>
-                          {addr.address_line2 && <p className="text-xs text-muted-foreground">{addr.address_line2}</p>}
-                          <p className="text-xs text-muted-foreground">{addr.city}, {addr.postcode}</p>
-                          {addr.phone && <p className="text-xs text-muted-foreground mt-1">{addr.phone}</p>}
-                          <button
-                            onClick={() => handleDeleteAddress(addr.id)}
-                            className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity p-1"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </div>
+              </TabsContent>
 
-            {/* SETTINGS TAB */}
-            <TabsContent value="settings">
-              <div className="grid gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><Lock className="h-4 w-4" />Change Password</CardTitle>
-                    <CardDescription>Update your account password</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>New Password</Label>
-                      <div className="relative">
-                        <Input
-                          type={showNewPw ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Enter new password"
-                        />
-                        <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                          {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {/* ORDERS TAB */}
+              <TabsContent value="orders" className="mt-0">
+                <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)] mb-1">Order History</h3>
+                <p className="text-[11px] text-slate-400 mb-4">{orders.length} order{orders.length !== 1 ? "s" : ""} found</p>
+                {ordersLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-slate-300" /></div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-10">
+                    <Package className="h-10 w-10 mx-auto mb-3 text-slate-200" />
+                    <p className="text-sm font-medium text-slate-400">No orders yet</p>
+                    <Button variant="outline" className="mt-4 rounded-xl" onClick={() => navigate("/")}>Browse Books</Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {orders.map((order) => (
+                      <div key={order.id} className="border border-slate-100 rounded-xl p-3.5 hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                            <Clock className="h-3 w-3" />
+                            {new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                          </span>
+                          <Badge className={`text-[10px] ${order.status === "completed" ? "bg-emerald-100 text-emerald-700" : order.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                            {order.status}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-slate-500 space-y-0.5">
+                          {order.order_items?.map((item: any) => (
+                            <p key={item.id}>{item.title} × {item.quantity} — £{(item.price * item.quantity).toFixed(2)}</p>
+                          ))}
+                        </div>
+                        <div className="flex justify-between text-xs mt-2 pt-2 border-t border-slate-100">
+                          <span className="text-slate-400">Total</span>
+                          <span className="font-semibold text-[hsl(207,68%,28%)]">£{Number(order.total).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ADDRESSES TAB */}
+              <TabsContent value="addresses" className="mt-0">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)]">Address Book</h3>
+                    <p className="text-[11px] text-slate-400">Manage billing addresses</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/checkout")} className="rounded-xl gap-1.5 text-xs h-8 border-slate-200">
+                    <Plus className="h-3 w-3" /> Add
+                  </Button>
+                </div>
+                {addressesLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-slate-300" /></div>
+                ) : addresses.length === 0 ? (
+                  <div className="text-center py-10">
+                    <MapPin className="h-10 w-10 mx-auto mb-3 text-slate-200" />
+                    <p className="text-sm font-medium text-slate-400">No saved addresses</p>
+                    <p className="text-xs text-slate-300 mt-1">Addresses saved during checkout</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {addresses.map((addr) => (
+                      <div key={addr.id} className="border border-slate-100 rounded-xl p-3.5 relative group hover:bg-slate-50/50 transition-colors">
+                        {addr.is_default && <Badge className="absolute top-2.5 right-2.5 bg-[hsl(var(--gold))]/10 text-[hsl(var(--gold))] text-[9px] border-0">Default</Badge>}
+                        <p className="font-medium text-sm text-[hsl(207,68%,28%)]">{addr.full_name}</p>
+                        <p className="text-xs text-slate-400 mt-1">{addr.address_line1}</p>
+                        {addr.address_line2 && <p className="text-xs text-slate-400">{addr.address_line2}</p>}
+                        <p className="text-xs text-slate-400">{addr.city}, {addr.postcode}</p>
+                        {addr.phone && <p className="text-xs text-slate-400 mt-1">{addr.phone}</p>}
+                        <button onClick={() => handleDeleteAddress(addr.id)}
+                          className="absolute bottom-2.5 right-2.5 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-500 transition-opacity p-1">
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* SETTINGS TAB */}
+              <TabsContent value="settings" className="mt-0">
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)] flex items-center gap-2 mb-3"><Lock className="h-3.5 w-3.5" />Change Password</h3>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-slate-500">New Password</Label>
+                        <div className="relative">
+                          <Input type={showNewPw ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password" className="h-10 rounded-xl border-slate-200 pr-10 focus:border-[hsl(var(--gold))] focus:ring-[hsl(var(--gold))]/20" />
+                          <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-slate-500">Confirm Password</Label>
+                        <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-10 rounded-xl border-slate-200 focus:border-[hsl(var(--gold))] focus:ring-[hsl(var(--gold))]/20" />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Confirm Password</Label>
-                      <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-                    </div>
-                    <Button onClick={handleChangePassword} disabled={changingPw || !newPassword} className="gap-2">
+                    <Button onClick={handleChangePassword} disabled={changingPw || !newPassword} className="mt-4 w-full gap-2 rounded-xl bg-[hsl(207,68%,28%)] hover:bg-[hsl(207,68%,24%)] h-10">
                       {changingPw ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       Update Password
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Account Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Email</span>
-                      <span className="font-medium">{user.email}</span>
+                  <div className="border-t border-slate-100 pt-4">
+                    <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)] mb-3">Account Information</h3>
+                    <div className="space-y-2.5">
+                      {[
+                        { label: "Email", value: user.email },
+                        { label: "Account Type", value: isWholesale ? "Wholesale" : "Retail" },
+                        { label: "Member Since", value: new Date(user.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) },
+                      ].map((row) => (
+                        <div key={row.label} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+                          <span className="text-xs text-slate-400">{row.label}</span>
+                          <span className="text-xs font-medium text-[hsl(207,68%,28%)]">{row.value}</span>
+                        </div>
+                      ))}
                     </div>
-                    <Separator />
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Account Type</span>
-                      <span className="font-medium">{isWholesale ? "Wholesale" : "Retail"}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Member Since</span>
-                      <span className="font-medium">{new Date(user.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+                  </div>
+                </div>
+              </TabsContent>
+            </div>
           </Tabs>
         </motion.div>
       </div>
+
       <Footer />
     </div>
   );
