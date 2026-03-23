@@ -199,7 +199,7 @@ const HeaderSettingsTab = () => {
 
   return (
     <Card>
-      <CardHeader><CardTitle className="font-serif">Header & Navigation</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="font-serif">Desktop Menu & Header</CardTitle></CardHeader>
       <CardContent className="space-y-6">
         {/* Logo Upload */}
         <div>
