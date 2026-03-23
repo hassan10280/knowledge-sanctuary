@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useWholesaleApplications, useUpdateApplication, useWholesaleFormFields } from "@/hooks/useWholesale";
+import { useWholesaleApplications, useWholesaleFormFields } from "@/hooks/useWholesale";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { bg: string; text: string; icon: any; label: string }> = {
@@ -21,9 +22,10 @@ const WholesaleRequestsTab = () => {
   const { user } = useAuth();
   const { data: applications, isLoading } = useWholesaleApplications();
   const { data: formFields } = useWholesaleFormFields();
-  const updateApp = useUpdateApplication();
+  const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
+  const [actionLoading, setActionLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -46,21 +48,36 @@ const WholesaleRequestsTab = () => {
   }, [applications, statusFilter, search, formFields]);
 
   const handleApprove = async (appId: string, userId: string) => {
+    setActionLoading(true);
     try {
-      await updateApp.mutateAsync({ id: appId, status: "approved", reviewed_by: user?.id });
-      await supabase.from("user_roles").upsert({ user_id: userId, role: "wholesale" as any });
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "approve_wholesale", application_id: appId, target_user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      queryClient.invalidateQueries({ queryKey: ["wholesale-applications"] });
       toast.success("Application approved!");
     } catch (e: any) {
       toast.error(e.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleReject = async (appId: string) => {
+    setActionLoading(true);
     try {
-      await updateApp.mutateAsync({ id: appId, status: "rejected", admin_notes: rejectNotes[appId] || "", reviewed_by: user?.id });
+      const { data, error } = await supabase.functions.invoke("manage-admin", {
+        body: { action: "reject_wholesale", application_id: appId, admin_notes: rejectNotes[appId] || "" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      queryClient.invalidateQueries({ queryKey: ["wholesale-applications"] });
       toast.success("Application rejected.");
     } catch (e: any) {
       toast.error(e.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -198,7 +215,7 @@ const WholesaleRequestsTab = () => {
                           <Button
                             size="sm"
                             onClick={() => handleApprove(app.id, app.user_id)}
-                            disabled={updateApp.isPending}
+                            disabled={actionLoading}
                             className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-4 h-9 text-xs font-semibold transition-colors"
                           >
                             <CheckCircle className="h-3.5 w-3.5" /> Approve
@@ -207,7 +224,7 @@ const WholesaleRequestsTab = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleReject(app.id)}
-                            disabled={updateApp.isPending}
+                            disabled={actionLoading}
                             className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg px-4 h-9 text-xs font-semibold transition-colors"
                           >
                             <XCircle className="h-3.5 w-3.5" /> Reject
