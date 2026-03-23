@@ -102,8 +102,8 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   if (!hasChildren) {
     return (
       <Link to={link.href}
-        className={`block font-medium text-white/75 hover:text-white hover:bg-white/[0.06] transition-all duration-200 rounded-lg ${
-          depth === 0 ? "text-[15px] py-4 px-6" : "text-[13px] py-3 pl-10 pr-6 border-l-2 border-white/10 ml-6"
+        className={`block font-medium text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] hover:bg-slate-50 transition-all duration-200 rounded-lg ${
+          depth === 0 ? "text-[15px] py-4 px-6" : "text-[13px] py-3 pl-10 pr-6 border-l-2 border-slate-200 ml-6"
         }`}
         onClick={onClose}>
         {link.label}
