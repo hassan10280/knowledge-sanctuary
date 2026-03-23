@@ -207,20 +207,31 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 gap-3 sm:gap-6">
-          <Link to="/" className="flex items-center shrink-0 min-w-0">
+        <div className="flex items-center justify-between gap-3 sm:gap-6"
+          style={{ height: `${getLayoutVal("header_height", 80) as number}px` }}>
+          <Link to="/" className="flex items-center shrink-0 min-w-0"
+            style={{
+              order: logoPosition === "right" ? 2 : 0,
+              marginLeft: logoPosition === "center" ? "auto" : undefined,
+              marginRight: logoPosition === "center" ? "auto" : undefined,
+            }}>
             {showResolvedLogo ? (
               <img
                 key={activeLogoSrc}
                 src={activeLogoSrc}
                 alt="Madrasah Matters"
-                style={{ height: logoHeight }}
-                className="w-auto max-w-[160px] sm:max-w-[220px] object-contain"
+                style={{
+                  width: `${logoWidth}px`,
+                  height: `${logoHeight}px`,
+                  objectFit: "contain",
+                  transform: `translate(${logoOffsetX}px, ${logoOffsetY}px) scale(${logoScale / 100})`,
+                }}
                 onError={() => setLogoLoadFailed(true)}
               />
             ) : (
               <div
-                className="h-10 sm:h-12 w-[132px] sm:w-[180px] rounded-md bg-white/10 animate-pulse"
+                className="rounded-md bg-white/10 animate-pulse"
+                style={{ width: `${logoWidth}px`, height: `${logoHeight}px` }}
                 aria-label="Loading logo"
               />
             )}
