@@ -139,7 +139,13 @@ const Profile = () => {
   const handleDeleteAddress = async (id: string) => {
     await supabase.from("billing_addresses").delete().eq("id", id);
     setAddresses((prev) => prev.filter((a) => a.id !== id));
+    setDeleteConfirmId(null);
+    queryClient.invalidateQueries({ queryKey: ["billing_addresses"] });
     toast.success("Address removed");
+  };
+
+  const invalidateAddresses = () => {
+    queryClient.invalidateQueries({ queryKey: ["billing_addresses"] });
   };
 
   if (authLoading || profileLoading) {
