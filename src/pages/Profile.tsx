@@ -17,9 +17,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
   User, Package, MapPin, Settings, Shield, Clock,
-  Save, Loader2, Plus, Trash2, Eye, EyeOff, Lock, Building2, Pencil, Star
+  Save, Loader2, Plus, Trash2, Eye, EyeOff, Lock, Building2, Pencil, Star, X, ArrowLeft
 } from "lucide-react";
 import AddressForm from "@/components/AddressForm";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 type TabValue = "profile" | "orders" | "addresses" | "settings";
 
