@@ -261,6 +261,10 @@ const BooksManagementTab = () => {
   /* ─── Save ─── */
   const handleSave = async () => {
     if (!editingBook) return;
+    if (uploadingCover || uploadingPreview) {
+      toast.error("Please wait for file uploads to complete before saving.");
+      return;
+    }
     const ve: Record<string, string> = {};
     if (!editingBook.title?.trim()) ve.title = "Title is required";
     if (!editingBook.author?.trim()) ve.author = "Author is required";
@@ -275,7 +279,32 @@ const BooksManagementTab = () => {
 
     setSaving(true);
     try {
-      await upsertBook.mutateAsync(editingBook);
+      const payload: Record<string, any> = {
+        title: editingBook.title,
+        author: editingBook.author,
+        category: editingBook.category,
+        price: editingBook.price,
+        original_price: editingBook.original_price ?? null,
+        discount_percent: editingBook.discount_percent ?? 0,
+        cover_color: editingBook.cover_color || "#1a5276",
+        cover_pattern: editingBook.cover_pattern || "geometric",
+        cover_image: editingBook.cover_image || null,
+        rating: editingBook.rating ?? 4.5,
+        sort_order: editingBook.sort_order ?? 0,
+        sample_url: editingBook.sample_url || null,
+        show_ratings: editingBook.show_ratings !== false,
+        publisher: editingBook.publisher || "",
+        isbn: editingBook.isbn || null,
+        stock_quantity: editingBook.stock_quantity ?? 100,
+        in_stock: editingBook.in_stock !== false,
+        description: editingBook.description || null,
+        preview_files: editingBook.preview_files && editingBook.preview_files.length > 0
+          ? editingBook.preview_files
+          : [],
+      };
+      if (editingBook.id) payload.id = editingBook.id;
+
+      await upsertBook.mutateAsync(payload);
       toast.success("Book saved!");
       setEditingBook(null);
       setErrors({});
@@ -579,7 +608,7 @@ const BooksManagementTab = () => {
             </FormField>
 
             <div className="flex gap-2 pt-2">
-              <Button size="sm" onClick={handleSave} disabled={saving || Object.keys(errors).length > 0} className="gap-1.5">
+              <Button size="sm" onClick={handleSave} disabled={saving || uploadingCover || uploadingPreview || Object.keys(errors).length > 0} className="gap-1.5">
                 <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => { setEditingBook(null); setErrors({}); }}>Cancel</Button>
@@ -617,6 +646,29 @@ const BooksManagementTab = () => {
               </div>
             </div>
             {detailBook.description && <p className="text-sm text-muted-foreground mt-3">{detailBook.description}</p>}
+            {Array.isArray(detailBook.preview_files) && detailBook.preview_files.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-foreground">Preview Files ({detailBook.preview_files.length})</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {detailBook.preview_files.map((f: any, i: number) => (
+                    <div key={i} className="rounded-lg border border-border overflow-hidden bg-muted/30">
+                      {f.type === "image" ? (
+                        <img src={f.url} alt={f.name} className="w-full h-20 object-cover" />
+                      ) : (
+                        <div className="w-full h-20 flex flex-col items-center justify-center">
+                          <FileText className="h-6 w-6 text-destructive/70" />
+                          <span className="text-[10px] text-muted-foreground mt-1">PDF</span>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground px-1.5 py-1 truncate">{f.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {detailBook.sample_url && (
+              <p className="text-sm mt-2"><span className="text-muted-foreground">Sample URL:</span> <a href={detailBook.sample_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">View Sample</a></p>
+            )}
           </CardContent>
         </Card>
       )}
