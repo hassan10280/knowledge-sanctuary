@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useWholesaleApplications, useUpdateApplication, useWholesaleFormFields } from "@/hooks/useWholesale";
+import { useWholesaleApplications, useWholesaleFormFields } from "@/hooks/useWholesale";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { bg: string; text: string; icon: any; label: string }> = {
