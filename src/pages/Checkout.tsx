@@ -488,7 +488,7 @@ const Checkout = () => {
                   </div>
                 )}
 
-                {(!savedAddress || !useSaved) && (
+                {(savedAddresses.length === 0 || !useSaved) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                       <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name *</label>
