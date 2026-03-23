@@ -114,10 +114,10 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   return (
     <div>
       <button
-        className="w-full flex items-center justify-between text-[15px] font-semibold text-white/90 hover:text-white py-4 px-6 hover:bg-white/[0.06] rounded-lg transition-all duration-200"
+        className="w-full flex items-center justify-between text-[15px] font-semibold text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] py-4 px-6 hover:bg-slate-50 rounded-lg transition-all duration-200"
         onClick={() => setExpanded(!expanded)}>
         {link.label}
-        <ChevronDown className={`h-4 w-4 text-white/50 transition-transform duration-300 ease-in-out ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-[hsl(207,68%,40%)] transition-transform duration-300 ease-in-out ${expanded ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence initial={false}>
         {expanded && (
