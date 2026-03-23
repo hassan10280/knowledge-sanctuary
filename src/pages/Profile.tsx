@@ -98,11 +98,17 @@ const Profile = () => {
   }, [activeTab, user]);
 
   // Load addresses
+  const loadAddresses = async () => {
+    if (!user) return;
+    setAddressesLoading(true);
+    const { data } = await supabase.from("billing_addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false });
+    setAddresses(data || []);
+    setAddressesLoading(false);
+  };
+
   useEffect(() => {
     if (activeTab !== "addresses" || !user) return;
-    setAddressesLoading(true);
-    supabase.from("billing_addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false })
-      .then(({ data }) => { setAddresses(data || []); setAddressesLoading(false); });
+    loadAddresses();
   }, [activeTab, user]);
 
   const handleSaveProfile = async () => {
