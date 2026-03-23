@@ -311,6 +311,7 @@ const Admin = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "header": return <HeaderSettingsTab />;
+      case "mobile-menu": return <MobileMenuSettingsTab />;
       case "hero": return <HeroSettingsTab />;
       case "books": return <BooksManagementTab />;
       case "categories": return <CategoriesManagementTab />;
