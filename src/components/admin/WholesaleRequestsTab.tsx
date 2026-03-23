@@ -22,7 +22,7 @@ const WholesaleRequestsTab = () => {
   const { user } = useAuth();
   const { data: applications, isLoading } = useWholesaleApplications();
   const { data: formFields } = useWholesaleFormFields();
-  const updateApp = useUpdateApplication();
+  const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
