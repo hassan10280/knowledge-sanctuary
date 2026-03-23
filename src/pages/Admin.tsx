@@ -90,8 +90,7 @@ const Admin = () => {
   const { data: categories } = useCategories();
   const { data: publishers } = usePublishers();
   const updateSetting = useUpdateSetting();
-  const upsertCategory = useUpsertCategory();
-  const deleteCategory = useDeleteCategory();
+
 
   const [activeSection, setActiveSection] = useState("header");
   const [localSettings, setLocalSettings] = useState<Record<string, Record<string, any>>>({});
