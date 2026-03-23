@@ -102,8 +102,8 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   if (!hasChildren) {
     return (
       <Link to={link.href}
-        className={`block font-medium text-white/75 hover:text-white hover:bg-white/[0.06] transition-all duration-200 rounded-lg ${
-          depth === 0 ? "text-[15px] py-4 px-6" : "text-[13px] py-3 pl-10 pr-6 border-l-2 border-white/10 ml-6"
+        className={`block font-medium text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] hover:bg-slate-50 transition-all duration-200 rounded-lg ${
+          depth === 0 ? "text-[15px] py-4 px-6" : "text-[13px] py-3 pl-10 pr-6 border-l-2 border-slate-200 ml-6"
         }`}
         onClick={onClose}>
         {link.label}
@@ -114,10 +114,10 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   return (
     <div>
       <button
-        className="w-full flex items-center justify-between text-[15px] font-semibold text-white/90 hover:text-white py-4 px-6 hover:bg-white/[0.06] rounded-lg transition-all duration-200"
+        className="w-full flex items-center justify-between text-[15px] font-semibold text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] py-4 px-6 hover:bg-slate-50 rounded-lg transition-all duration-200"
         onClick={() => setExpanded(!expanded)}>
         {link.label}
-        <ChevronDown className={`h-4 w-4 text-white/50 transition-transform duration-300 ease-in-out ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-[hsl(207,68%,40%)] transition-transform duration-300 ease-in-out ${expanded ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence initial={false}>
         {expanded && (
@@ -318,7 +318,7 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden fixed inset-0 top-0 bg-black/60 backdrop-blur-md z-40"
+              className="lg:hidden fixed inset-0 top-0 bg-black/50 backdrop-blur-sm z-40"
               onClick={() => setMobileOpen(false)}
             />
             {/* Slide-in panel */}
@@ -327,15 +327,15 @@ const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-[hsl(207,68%,16%)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] flex flex-col mobile-drawer-scrollbar"
+              className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-white shadow-[-8px_0_30px_rgba(0,0,0,0.15)] flex flex-col mobile-drawer-scrollbar"
             >
               {/* Drawer header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
                   <img src={activeLogoSrc} alt="Madrasah Matters" className="h-8 w-auto object-contain" />
                 </Link>
                 <div className="flex items-center gap-3">
-                  <Link to="/cart" className="relative p-2 text-white/80 hover:text-white transition-colors" onClick={() => setMobileOpen(false)}>
+                  <Link to="/cart" className="relative p-2 text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] transition-colors" onClick={() => setMobileOpen(false)}>
                     <ShoppingCart className="h-5 w-5" />
                     {totalItems > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-[hsl(var(--coral))] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
@@ -343,7 +343,7 @@ const Navbar = () => {
                       </span>
                     )}
                   </Link>
-                  <button className="p-2 text-white/80 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                  <button className="p-2 text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] transition-colors rounded-lg hover:bg-slate-100"
                     onClick={() => setMobileOpen(false)}>
                     <X className="h-5 w-5" />
                   </button>
@@ -357,47 +357,47 @@ const Navbar = () => {
                 ))}
 
                 <Link to="/auth?intent=wholesale"
-                  className="flex items-center gap-3 text-[15px] font-semibold text-[hsl(var(--gold))] py-4 px-6 hover:bg-white/[0.06] rounded-lg transition-all duration-200"
+                  className="flex items-center gap-3 text-[15px] font-semibold text-[hsl(var(--gold))] py-4 px-6 hover:bg-amber-50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileOpen(false)}>
                   <Building2 className="h-4.5 w-4.5" /> Wholesale
                 </Link>
 
                 {/* Auth actions — flow naturally after nav */}
-                <div className="mt-6 mx-2 pt-5 border-t border-white/10 space-y-3">
+                <div className="mt-6 mx-2 pt-5 border-t border-slate-200 space-y-3">
                   {user ? (
                     <>
-                      <p className="text-xs text-white/40 truncate mb-2 px-1">{user.email}</p>
+                      <p className="text-xs text-slate-400 truncate mb-2 px-1">{user.email}</p>
                       <Link to="/profile"
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200"
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-slate-50 text-[hsl(207,68%,28%)] border border-slate-200 rounded-xl hover:bg-slate-100 transition-all duration-200"
                         onClick={() => setMobileOpen(false)}>
                         <User className="h-4 w-4" /> My Profile
                       </Link>
                       {isAdmin && (
                         <Link to="/admin"
-                          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-xl hover:bg-[hsl(var(--gold))]/20 transition-all duration-200"
+                          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-amber-50 text-[hsl(var(--gold))] border border-amber-200 rounded-xl hover:bg-amber-100 transition-all duration-200"
                           onClick={() => setMobileOpen(false)}>
                           <Shield className="h-4 w-4" /> Admin Panel
                         </Link>
                       )}
                       <button onClick={handleSignOut}
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200">
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-slate-50 text-[hsl(207,68%,28%)] border border-slate-200 rounded-xl hover:bg-slate-100 transition-all duration-200">
                         <LogOut className="h-4 w-4" /> Logout
                       </button>
                     </>
                   ) : loading ? (
                     <div className="space-y-3">
-                      <div className="h-12 rounded-xl bg-white/10 animate-pulse" />
-                      <div className="h-12 rounded-xl bg-white/10 animate-pulse" />
+                      <div className="h-12 rounded-xl bg-slate-100 animate-pulse" />
+                      <div className="h-12 rounded-xl bg-slate-100 animate-pulse" />
                     </div>
                   ) : (
                     <>
                       <Link to="/auth"
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium text-white border border-white/25 rounded-xl hover:bg-white/10 transition-all duration-200"
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium text-[hsl(207,68%,28%)] border border-[hsl(207,68%,28%)] rounded-xl hover:bg-slate-50 transition-all duration-200"
                         onClick={() => setMobileOpen(false)}>
                         <LogOut className="h-4 w-4" /> Log In
                       </Link>
                       <Link to="/auth?intent=signup"
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-semibold bg-white text-[hsl(207,68%,28%)] rounded-xl hover:bg-white/90 transition-all duration-200 shadow-md"
+                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-semibold bg-[hsl(207,68%,28%)] text-white rounded-xl hover:bg-[hsl(207,68%,24%)] transition-all duration-200 shadow-md"
                         onClick={() => setMobileOpen(false)}>
                         <User className="h-4 w-4" /> Create Account
                       </Link>
