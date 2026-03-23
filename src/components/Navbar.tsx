@@ -308,7 +308,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ── Mobile Drawer ── */}
+      {/* ── Mobile Floating Menu ── */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -317,95 +317,94 @@ const Navbar = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="lg:hidden fixed inset-0 top-0 bg-black/50 backdrop-blur-sm z-40"
+              transition={{ duration: 0.25 }}
+              className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
               onClick={() => setMobileOpen(false)}
             />
-            {/* Slide-in panel */}
+            {/* Floating card */}
             <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="lg:hidden fixed top-0 right-0 bottom-0 w-[85vw] max-w-[380px] z-50 bg-white shadow-[-8px_0_30px_rgba(0,0,0,0.15)] flex flex-col mobile-drawer-scrollbar"
+              initial={{ opacity: 0, scale: 0.92, y: -12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: -12 }}
+              transition={{ type: "spring", damping: 26, stiffness: 340 }}
+              className="lg:hidden fixed top-3 right-3 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100vh-1.5rem)] z-50 bg-white border border-slate-200/80 rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden mobile-drawer-scrollbar"
             >
-              {/* Drawer header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-                <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                  <img src={activeLogoSrc} alt="Madrasah Matters" className="h-8 w-auto object-contain" />
+              {/* ─ Card header ─ */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 shrink-0">
+                <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center">
+                  <img src={activeLogoSrc} alt="Madrasah Matters" className="h-7 w-auto object-contain" />
                 </Link>
-                <div className="flex items-center gap-3">
-                  <Link to="/cart" className="relative p-2 text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] transition-colors" onClick={() => setMobileOpen(false)}>
-                    <ShoppingCart className="h-5 w-5" />
+                <div className="flex items-center gap-1.5">
+                  <Link to="/cart" className="relative p-2 text-[hsl(207,68%,28%)] hover:text-[hsl(var(--gold))] transition-colors rounded-lg hover:bg-slate-50" onClick={() => setMobileOpen(false)}>
+                    <ShoppingCart className="h-[18px] w-[18px]" />
                     {totalItems > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-[hsl(var(--coral))] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[hsl(var(--coral))] text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
                         {totalItems}
                       </span>
                     )}
                   </Link>
-                  <button className="p-2 text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] transition-colors rounded-lg hover:bg-slate-100"
+                  <button className="p-2 text-slate-400 hover:text-[hsl(207,68%,28%)] transition-colors rounded-lg hover:bg-slate-50"
                     onClick={() => setMobileOpen(false)}>
-                    <X className="h-5 w-5" />
+                    <X className="h-[18px] w-[18px]" />
                   </button>
                 </div>
               </div>
 
-              {/* Scrollable nav links */}
-              <div className="flex-1 overflow-y-auto py-3 px-2 pb-24">
+              {/* ─ Scrollable nav ─ */}
+              <div className="flex-1 overflow-y-auto overscroll-contain py-2 px-2">
                 {navLinks.map((link, i) => (
                   <MobileNavItem key={i} link={link} depth={0} onClose={() => setMobileOpen(false)} />
                 ))}
 
                 <Link to="/auth?intent=wholesale"
-                  className="flex items-center gap-3 text-[15px] font-semibold text-[hsl(var(--gold))] py-4 px-6 hover:bg-amber-50 rounded-lg transition-all duration-200"
+                  className="flex items-center gap-2.5 text-[14px] font-semibold text-[hsl(var(--gold))] py-3 px-5 hover:bg-amber-50/70 rounded-xl transition-all duration-200"
                   onClick={() => setMobileOpen(false)}>
-                  <Building2 className="h-4.5 w-4.5" /> Wholesale
+                  <Building2 className="h-4 w-4" /> Wholesale
                 </Link>
-
-                {/* Auth actions — flow naturally after nav */}
-                <div className="mt-6 mx-2 pt-5 border-t border-slate-200 space-y-3">
-                  {user ? (
-                    <>
-                      <p className="text-xs text-slate-400 truncate mb-2 px-1">{user.email}</p>
-                      <Link to="/profile"
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-slate-50 text-[hsl(207,68%,28%)] border border-slate-200 rounded-xl hover:bg-slate-100 transition-all duration-200"
-                        onClick={() => setMobileOpen(false)}>
-                        <User className="h-4 w-4" /> My Profile
-                      </Link>
-                      {isAdmin && (
-                        <Link to="/admin"
-                          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-amber-50 text-[hsl(var(--gold))] border border-amber-200 rounded-xl hover:bg-amber-100 transition-all duration-200"
-                          onClick={() => setMobileOpen(false)}>
-                          <Shield className="h-4 w-4" /> Admin Panel
-                        </Link>
-                      )}
-                      <button onClick={handleSignOut}
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium bg-slate-50 text-[hsl(207,68%,28%)] border border-slate-200 rounded-xl hover:bg-slate-100 transition-all duration-200">
-                        <LogOut className="h-4 w-4" /> Logout
-                      </button>
-                    </>
-                  ) : loading ? (
-                    <div className="space-y-3">
-                      <div className="h-12 rounded-xl bg-slate-100 animate-pulse" />
-                      <div className="h-12 rounded-xl bg-slate-100 animate-pulse" />
-                    </div>
-                  ) : (
-                    <>
-                      <Link to="/auth"
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-medium text-[hsl(207,68%,28%)] border border-[hsl(207,68%,28%)] rounded-xl hover:bg-slate-50 transition-all duration-200"
-                        onClick={() => setMobileOpen(false)}>
-                        <LogOut className="h-4 w-4" /> Log In
-                      </Link>
-                      <Link to="/auth?intent=signup"
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-semibold bg-[hsl(207,68%,28%)] text-white rounded-xl hover:bg-[hsl(207,68%,24%)] transition-all duration-200 shadow-md"
-                        onClick={() => setMobileOpen(false)}>
-                        <User className="h-4 w-4" /> Create Account
-                      </Link>
-                    </>
-                  )}
-                </div>
               </div>
 
+              {/* ─ Card footer ─ */}
+              <div className="shrink-0 px-4 pt-3 pb-4 border-t border-slate-100 space-y-2.5">
+                {user ? (
+                  <>
+                    <p className="text-[11px] text-slate-400 truncate px-1">{user.email}</p>
+                    <Link to="/profile"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium bg-slate-50 text-[hsl(207,68%,28%)] border border-slate-200 rounded-xl hover:bg-slate-100 transition-all duration-200"
+                      onClick={() => setMobileOpen(false)}>
+                      <User className="h-3.5 w-3.5" /> My Profile
+                    </Link>
+                    {isAdmin && (
+                      <Link to="/admin"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium bg-amber-50 text-[hsl(var(--gold))] border border-amber-200 rounded-xl hover:bg-amber-100 transition-all duration-200"
+                        onClick={() => setMobileOpen(false)}>
+                        <Shield className="h-3.5 w-3.5" /> Admin Panel
+                      </Link>
+                    )}
+                    <button onClick={handleSignOut}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium text-slate-500 hover:text-[hsl(207,68%,28%)] hover:bg-slate-50 rounded-xl transition-all duration-200">
+                      <LogOut className="h-3.5 w-3.5" /> Logout
+                    </button>
+                  </>
+                ) : loading ? (
+                  <div className="space-y-2.5">
+                    <div className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+                    <div className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+                  </div>
+                ) : (
+                  <>
+                    <Link to="/auth"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium text-[hsl(207,68%,28%)] border border-[hsl(207,68%,28%)]/30 rounded-xl hover:border-[hsl(207,68%,28%)] hover:bg-slate-50 transition-all duration-200"
+                      onClick={() => setMobileOpen(false)}>
+                      <LogOut className="h-3.5 w-3.5" /> Log In
+                    </Link>
+                    <Link to="/auth?intent=signup"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-semibold bg-[hsl(var(--gold))] text-[hsl(207,68%,20%)] rounded-xl hover:brightness-105 transition-all duration-200 shadow-sm"
+                      onClick={() => setMobileOpen(false)}>
+                      <User className="h-3.5 w-3.5" /> Create Account
+                    </Link>
+                  </>
+                )}
+              </div>
             </motion.div>
           </>
         )}
