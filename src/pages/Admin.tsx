@@ -53,7 +53,8 @@ interface SidebarItem {
 }
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
-  { id: "header", label: "Header", icon: Layout, group: "Content" },
+  { id: "header", label: "Desktop Menu", icon: Layout, group: "Content" },
+  { id: "mobile-menu", label: "Mobile & Tablet Menu", icon: Menu, group: "Content" },
   { id: "hero", label: "Hero", icon: Globe, group: "Content" },
   { id: "books", label: "Books", icon: BookOpen, group: "Content" },
   { id: "categories", label: "Categories", icon: BookOpen, group: "Content" },
