@@ -95,10 +95,8 @@ const Admin = () => {
 
   const [activeSection, setActiveSection] = useState("header");
   const [localSettings, setLocalSettings] = useState<Record<string, Record<string, any>>>({});
-  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [openPanels, setOpenPanels] = useState<Record<string, boolean>>({});
-  const [savingCategory, setSavingCategory] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
