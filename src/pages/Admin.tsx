@@ -457,42 +457,6 @@ const Admin = () => {
 
 
 
-/* ─── Categories Management Component ─── */
-const CategoriesManagement = ({ editingCategory, setEditingCategory, categories, handleSaveCategory, deleteCategory, savingCategory }: any) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between">
-      <CardTitle className="font-serif">Categories</CardTitle>
-      <Button size="sm" onClick={() => setEditingCategory({ name: "", name_bn: "", icon: "BookOpen", sort_order: 0 })} className="gap-1.5"><Plus className="h-4 w-4" /> Add Category</Button>
-    </CardHeader>
-    <CardContent>
-      {editingCategory && (
-        <div className="mb-6 p-4 bg-muted rounded-lg space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input placeholder="Name (English)" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} />
-            <Input placeholder="Name (Secondary)" value={editingCategory.name_bn || ""} onChange={(e) => setEditingCategory({ ...editingCategory, name_bn: e.target.value })} />
-            <Input placeholder="Icon" value={editingCategory.icon || ""} onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })} />
-            <Input type="number" placeholder="Sort Order" value={editingCategory.sort_order || 0} onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })} />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleSaveCategory} disabled={savingCategory} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {savingCategory ? "Saving..." : "Save"}</Button>
-            <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>Cancel</Button>
-          </div>
-        </div>
-      )}
-      <div className="space-y-2">
-        {categories?.map((cat: any) => (
-          <div key={cat.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <div><p className="text-sm font-medium">{cat.name}</p><p className="text-xs text-muted-foreground">{cat.name_bn}</p></div>
-            <div className="flex gap-1.5">
-              <Button size="sm" variant="ghost" onClick={() => setEditingCategory({ ...cat })}>Edit</Button>
-              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { if (confirm("Delete?")) deleteCategory.mutate(cat.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
 
 /* ─── Users / Role Management Component ─── */
 const UsersManagement = () => {
