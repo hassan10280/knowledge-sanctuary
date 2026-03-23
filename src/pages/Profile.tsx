@@ -301,17 +301,61 @@ const Profile = () => {
                     <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)]">Address Book</h3>
                     <p className="text-[11px] text-slate-400">Manage billing addresses</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/checkout")} className="rounded-xl gap-1.5 text-xs h-8 border-slate-200">
-                    <Plus className="h-3 w-3" /> Add
-                  </Button>
+                  {!showAddressForm && !editingAddress && (
+                    <Button variant="outline" size="sm" onClick={() => { setShowAddressForm(true); setEditingAddress(null); }} className="rounded-xl gap-1.5 text-xs h-8 border-slate-200">
+                      <Plus className="h-3 w-3" /> Add New
+                    </Button>
+                  )}
                 </div>
+
+                {/* Add New Address Form */}
+                {showAddressForm && !editingAddress && (
+                  <div className="mb-4 border border-[hsl(var(--gold))]/30 rounded-xl p-4 bg-[hsl(var(--gold))]/5">
+                    <h4 className="text-xs font-semibold text-[hsl(207,68%,28%)] mb-3">New Address</h4>
+                    <AddressForm
+                      onSave={async (data) => {
+                        if (!user) return;
+                        await supabase.from("billing_addresses").insert({
+                          user_id: user.id, ...data, country: "United Kingdom",
+                          is_default: addresses.length === 0,
+                        });
+                        setShowAddressForm(false);
+                        loadAddresses();
+                        toast.success("Address added!");
+                      }}
+                      onCancel={() => setShowAddressForm(false)}
+                      saveLabel="Add Address"
+                    />
+                  </div>
+                )}
+
+                {/* Edit Address Form */}
+                {editingAddress && (
+                  <div className="mb-4 border border-[hsl(var(--gold))]/30 rounded-xl p-4 bg-[hsl(var(--gold))]/5">
+                    <h4 className="text-xs font-semibold text-[hsl(207,68%,28%)] mb-3">Edit Address</h4>
+                    <AddressForm
+                      initial={editingAddress}
+                      onSave={async (data) => {
+                        await supabase.from("billing_addresses").update({ ...data, updated_at: new Date().toISOString() }).eq("id", editingAddress.id);
+                        setEditingAddress(null);
+                        loadAddresses();
+                        toast.success("Address updated!");
+                      }}
+                      onCancel={() => setEditingAddress(null)}
+                      saveLabel="Update Address"
+                    />
+                  </div>
+                )}
+
                 {addressesLoading ? (
                   <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-slate-300" /></div>
-                ) : addresses.length === 0 ? (
+                ) : addresses.length === 0 && !showAddressForm ? (
                   <div className="text-center py-10">
                     <MapPin className="h-10 w-10 mx-auto mb-3 text-slate-200" />
                     <p className="text-sm font-medium text-slate-400">No saved addresses</p>
-                    <p className="text-xs text-slate-300 mt-1">Addresses saved during checkout</p>
+                    <Button variant="outline" className="mt-4 rounded-xl gap-2" onClick={() => setShowAddressForm(true)}>
+                      <Plus className="h-3.5 w-3.5" /> Add Your First Address
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -323,10 +367,26 @@ const Profile = () => {
                         {addr.address_line2 && <p className="text-xs text-slate-400">{addr.address_line2}</p>}
                         <p className="text-xs text-slate-400">{addr.city}, {addr.postcode}</p>
                         {addr.phone && <p className="text-xs text-slate-400 mt-1">{addr.phone}</p>}
-                        <button onClick={() => handleDeleteAddress(addr.id)}
-                          className="absolute bottom-2.5 right-2.5 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-500 transition-opacity p-1">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        <div className="absolute bottom-2.5 right-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {!addr.is_default && (
+                            <button onClick={async () => {
+                              await supabase.from("billing_addresses").update({ is_default: false }).eq("user_id", user.id);
+                              await supabase.from("billing_addresses").update({ is_default: true }).eq("id", addr.id);
+                              loadAddresses();
+                              toast.success("Default address updated");
+                            }} className="text-[hsl(var(--gold))] hover:text-[hsl(var(--gold))] p-1" title="Set as default">
+                              <Star className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button onClick={() => { setEditingAddress(addr); setShowAddressForm(false); }}
+                            className="text-slate-400 hover:text-[hsl(207,68%,28%)] p-1" title="Edit">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={() => handleDeleteAddress(addr.id)}
+                            className="text-red-400 hover:text-red-500 p-1" title="Delete">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
