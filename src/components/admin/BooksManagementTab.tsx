@@ -8,6 +8,7 @@ import {
   CheckCircle2, Search, SlidersHorizontal, ArrowUpDown, Grid3X3, List, RotateCcw,
   Eye, Edit2, ChevronDown, Loader2, Filter,
 } from "lucide-react";
+import PreviewFileUploader from "./PreviewFileUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
