@@ -102,8 +102,8 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   if (!hasChildren) {
     return (
       <Link to={link.href}
-        className={`block font-medium text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] hover:bg-slate-50 transition-all duration-200 rounded-lg ${
-          depth === 0 ? "text-[15px] py-4 px-6" : "text-[13px] py-3 pl-10 pr-6 border-l-2 border-slate-200 ml-6"
+        className={`block font-medium text-[hsl(207,68%,28%)] hover:text-[hsl(var(--gold))] transition-all duration-200 rounded-xl ${
+          depth === 0 ? "text-[14px] py-3 px-5 hover:bg-amber-50/50" : "text-[13px] py-2.5 pl-9 pr-5 border-l-2 border-slate-200 ml-5 hover:border-[hsl(var(--gold))] hover:bg-amber-50/40"
         }`}
         onClick={onClose}>
         {link.label}
@@ -114,10 +114,10 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   return (
     <div>
       <button
-        className="w-full flex items-center justify-between text-[15px] font-semibold text-[hsl(207,68%,28%)] hover:text-[hsl(207,68%,20%)] py-4 px-6 hover:bg-slate-50 rounded-lg transition-all duration-200"
+        className="w-full flex items-center justify-between text-[14px] font-semibold text-[hsl(207,68%,28%)] hover:text-[hsl(var(--gold))] py-3 px-5 hover:bg-amber-50/50 rounded-xl transition-all duration-200"
         onClick={() => setExpanded(!expanded)}>
         {link.label}
-        <ChevronDown className={`h-4 w-4 text-[hsl(207,68%,40%)] transition-transform duration-300 ease-in-out ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-300 ease-in-out ${expanded ? "rotate-180 text-[hsl(var(--gold))]" : ""}`} />
       </button>
       <AnimatePresence initial={false}>
         {expanded && (
@@ -125,7 +125,7 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden">
             <div className="pb-1">
               {link.children!.map((child, ci) => (
