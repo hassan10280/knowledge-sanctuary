@@ -455,22 +455,28 @@ const Checkout = () => {
               <div className="bg-card border border-border rounded-xl p-6 space-y-5">
                 <h2 className="font-serif text-xl text-foreground">Billing Address</h2>
 
-                {savedAddress && (
+                {savedAddresses.length > 0 && (
                   <div className="space-y-3">
-                    <button
-                      onClick={() => setUseSaved(true)}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
-                        useSaved ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-foreground">Use this address</span>
-                        {useSaved && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {savedAddress.full_name}, {savedAddress.address_line1}, {savedAddress.city}, {savedAddress.postcode}
-                      </p>
-                    </button>
+                    {savedAddresses.map((addr) => (
+                      <button
+                        key={addr.id}
+                        onClick={() => { setSelectedAddressId(addr.id); setUseSaved(true); }}
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
+                          useSaved && selectedAddressId === addr.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-foreground">
+                            {addr.full_name}
+                            {addr.is_default && <span className="ml-2 text-[10px] text-primary font-normal">(Default)</span>}
+                          </span>
+                          {useSaved && selectedAddressId === addr.id && <Check className="h-4 w-4 text-primary" />}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {addr.address_line1}, {addr.city}, {addr.postcode}
+                        </p>
+                      </button>
+                    ))}
                     <button
                       onClick={() => setUseSaved(false)}
                       className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-300 ${
