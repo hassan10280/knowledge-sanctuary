@@ -48,6 +48,7 @@ const WholesaleRequestsTab = () => {
   }, [applications, statusFilter, search, formFields]);
 
   const handleApprove = async (appId: string, userId: string) => {
+    setActionLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("manage-admin", {
         body: { action: "approve_wholesale", application_id: appId, target_user_id: userId },
@@ -58,6 +59,8 @@ const WholesaleRequestsTab = () => {
       toast.success("Application approved!");
     } catch (e: any) {
       toast.error(e.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
