@@ -86,8 +86,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data: settings, isLoading: settingsLoading } = useSiteSettings();
-  const { data: categories } = useCategories();
-  const { data: publishers } = usePublishers();
+  const updateSetting = useUpdateSetting();
   const updateSetting = useUpdateSetting();
 
 
