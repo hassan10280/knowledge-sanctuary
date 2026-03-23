@@ -50,6 +50,8 @@ const Profile = () => {
   // Addresses
   const [addresses, setAddresses] = useState<any[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<any>(null);
 
   // Wholesale status
   const [wholesaleApp, setWholesaleApp] = useState<any>(null);
