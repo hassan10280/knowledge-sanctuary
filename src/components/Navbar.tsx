@@ -31,7 +31,7 @@ const DesktopNavItem = ({ link }: { link: NavLink }) => {
   if (!hasChildren) {
     return (
       <Link to={link.href}
-        className="text-sm font-medium text-white/75 hover:text-white transition-colors duration-300 relative group">
+        className="text-[13px] font-medium text-white/80 hover:text-white transition-colors duration-200 relative group whitespace-nowrap">
         {link.label}
         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[hsl(var(--gold))] rounded-full group-hover:w-full transition-all duration-300" />
       </Link>
@@ -41,10 +41,10 @@ const DesktopNavItem = ({ link }: { link: NavLink }) => {
   return (
     <div ref={ref} className="relative"
       onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      <button className="flex items-center gap-1 text-sm font-medium text-white/75 hover:text-white transition-colors duration-300"
+      <button className="flex items-center gap-1 text-[13px] font-medium text-white/80 hover:text-white transition-colors duration-200 whitespace-nowrap"
         onClick={() => setOpen(!open)}>
         {link.label}
-        <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence>
         {open && (
@@ -102,7 +102,7 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   if (!hasChildren) {
     return (
       <Link to={link.href}
-        className="block text-sm font-medium text-white/70 hover:text-white py-2 transition-colors"
+        className="block text-sm font-medium text-white/70 hover:text-white py-2.5 transition-colors"
         style={{ paddingLeft: `${depth * 16}px` }}
         onClick={onClose}>
         {link.label}
@@ -112,7 +112,7 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
 
   return (
     <div>
-      <button className="w-full flex items-center justify-between text-sm font-medium text-white/70 hover:text-white py-2 transition-colors"
+      <button className="w-full flex items-center justify-between text-sm font-medium text-white/70 hover:text-white py-2.5 transition-colors"
         style={{ paddingLeft: `${depth * 16}px` }}
         onClick={() => setExpanded(!expanded)}>
         {link.label}
@@ -163,16 +163,16 @@ const Navbar = () => {
   };
 
   const navLinks = get("nav_links", [
-    { label: "Home", href: "/" },
-    { label: "Browse Books", href: "/browse" },
-    { label: "Categories", href: "/categories" },
-    { label: "Membership", href: "/membership" },
-    { label: "Contact", href: "/contact" },
+    { label: "Shop", href: "/" },
+    { label: "Books", href: "/browse", children: [] },
+    { label: "Books by Publications", href: "/publications", children: [] },
+    { label: "Subject wise Books", href: "/subjects", children: [] },
+    { label: "Education Essentials", href: "/essentials" },
+    { label: "Gifts", href: "/gifts" },
   ]) as NavLink[];
 
   const logoWidth = getLayoutVal("logo_width", 200) as number;
   const logoHeight = getLayoutVal("logo_height", 56) as number;
-  const logoPosition = getLayoutVal("logo_position", "left") as string;
   const logoOffsetX = getLayoutVal("logo_offset_x", 0) as number;
   const logoOffsetY = getLayoutVal("logo_offset_y", 0) as number;
   const logoScale = getLayoutVal("logo_scale", 100) as number;
@@ -202,19 +202,16 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         !isHomePage || scrolled
-          ? "bg-[hsl(207,68%,28%)]/95 backdrop-blur-xl shadow-lg"
+          ? "bg-[hsl(207,68%,28%)] shadow-[0_2px_12px_rgba(0,0,0,0.15)]"
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-3 sm:gap-6"
-          style={{ height: `${getLayoutVal("header_height", 80) as number}px` }}>
-          <Link to="/" className="flex items-center shrink-0 min-w-0"
-            style={{
-              order: logoPosition === "right" ? 2 : 0,
-              marginLeft: logoPosition === "center" ? "auto" : undefined,
-              marginRight: logoPosition === "center" ? "auto" : undefined,
-            }}>
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10">
+        <div className="flex items-center justify-between"
+          style={{ height: `${getLayoutVal("header_height", 72) as number}px` }}>
+
+          {/* ── Left: Logo + Brand ── */}
+          <Link to="/" className="flex items-center gap-3 shrink-0">
             {showResolvedLogo ? (
               <img
                 key={activeLogoSrc}
@@ -237,107 +234,114 @@ const Navbar = () => {
             )}
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
+          {/* ── Center: Navigation Links ── */}
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8">
             {navLinks.map((link, i) => (
               <DesktopNavItem key={i} link={link} />
             ))}
           </div>
 
+          {/* ── Right: Actions ── */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Wholesale Button */}
             <Link
               to="/auth?intent=wholesale"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-lg hover:bg-[hsl(var(--gold))]/25 transition-all"
+              className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/40 rounded-md hover:bg-[hsl(var(--gold))]/10 transition-all duration-200"
             >
               <Building2 className="h-3.5 w-3.5" />
               Wholesale
             </Link>
 
+            {/* Cart */}
             <Link to="/cart" className="relative p-2 text-white/80 hover:text-white transition-colors duration-200">
               <ShoppingCart className="h-5 w-5" />
               {totalItems > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[hsl(var(--coral))] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-[hsl(var(--coral))] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
                   {totalItems}
                 </span>
               )}
             </Link>
 
+            {/* Auth Section */}
             {user ? (
-              <div className="hidden sm:flex items-center min-w-[120px] justify-end">
+              <div className="hidden sm:flex items-center">
                 <ProfileDropdown />
               </div>
             ) : loading ? (
-              <div className="hidden sm:flex items-center gap-2 min-w-[190px] justify-end">
-                <div className="h-10 w-20 rounded-lg bg-white/10 animate-pulse" />
-                <div className="h-10 w-24 rounded-lg bg-white/10 animate-pulse" />
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="h-8 w-16 rounded-md bg-white/10 animate-pulse" />
+                <div className="h-8 w-20 rounded-md bg-white/10 animate-pulse" />
               </div>
             ) : (
-              <div className="hidden sm:flex items-center gap-2 min-w-[190px] justify-end">
-                <Link to="/auth" className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors">
-                  <LogOut className="h-4 w-4" /> Log In
+              <div className="hidden sm:flex items-center gap-2">
+                <Link to="/auth" className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white/85 hover:text-white border border-white/20 rounded-md hover:border-white/40 transition-all duration-200">
+                  <LogOut className="h-3.5 w-3.5" /> Log In
                 </Link>
-                <Link to="/auth?intent=signup" className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-white/15 text-white border border-white/25 rounded-lg hover:bg-white/25 transition-all duration-300 backdrop-blur-sm">
-                  <User className="h-4 w-4" /> Sign Up
+                <Link to="/auth?intent=signup" className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-white text-[hsl(207,68%,28%)] rounded-md hover:bg-white/90 transition-all duration-200 shadow-sm">
+                  <User className="h-3.5 w-3.5" /> Sign Up
                 </Link>
               </div>
             )}
 
-            <button className="md:hidden p-2 text-white/90" onClick={() => setMobileOpen(!mobileOpen)}>
-              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {/* Mobile Toggle */}
+            <button className="lg:hidden p-2 text-white/90 hover:text-white" onClick={() => setMobileOpen(!mobileOpen)}>
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </div>
 
+      {/* ── Mobile Menu ── */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-white/10 bg-[hsl(207,68%,28%)]/95 backdrop-blur-xl"
+            className="lg:hidden border-t border-white/10 bg-[hsl(207,68%,25%)] backdrop-blur-xl"
           >
-            <div className="px-6 py-4 space-y-1">
+            <div className="px-5 py-4 space-y-1">
               {navLinks.map((link, i) => (
                 <MobileNavItem key={i} link={link} depth={0} onClose={() => setMobileOpen(false)} />
               ))}
 
               <Link to="/auth?intent=wholesale"
-                className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--gold))] py-2 transition-colors"
+                className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--gold))] py-2.5 transition-colors"
                 onClick={() => setMobileOpen(false)}>
-                <Building2 className="h-4 w-4" /> Register as Wholesale
+                <Building2 className="h-4 w-4" /> Wholesale
               </Link>
 
-              <div className="border-t border-white/10 pt-3 space-y-2">
+              <div className="border-t border-white/10 pt-3 mt-2 space-y-2">
                 {user ? (
                   <>
                     <p className="text-xs text-white/40 truncate">{user.email}</p>
-                    <Link to="/profile" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg"
+                    <Link to="/profile" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-md"
                       onClick={() => setMobileOpen(false)}>
                       <User className="h-4 w-4" /> My Profile
                     </Link>
                     {isAdmin && (
-                      <Link to="/admin" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/30 rounded-lg"
+                      <Link to="/admin" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[hsl(var(--gold))]/15 text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/25 rounded-md"
                         onClick={() => setMobileOpen(false)}>
                         <Shield className="h-4 w-4" /> Admin Panel
                       </Link>
                     )}
                     <button onClick={handleSignOut}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/20 rounded-lg">
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white border border-white/15 rounded-md">
                       <LogOut className="h-4 w-4" /> Logout
                     </button>
                   </>
                 ) : loading ? (
                   <div className="space-y-2">
-                    <div className="h-10 rounded-lg bg-white/10 animate-pulse" />
-                    <div className="h-10 rounded-lg bg-white/10 animate-pulse" />
+                    <div className="h-10 rounded-md bg-white/10 animate-pulse" />
+                    <div className="h-10 rounded-md bg-white/10 animate-pulse" />
                   </div>
                 ) : (
                   <>
-                    <Link to="/auth" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/15 text-white border border-white/25 rounded-lg backdrop-blur-sm"
+                    <Link to="/auth" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white border border-white/20 rounded-md"
                       onClick={() => setMobileOpen(false)}>
                       <LogOut className="h-4 w-4" /> Log In
                     </Link>
-                    <Link to="/auth?intent=signup" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-white text-[hsl(var(--sky-deep))] rounded-lg hover:bg-white/90 transition-all"
+                    <Link to="/auth?intent=signup" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-white text-[hsl(207,68%,28%)] rounded-md"
                       onClick={() => setMobileOpen(false)}>
                       <User className="h-4 w-4" /> Create Account
                     </Link>
