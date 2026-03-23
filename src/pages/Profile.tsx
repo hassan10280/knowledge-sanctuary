@@ -396,6 +396,7 @@ const Profile = () => {
                               await supabase.from("billing_addresses").update({ is_default: false }).eq("user_id", user.id);
                               await supabase.from("billing_addresses").update({ is_default: true }).eq("id", addr.id);
                               loadAddresses();
+                              invalidateAddresses();
                               toast.success("Default address updated");
                             }} className="text-[hsl(var(--gold))] hover:text-[hsl(var(--gold))] p-1" title="Set as default">
                               <Star className="h-3.5 w-3.5" />
