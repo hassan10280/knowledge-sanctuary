@@ -217,7 +217,7 @@ const WholesaleRequestsTab = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleReject(app.id)}
-                            disabled={updateApp.isPending}
+                            disabled={loading}
                             className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg px-4 h-9 text-xs font-semibold transition-colors"
                           >
                             <XCircle className="h-3.5 w-3.5" /> Reject
