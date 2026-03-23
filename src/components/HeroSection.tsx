@@ -17,6 +17,11 @@ const HeroSection = ({ onSearch }: HeroSectionProps) => {
     return (s?.value as string) ?? fallback;
   };
 
+  const getNum = (key: string, fallback: number) => {
+    const s = settings?.find((s) => s.key === key);
+    return typeof s?.value === "number" ? s.value : fallback;
+  };
+
   const getArr = (key: string, fallback: string[]) => {
     const s = settings?.find((s) => s.key === key);
     return (s?.value as string[]) ?? fallback;
@@ -29,6 +34,20 @@ const HeroSection = ({ onSearch }: HeroSectionProps) => {
   const searchPlaceholder = get("search_placeholder", "Search by title, author, or category...");
   const cats = getArr("categories", ["Quran", "Hadith", "Fiqh", "History", "Kids"]);
 
+  // Dynamic image settings
+  const heroImageUrl = get("hero_image_url", "");
+  const heroImageFit = get("hero_image_fit", "cover") as React.CSSProperties["objectFit"];
+  const heroImageWidth = getNum("hero_image_width", 100);
+  const heroImageHeight = getNum("hero_image_height", 600);
+
+  // Dynamic spacing
+  const paddingTop = getNum("hero_padding_top", 0);
+  const paddingBottom = getNum("hero_padding_bottom", 0);
+  const paddingLeft = getNum("hero_padding_left", 0);
+  const paddingRight = getNum("hero_padding_right", 0);
+  const marginTop = getNum("hero_margin_top", 0);
+  const marginBottom = getNum("hero_margin_bottom", 0);
+
   const handleSearch = () => {
     onSearch?.(query);
   };
@@ -38,19 +57,50 @@ const HeroSection = ({ onSearch }: HeroSectionProps) => {
   };
 
   return (
-    <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden gradient-hero">
-      <GeometricPattern />
+    <section
+      className="relative flex items-center justify-center overflow-hidden gradient-hero"
+      style={{
+        minHeight: heroImageUrl ? `${heroImageHeight}px` : "92vh",
+        paddingTop: paddingTop ? `${paddingTop}px` : undefined,
+        paddingBottom: paddingBottom ? `${paddingBottom}px` : undefined,
+        paddingLeft: paddingLeft ? `${paddingLeft}px` : undefined,
+        paddingRight: paddingRight ? `${paddingRight}px` : undefined,
+        marginTop: marginTop ? `${marginTop}px` : undefined,
+        marginBottom: marginBottom ? `${marginBottom}px` : undefined,
+      }}
+    >
+      {/* Background image from admin */}
+      {heroImageUrl && (
+        <div
+          className="absolute inset-0 z-0"
+          style={{ width: `${heroImageWidth}%`, margin: heroImageWidth < 100 ? "0 auto" : undefined }}
+        >
+          <img
+            src={heroImageUrl}
+            alt="Hero background"
+            className="w-full h-full"
+            style={{ objectFit: heroImageFit }}
+          />
+          <div className="absolute inset-0 bg-[hsl(207,68%,28%)]/60" />
+        </div>
+      )}
+
+      {!heroImageUrl && <GeometricPattern />}
       
-      <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 -left-32 w-96 h-96 rounded-full bg-sky-glow blur-3xl"
-      />
-      <motion.div
-        animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-20 -right-32 w-[500px] h-[500px] rounded-full bg-sky-light blur-3xl"
-      />
+      {!heroImageUrl && (
+        <>
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-20 -left-32 w-96 h-96 rounded-full bg-sky-glow blur-3xl"
+          />
+          <motion.div
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-20 -right-32 w-[500px] h-[500px] rounded-full bg-sky-light blur-3xl"
+          />
+        </>
+      )}
       
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[hsl(207,68%,28%)]" />
 

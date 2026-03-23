@@ -137,6 +137,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const { data: settings, isLoading: headerSettingsLoading } = useSiteSettings("header");
+  const { data: layoutSettings } = useSiteSettings();
   const { user, isAdmin, loading, signOut } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
@@ -154,6 +155,13 @@ const Navbar = () => {
     return setting?.value ?? fallback;
   };
 
+  const getLayoutVal = (key: string, fallback: any) => {
+    const w = typeof window !== "undefined" ? window.innerWidth : 1200;
+    const section = w <= 767 ? "layout_mobile" : w <= 1024 ? "layout_tablet" : "layout_desktop";
+    const setting = layoutSettings?.find((s) => s.section === section && s.key === key);
+    return setting?.value ?? fallback;
+  };
+
   const navLinks = get("nav_links", [
     { label: "Home", href: "/" },
     { label: "Browse Books", href: "/browse" },
@@ -162,9 +170,12 @@ const Navbar = () => {
     { label: "Contact", href: "/contact" },
   ]) as NavLink[];
 
-  // Use logo_size_px (number) saved from admin, fallback to 56
-  const logoSizePx = get("logo_size_px", 56) as number;
-  const logoHeight = typeof logoSizePx === "number" ? `${logoSizePx}px` : "56px";
+  const logoWidth = getLayoutVal("logo_width", 200) as number;
+  const logoHeight = getLayoutVal("logo_height", 56) as number;
+  const logoPosition = getLayoutVal("logo_position", "left") as string;
+  const logoOffsetX = getLayoutVal("logo_offset_x", 0) as number;
+  const logoOffsetY = getLayoutVal("logo_offset_y", 0) as number;
+  const logoScale = getLayoutVal("logo_scale", 100) as number;
 
   const logoUrlSetting = settings?.find((item) => item.key === "logo_url");
   const rawLogoUrl = typeof logoUrlSetting?.value === "string" ? logoUrlSetting.value.trim() : "";
@@ -196,20 +207,31 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 gap-3 sm:gap-6">
-          <Link to="/" className="flex items-center shrink-0 min-w-0">
+        <div className="flex items-center justify-between gap-3 sm:gap-6"
+          style={{ height: `${getLayoutVal("header_height", 80) as number}px` }}>
+          <Link to="/" className="flex items-center shrink-0 min-w-0"
+            style={{
+              order: logoPosition === "right" ? 2 : 0,
+              marginLeft: logoPosition === "center" ? "auto" : undefined,
+              marginRight: logoPosition === "center" ? "auto" : undefined,
+            }}>
             {showResolvedLogo ? (
               <img
                 key={activeLogoSrc}
                 src={activeLogoSrc}
                 alt="Madrasah Matters"
-                style={{ height: logoHeight }}
-                className="w-auto max-w-[160px] sm:max-w-[220px] object-contain"
+                style={{
+                  width: `${logoWidth}px`,
+                  height: `${logoHeight}px`,
+                  objectFit: "contain",
+                  transform: `translate(${logoOffsetX}px, ${logoOffsetY}px) scale(${logoScale / 100})`,
+                }}
                 onError={() => setLogoLoadFailed(true)}
               />
             ) : (
               <div
-                className="h-10 sm:h-12 w-[132px] sm:w-[180px] rounded-md bg-white/10 animate-pulse"
+                className="rounded-md bg-white/10 animate-pulse"
+                style={{ width: `${logoWidth}px`, height: `${logoHeight}px` }}
                 aria-label="Loading logo"
               />
             )}
