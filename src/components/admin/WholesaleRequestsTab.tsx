@@ -65,6 +65,7 @@ const WholesaleRequestsTab = () => {
   };
 
   const handleReject = async (appId: string) => {
+    setActionLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("manage-admin", {
         body: { action: "reject_wholesale", application_id: appId, admin_notes: rejectNotes[appId] || "" },
@@ -75,6 +76,8 @@ const WholesaleRequestsTab = () => {
       toast.success("Application rejected.");
     } catch (e: any) {
       toast.error(e.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
