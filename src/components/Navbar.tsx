@@ -137,6 +137,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const { data: settings, isLoading: headerSettingsLoading } = useSiteSettings("header");
+  const { data: layoutSettings } = useSiteSettings();
   const { user, isAdmin, loading, signOut } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
@@ -154,6 +155,13 @@ const Navbar = () => {
     return setting?.value ?? fallback;
   };
 
+  const getLayoutVal = (key: string, fallback: any) => {
+    const w = typeof window !== "undefined" ? window.innerWidth : 1200;
+    const section = w <= 767 ? "layout_mobile" : w <= 1024 ? "layout_tablet" : "layout_desktop";
+    const setting = layoutSettings?.find((s) => s.section === section && s.key === key);
+    return setting?.value ?? fallback;
+  };
+
   const navLinks = get("nav_links", [
     { label: "Home", href: "/" },
     { label: "Browse Books", href: "/browse" },
@@ -162,9 +170,12 @@ const Navbar = () => {
     { label: "Contact", href: "/contact" },
   ]) as NavLink[];
 
-  // Use logo_size_px (number) saved from admin, fallback to 56
-  const logoSizePx = get("logo_size_px", 56) as number;
-  const logoHeight = typeof logoSizePx === "number" ? `${logoSizePx}px` : "56px";
+  const logoWidth = getLayoutVal("logo_width", 200) as number;
+  const logoHeight = getLayoutVal("logo_height", 56) as number;
+  const logoPosition = getLayoutVal("logo_position", "left") as string;
+  const logoOffsetX = getLayoutVal("logo_offset_x", 0) as number;
+  const logoOffsetY = getLayoutVal("logo_offset_y", 0) as number;
+  const logoScale = getLayoutVal("logo_scale", 100) as number;
 
   const logoUrlSetting = settings?.find((item) => item.key === "logo_url");
   const rawLogoUrl = typeof logoUrlSetting?.value === "string" ? logoUrlSetting.value.trim() : "";
