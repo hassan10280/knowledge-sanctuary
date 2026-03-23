@@ -215,7 +215,7 @@ const WholesaleRequestsTab = () => {
                           <Button
                             size="sm"
                             onClick={() => handleApprove(app.id, app.user_id)}
-                            disabled={loading}
+                            disabled={actionLoading}
                             className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-4 h-9 text-xs font-semibold transition-colors"
                           >
                             <CheckCircle className="h-3.5 w-3.5" /> Approve
