@@ -36,7 +36,8 @@ const Checkout = () => {
   const { getSetting } = useSettingsGetter();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [savedAddress, setSavedAddress] = useState<any>(null);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [useSaved, setUseSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transactionId, setTransactionId] = useState("");
