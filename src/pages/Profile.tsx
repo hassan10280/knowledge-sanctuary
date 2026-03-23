@@ -342,6 +342,7 @@ const Profile = () => {
                         });
                         setShowAddressForm(false);
                         loadAddresses();
+                        invalidateAddresses();
                         toast.success("Address added!");
                       }}
                       onCancel={() => setShowAddressForm(false)}
