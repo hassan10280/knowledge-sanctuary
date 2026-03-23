@@ -102,8 +102,9 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
   if (!hasChildren) {
     return (
       <Link to={link.href}
-        className="block text-sm font-medium text-white/70 hover:text-white py-2.5 transition-colors"
-        style={{ paddingLeft: `${depth * 16}px` }}
+        className={`block font-medium text-white/75 hover:text-white hover:bg-white/[0.06] transition-all duration-200 rounded-lg ${
+          depth === 0 ? "text-[15px] py-4 px-6" : "text-[13px] py-3 pl-10 pr-6 border-l-2 border-white/10 ml-6"
+        }`}
         onClick={onClose}>
         {link.label}
       </Link>
@@ -112,19 +113,25 @@ const MobileNavItem = ({ link, depth, onClose }: { link: NavLink; depth: number;
 
   return (
     <div>
-      <button className="w-full flex items-center justify-between text-sm font-medium text-white/70 hover:text-white py-2.5 transition-colors"
-        style={{ paddingLeft: `${depth * 16}px` }}
+      <button
+        className="w-full flex items-center justify-between text-[15px] font-semibold text-white/90 hover:text-white py-4 px-6 hover:bg-white/[0.06] rounded-lg transition-all duration-200"
         onClick={() => setExpanded(!expanded)}>
         {link.label}
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-white/50 transition-transform duration-300 ease-in-out ${expanded ? "rotate-180" : ""}`} />
       </button>
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {expanded && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden">
-            {link.children!.map((child, ci) => (
-              <MobileNavItem key={ci} link={child} depth={depth + 1} onClose={onClose} />
-            ))}
+            <div className="pb-1">
+              {link.children!.map((child, ci) => (
+                <MobileNavItem key={ci} link={child} depth={depth + 1} onClose={onClose} />
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
