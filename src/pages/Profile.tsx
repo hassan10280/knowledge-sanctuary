@@ -406,7 +406,7 @@ const Profile = () => {
                             className="text-slate-400 hover:text-[hsl(207,68%,28%)] p-1" title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => handleDeleteAddress(addr.id)}
+                          <button onClick={() => setDeleteConfirmId(addr.id)}
                             className="text-red-400 hover:text-red-500 p-1" title="Delete">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
