@@ -178,8 +178,16 @@ const Profile = () => {
           className="w-full max-w-[420px] sm:max-w-[520px] md:max-w-[640px] lg:max-w-[720px] bg-white rounded-2xl sm:rounded-3xl shadow-[0_25px_80px_-12px_rgba(0,0,0,0.3)] border border-slate-200/60 overflow-hidden"
         >
           {/* ── Navy Header ── */}
-          <div className="bg-[hsl(207,68%,28%)] px-5 sm:px-7 py-5 sm:py-6">
-            <div className="flex items-center gap-4">
+          <div className="bg-[hsl(207,68%,28%)] px-5 sm:px-7 py-5 sm:py-6 relative">
+            {/* Back & Close buttons */}
+            <button onClick={() => navigate(-1)} className="absolute top-4 left-4 text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10" title="Go back">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <button onClick={() => navigate("/")} className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10" title="Close">
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-4 pt-4">
               <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-2 border-white/25 shrink-0">
                 {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} /> : null}
                 <AvatarFallback className="bg-white/15 text-white text-lg font-semibold">{getInitials()}</AvatarFallback>
