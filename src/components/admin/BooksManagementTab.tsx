@@ -573,36 +573,13 @@ const BooksManagementTab = () => {
               <p className="text-[11px] text-muted-foreground">JPG, PNG, WEBP • Max 10MB</p>
             </div>
 
-            {/* Preview Files */}
-            <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
-              <Label className="text-xs font-semibold flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary" /> Inside Pages Preview</Label>
-              <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-border bg-background hover:bg-muted/60 transition-colors text-sm">
-                <Upload className="h-4 w-4 text-muted-foreground" />
-                {uploadingPreview ? "Uploading..." : "Upload Images / PDFs"}
-                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple onChange={handlePreviewUpload} className="hidden" disabled={uploadingPreview} />
-              </label>
-              <p className="text-[11px] text-muted-foreground">JPG, PNG, WEBP, PDF • Max 10MB per file</p>
-              {previewFiles.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-                  {previewFiles.map((file, index) => (
-                    <div key={index} className="relative group rounded-lg border border-border overflow-hidden bg-muted/30">
-                      {file.type === "image" ? (
-                        <img src={file.url} alt={file.name} className="w-full h-24 object-cover" />
-                      ) : (
-                        <div className="w-full h-24 flex flex-col items-center justify-center bg-muted/50">
-                          <FileText className="h-8 w-8 text-destructive/70" />
-                          <span className="text-[10px] text-muted-foreground mt-1">PDF</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button onClick={() => removePreviewFile(index)} className="p-1.5 rounded-full bg-destructive text-destructive-foreground"><X className="h-3.5 w-3.5" /></button>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground px-2 py-1 truncate">{file.name}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Preview Files - Advanced Uploader */}
+            <PreviewFileUploader
+              files={previewFiles}
+              onChange={(newFiles) => updateField("preview_files", newFiles)}
+              uploading={uploadingPreview}
+              setUploading={setUploadingPreview}
+            />
 
             <FormField label="Sample Preview URL" hint="Direct link to sample PDF or image">
               <Input placeholder="https://..." value={editingBook.sample_url || ""} onChange={(e) => updateField("sample_url", e.target.value)} />
