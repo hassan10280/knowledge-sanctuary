@@ -31,7 +31,7 @@ const DesktopNavItem = ({ link }: { link: NavLink }) => {
   if (!hasChildren) {
     return (
       <Link to={link.href}
-        className="text-[13px] font-medium text-white/80 hover:text-white transition-colors duration-200 relative group whitespace-nowrap">
+        className="text-[13px] font-medium text-white/80 hover:text-white transition-colors duration-200 relative group whitespace-nowrap tracking-wide">
         {link.label}
         <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[hsl(var(--gold))] rounded-full group-hover:w-full transition-all duration-300" />
       </Link>
@@ -41,7 +41,7 @@ const DesktopNavItem = ({ link }: { link: NavLink }) => {
   return (
     <div ref={ref} className="relative"
       onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      <button className="flex items-center gap-1 text-[13px] font-medium text-white/80 hover:text-white transition-colors duration-200 whitespace-nowrap"
+      <button className="flex items-center gap-1 text-[13px] font-medium text-white/80 hover:text-white transition-colors duration-200 whitespace-nowrap tracking-wide"
         onClick={() => setOpen(!open)}>
         {link.label}
         <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -176,6 +176,7 @@ const Navbar = () => {
   const logoOffsetX = getLayoutVal("logo_offset_x", 0) as number;
   const logoOffsetY = getLayoutVal("logo_offset_y", 0) as number;
   const logoScale = getLayoutVal("logo_scale", 100) as number;
+  const headerHeight = getLayoutVal("header_height", 72) as number;
 
   const logoUrlSetting = settings?.find((item) => item.key === "logo_url");
   const rawLogoUrl = typeof logoUrlSetting?.value === "string" ? logoUrlSetting.value.trim() : "";
@@ -202,25 +203,26 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         !isHomePage || scrolled
-          ? "bg-[hsl(207,68%,28%)] shadow-[0_2px_12px_rgba(0,0,0,0.15)]"
+          ? "bg-[hsl(207,68%,28%)] shadow-[0_2px_16px_rgba(0,0,0,0.18)]"
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10">
+      {/* Full-width container with edge-to-edge padding */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
         <div className="flex items-center justify-between"
-          style={{ height: `${getLayoutVal("header_height", 72) as number}px` }}>
+          style={{ height: `${headerHeight}px` }}>
 
-          {/* ── Left: Logo + Brand ── */}
-          <Link to="/" className="flex items-center gap-3 shrink-0">
+          {/* ── Left: Logo + Brand Name ── */}
+          <Link to="/" className="flex items-center gap-2.5 shrink-0">
             {showResolvedLogo ? (
               <img
                 key={activeLogoSrc}
                 src={activeLogoSrc}
                 alt="Madrasah Matters"
+                className="object-contain"
                 style={{
-                  width: `${logoWidth}px`,
-                  height: `${logoHeight}px`,
-                  objectFit: "contain",
+                  width: `clamp(${Math.round(logoWidth * 0.55)}px, ${logoWidth}px, ${logoWidth}px)`,
+                  height: `clamp(${Math.round(logoHeight * 0.6)}px, ${logoHeight}px, ${logoHeight}px)`,
                   transform: `translate(${logoOffsetX}px, ${logoOffsetY}px) scale(${logoScale / 100})`,
                 }}
                 onError={() => setLogoLoadFailed(true)}
@@ -234,19 +236,21 @@ const Navbar = () => {
             )}
           </Link>
 
-          {/* ── Center: Navigation Links ── */}
-          <div className="hidden lg:flex items-center gap-6 xl:gap-8">
-            {navLinks.map((link, i) => (
-              <DesktopNavItem key={i} link={link} />
-            ))}
+          {/* ── Center: Navigation Links (Desktop only) ── */}
+          <div className="hidden lg:flex items-center justify-center flex-1 mx-4">
+            <div className="flex items-center gap-5 xl:gap-7 2xl:gap-9">
+              {navLinks.map((link, i) => (
+                <DesktopNavItem key={i} link={link} />
+              ))}
+            </div>
           </div>
 
           {/* ── Right: Actions ── */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
             {/* Wholesale Button */}
             <Link
               to="/auth?intent=wholesale"
-              className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/40 rounded-md hover:bg-[hsl(var(--gold))]/10 transition-all duration-200"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[hsl(var(--gold))] border border-[hsl(var(--gold))]/40 rounded-md hover:bg-[hsl(var(--gold))]/10 transition-all duration-200"
             >
               <Building2 className="h-3.5 w-3.5" />
               Wholesale
@@ -284,7 +288,7 @@ const Navbar = () => {
             )}
 
             {/* Mobile Toggle */}
-            <button className="lg:hidden p-2 text-white/90 hover:text-white" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button className="lg:hidden p-2 text-white/90 hover:text-white transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
