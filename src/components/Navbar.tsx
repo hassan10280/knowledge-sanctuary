@@ -364,34 +364,41 @@ const Navbar = () => {
               </div>
 
               {/* ─ Card footer ─ */}
-              <div className="shrink-0 px-4 pt-3 pb-4 border-t border-slate-100 space-y-2.5">
+              <div className="shrink-0 px-4 pt-3 pb-6 border-t border-slate-100">
                 {user ? (
-                  <>
-                    <p className="text-[11px] text-slate-400 truncate px-1">{user.email}</p>
-                    <Link to="/profile"
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium bg-slate-50 text-[hsl(207,68%,28%)] border border-slate-200 rounded-xl hover:bg-slate-100 transition-all duration-200"
-                      onClick={() => setMobileOpen(false)}>
-                      <User className="h-3.5 w-3.5" /> My Profile
+                  <div className="space-y-2">
+                    {/* Profile mini-card */}
+                    <Link to="/profile" onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                      <div className="w-9 h-9 rounded-full bg-[hsl(207,68%,28%)] flex items-center justify-center shrink-0">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[hsl(207,68%,28%)] truncate">My Profile</p>
+                        <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
+                      </div>
                     </Link>
                     {isAdmin && (
-                      <Link to="/admin"
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium bg-amber-50 text-[hsl(var(--gold))] border border-amber-200 rounded-xl hover:bg-amber-100 transition-all duration-200"
-                        onClick={() => setMobileOpen(false)}>
-                        <Shield className="h-3.5 w-3.5" /> Admin Panel
+                      <Link to="/admin" onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--gold))]/5 hover:bg-[hsl(var(--gold))]/10 transition-colors">
+                        <div className="w-9 h-9 rounded-full bg-[hsl(var(--gold))]/15 flex items-center justify-center shrink-0">
+                          <Shield className="h-4 w-4 text-[hsl(var(--gold))]" />
+                        </div>
+                        <p className="text-[13px] font-semibold text-[hsl(var(--gold))]">Admin Panel</p>
                       </Link>
                     )}
                     <button onClick={handleSignOut}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium text-slate-500 hover:text-[hsl(207,68%,28%)] hover:bg-slate-50 rounded-xl transition-all duration-200">
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200">
                       <LogOut className="h-3.5 w-3.5" /> Logout
                     </button>
-                  </>
+                  </div>
                 ) : loading ? (
                   <div className="space-y-2.5">
                     <div className="h-10 rounded-xl bg-slate-100 animate-pulse" />
                     <div className="h-10 rounded-xl bg-slate-100 animate-pulse" />
                   </div>
                 ) : (
-                  <>
+                  <div className="space-y-2.5">
                     <Link to="/auth"
                       className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[13px] font-medium text-[hsl(207,68%,28%)] border border-[hsl(207,68%,28%)]/30 rounded-xl hover:border-[hsl(207,68%,28%)] hover:bg-slate-50 transition-all duration-200"
                       onClick={() => setMobileOpen(false)}>
@@ -402,7 +409,7 @@ const Navbar = () => {
                       onClick={() => setMobileOpen(false)}>
                       <User className="h-3.5 w-3.5" /> Create Account
                     </Link>
-                  </>
+                  </div>
                 )}
               </div>
             </motion.div>
