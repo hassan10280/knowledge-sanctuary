@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
-import { useCategories, useUpsertCategory, useDeleteCategory } from "@/hooks/useBooks";
-import { usePublishers } from "@/hooks/usePublishers";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Layers, Truck, Bell, Package, Cog, PenLine, BarChart3, ShoppingCart, X, Home } from "lucide-react";
@@ -26,6 +24,7 @@ import ContentEditorTab from "@/components/admin/ContentEditorTab";
 import AnalyticsDashboardTab from "@/components/admin/AnalyticsDashboardTab";
 import AbandonedCartsTab from "@/components/admin/AbandonedCartsTab";
 import BooksManagementTab from "@/components/admin/BooksManagementTab";
+import CategoriesManagementTab from "@/components/admin/CategoriesManagementTab";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,18 +85,13 @@ const Admin = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data: settings, isLoading: settingsLoading } = useSiteSettings();
-  const { data: categories } = useCategories();
-  const { data: publishers } = usePublishers();
   const updateSetting = useUpdateSetting();
-  const upsertCategory = useUpsertCategory();
-  const deleteCategory = useDeleteCategory();
+
 
   const [activeSection, setActiveSection] = useState("header");
   const [localSettings, setLocalSettings] = useState<Record<string, Record<string, any>>>({});
-  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [openPanels, setOpenPanels] = useState<Record<string, boolean>>({});
-  const [savingCategory, setSavingCategory] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -154,33 +148,6 @@ const Admin = () => {
   };
 
 
-  const handleSaveCategory = async () => {
-    if (!editingCategory) {
-      toast.error("No category data found.");
-      return;
-    }
-
-    if (isBlank(editingCategory.name)) {
-      toast.error("Name (English) is required.");
-      return;
-    }
-
-    if (!isValidNumber(Number(editingCategory.sort_order ?? 0), { min: 0 })) {
-      toast.error("Sort Order must be a valid number.");
-      return;
-    }
-
-    setSavingCategory(true);
-    try {
-      await upsertCategory.mutateAsync(editingCategory);
-      toast.success("Category saved!");
-      setEditingCategory(null);
-    } catch (e: unknown) {
-      toast.error(getErrorMessage(e));
-    } finally {
-      setSavingCategory(false);
-    }
-  };
 
   if (loading || settingsLoading) {
     return (
@@ -344,7 +311,7 @@ const Admin = () => {
       case "header": return <HeaderSettingsTab />;
       case "hero": return <HeroSettingsTab />;
       case "books": return <BooksManagementTab />;
-      case "categories": return <CategoriesManagement editingCategory={editingCategory} setEditingCategory={setEditingCategory} categories={categories} handleSaveCategory={handleSaveCategory} deleteCategory={deleteCategory} savingCategory={savingCategory} />;
+      case "categories": return <CategoriesManagementTab />;
       case "publishers": return <PublishersTab />;
       case "design": return (
         <div className="space-y-6">
@@ -456,42 +423,6 @@ const Admin = () => {
 
 
 
-/* ─── Categories Management Component ─── */
-const CategoriesManagement = ({ editingCategory, setEditingCategory, categories, handleSaveCategory, deleteCategory, savingCategory }: any) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between">
-      <CardTitle className="font-serif">Categories</CardTitle>
-      <Button size="sm" onClick={() => setEditingCategory({ name: "", name_bn: "", icon: "BookOpen", sort_order: 0 })} className="gap-1.5"><Plus className="h-4 w-4" /> Add Category</Button>
-    </CardHeader>
-    <CardContent>
-      {editingCategory && (
-        <div className="mb-6 p-4 bg-muted rounded-lg space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input placeholder="Name (English)" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} />
-            <Input placeholder="Name (Secondary)" value={editingCategory.name_bn || ""} onChange={(e) => setEditingCategory({ ...editingCategory, name_bn: e.target.value })} />
-            <Input placeholder="Icon" value={editingCategory.icon || ""} onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })} />
-            <Input type="number" placeholder="Sort Order" value={editingCategory.sort_order || 0} onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })} />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleSaveCategory} disabled={savingCategory} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {savingCategory ? "Saving..." : "Save"}</Button>
-            <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>Cancel</Button>
-          </div>
-        </div>
-      )}
-      <div className="space-y-2">
-        {categories?.map((cat: any) => (
-          <div key={cat.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <div><p className="text-sm font-medium">{cat.name}</p><p className="text-xs text-muted-foreground">{cat.name_bn}</p></div>
-            <div className="flex gap-1.5">
-              <Button size="sm" variant="ghost" onClick={() => setEditingCategory({ ...cat })}>Edit</Button>
-              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { if (confirm("Delete?")) deleteCategory.mutate(cat.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
 
 /* ─── Users / Role Management Component ─── */
 const UsersManagement = () => {
