@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LogOut, Save, Plus, Trash2, Settings, BookOpen, Layout, Globe, Menu, Users, Shield, ShieldOff, Paintbrush, Type, Palette, ChevronDown, ChevronUp, RotateCcw, Minus, MessageCircle, Star, Building2, Percent, FileText, Layers, Truck, Bell, Package, Cog, PenLine, BarChart3, ShoppingCart, X, Home } from "lucide-react";
 import HeaderSettingsTab from "@/components/admin/HeaderSettingsTab";
