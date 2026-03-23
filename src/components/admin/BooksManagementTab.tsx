@@ -646,6 +646,29 @@ const BooksManagementTab = () => {
               </div>
             </div>
             {detailBook.description && <p className="text-sm text-muted-foreground mt-3">{detailBook.description}</p>}
+            {Array.isArray(detailBook.preview_files) && detailBook.preview_files.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-foreground">Preview Files ({detailBook.preview_files.length})</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {detailBook.preview_files.map((f: any, i: number) => (
+                    <div key={i} className="rounded-lg border border-border overflow-hidden bg-muted/30">
+                      {f.type === "image" ? (
+                        <img src={f.url} alt={f.name} className="w-full h-20 object-cover" />
+                      ) : (
+                        <div className="w-full h-20 flex flex-col items-center justify-center">
+                          <FileText className="h-6 w-6 text-destructive/70" />
+                          <span className="text-[10px] text-muted-foreground mt-1">PDF</span>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground px-1.5 py-1 truncate">{f.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {detailBook.sample_url && (
+              <p className="text-sm mt-2"><span className="text-muted-foreground">Sample URL:</span> <a href={detailBook.sample_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">View Sample</a></p>
+            )}
           </CardContent>
         </Card>
       )}
