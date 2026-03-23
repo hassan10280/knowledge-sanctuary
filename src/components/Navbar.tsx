@@ -357,7 +357,7 @@ const Navbar = () => {
                 ))}
 
                 <Link to="/auth?intent=wholesale"
-                  className="flex items-center gap-3 text-[15px] font-semibold text-[hsl(var(--gold))] py-4 px-6 hover:bg-white/[0.06] rounded-lg transition-all duration-200"
+                  className="flex items-center gap-3 text-[15px] font-semibold text-[hsl(var(--gold))] py-4 px-6 hover:bg-amber-50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileOpen(false)}>
                   <Building2 className="h-4.5 w-4.5" /> Wholesale
                 </Link>
