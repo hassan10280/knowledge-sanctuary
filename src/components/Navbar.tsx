@@ -197,8 +197,8 @@ const Navbar = () => {
   const logoSrc = rawLogoUrl
     ? `${rawLogoUrl}${rawLogoUrl.includes("?") ? "&" : "?"}v=${logoVersion}`
     : logoHeader;
-  const showResolvedLogo = !headerSettingsLoading;
-  const activeLogoSrc = !showResolvedLogo || logoLoadFailed ? logoHeader : logoSrc;
+  // Always show the logo — use fallback while settings load or if remote fails
+  const activeLogoSrc = headerSettingsLoading || logoLoadFailed || !rawLogoUrl ? logoHeader : logoSrc;
 
   useEffect(() => {
     setLogoLoadFailed(false);
