@@ -128,11 +128,14 @@ export function useAbandonedCartTracker() {
             status: "active",
           });
           lastSavedRef.current = cartData;
-        } catch {
-          console.warn("[AbandonedCart] Update failed, creating new record");
+        } catch (e) {
+          console.warn("[AbandonedCart] Update failed, will create new record:", e);
           recordIdRef.current = null;
           localStorage.removeItem(CART_RECORD_KEY);
           lastSavedRef.current = "";
+          // Immediately try to create a new record
+          savingRef.current = false;
+          return saveCartSnapshot();
         }
       } else {
         // INSERT uses the default client — public INSERT is allowed for all
