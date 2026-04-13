@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useWholesaleStatus } from "@/hooks/useWholesaleStatus";
-import { useValidateCoupon, useCoupons } from "@/hooks/useAdvancedDiscounts";
+import { useValidateCoupon, useAutoApplyCoupons } from "@/hooks/useAdvancedDiscounts";
 import { useShippingCalculator } from "@/hooks/useShipping";
 import { useDiscountCalculator } from "@/hooks/useDiscountCalculator";
 import { useBooks } from "@/hooks/useBooks";
@@ -81,7 +81,7 @@ const Cart = () => {
   };
 
   // Auto-apply coupon
-  const { data: allCoupons } = useCoupons();
+  const { data: allCoupons } = useAutoApplyCoupons();
   const autoApplyAttemptedRef = useRef(false);
   useEffect(() => {
     if (appliedCoupon || !allCoupons || items.length === 0 || autoApplyAttemptedRef.current) return;
