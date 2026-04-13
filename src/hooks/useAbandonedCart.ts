@@ -1,17 +1,14 @@
 import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createGuestCartClient } from "@/lib/guest-cart-client";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 
-const ABANDON_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+const ABANDON_TIMEOUT_MS = 20 * 60 * 1000;
 const SAVE_DEBOUNCE_MS = 5000;
 const CART_RECORD_KEY = "abandoned_cart_record_id";
 const CART_SESSION_KEY = "abandoned_cart_session_id";
 
-/**
- * Get or create a persistent session ID stored in localStorage (not sessionStorage)
- * so it survives tab closes and is consistent across tabs.
- */
 function getOrCreateSessionId(): string {
   let sid = localStorage.getItem(CART_SESSION_KEY);
   if (!sid) {
@@ -21,16 +18,12 @@ function getOrCreateSessionId(): string {
   return sid;
 }
 
-/**
- * Tracks cart state and marks as abandoned after inactivity.
- * Saves cart snapshots to DB for admin recovery dashboard.
- *
- * Fixed bugs:
- * - sendBeacon now uses proper Supabase auth headers
- * - Guest users can update their carts via public RLS policy
- * - Session ID is in localStorage (consistent across tabs)
- * - Deduplication guard prevents double-inserts
- */
+/** Returns the appropriate Supabase client — with x-session-id header for guests */
+function getCartClient(userId: string | undefined) {
+  if (userId) return supabase;
+  return createGuestCartClient(getOrCreateSessionId());
+}
+
 export function useAbandonedCartTracker() {
   const { items, totalPrice } = useCart();
   const { user } = useAuth();
@@ -38,9 +31,8 @@ export function useAbandonedCartTracker() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordIdRef = useRef<string | null>(localStorage.getItem(CART_RECORD_KEY));
   const lastSavedRef = useRef<string>("");
-  const savingRef = useRef(false); // Guard against concurrent saves
+  const savingRef = useRef(false);
 
-  // Reset abandon timer on activity
   const resetAbandonTimer = useCallback(() => {
     if (abandonTimerRef.current) clearTimeout(abandonTimerRef.current);
     if (items.length === 0) return;
@@ -48,15 +40,15 @@ export function useAbandonedCartTracker() {
     abandonTimerRef.current = setTimeout(async () => {
       const rid = recordIdRef.current;
       if (!rid) return;
-      await supabase
+      const client = getCartClient(user?.id);
+      await client
         .from("abandoned_carts")
         .update({ status: "abandoned" })
         .eq("id", rid)
         .eq("status", "active");
     }, ABANDON_TIMEOUT_MS);
-  }, [items.length]);
+  }, [items.length, user?.id]);
 
-  // Save cart snapshot (debounced, with concurrency guard)
   const saveCartSnapshot = useCallback(async () => {
     if (savingRef.current) return;
 
@@ -65,7 +57,8 @@ export function useAbandonedCartTracker() {
       if (rid) {
         savingRef.current = true;
         try {
-          await supabase
+          const client = getCartClient(user?.id);
+          await client
             .from("abandoned_carts")
             .update({ status: "recovered", recovered_at: new Date().toISOString() })
             .eq("id", rid);
@@ -92,9 +85,11 @@ export function useAbandonedCartTracker() {
         quantity: i.quantity,
       }));
 
+      const client = getCartClient(user?.id);
       const rid = recordIdRef.current;
+
       if (rid) {
-        const { error } = await supabase
+        const { error } = await client
           .from("abandoned_carts")
           .update({
             session_id: sessionId,
@@ -106,16 +101,15 @@ export function useAbandonedCartTracker() {
           .eq("id", rid);
 
         if (error) {
-          // Record may have been deleted by admin — create new
           console.warn("[AbandonedCart] Update failed, creating new record", error.message);
           recordIdRef.current = null;
           localStorage.removeItem(CART_RECORD_KEY);
-          // Will retry on next debounce cycle
           lastSavedRef.current = "";
         } else {
           lastSavedRef.current = cartData;
         }
       } else {
+        // INSERT uses the default client — public INSERT is allowed for all
         const { data, error } = await supabase
           .from("abandoned_carts")
           .insert({
@@ -139,18 +133,15 @@ export function useAbandonedCartTracker() {
     }
   }, [items, totalPrice, user?.id]);
 
-  // Debounced save on cart change
   useEffect(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(saveCartSnapshot, SAVE_DEBOUNCE_MS);
     resetAbandonTimer();
-
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [items, saveCartSnapshot, resetAbandonTimer]);
 
-  // Reset timer on user activity
   useEffect(() => {
     const events = ["mousedown", "keydown", "scroll", "touchstart"];
     const handler = () => resetAbandonTimer();
@@ -158,7 +149,6 @@ export function useAbandonedCartTracker() {
     return () => events.forEach((e) => window.removeEventListener(e, handler));
   }, [resetAbandonTimer]);
 
-  // On page close, save via sendBeacon WITH proper auth headers
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (items.length > 0 && recordIdRef.current) {
@@ -167,7 +157,6 @@ export function useAbandonedCartTracker() {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-        // Use fetch with keepalive instead of sendBeacon for proper headers
         const url = `${supabaseUrl}/rest/v1/abandoned_carts?id=eq.${rid}`;
         const body = JSON.stringify({
           cart_items: items.map((i) => ({
@@ -186,15 +175,16 @@ export function useAbandonedCartTracker() {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
-              "Prefer": "return=minimal",
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+              Prefer: "return=minimal",
+              "x-session-id": sessionId,
             },
             body,
             keepalive: true,
           });
         } catch {
-          // Silently fail — best-effort save on tab close
+          // Best-effort save on tab close
         }
       }
     };
