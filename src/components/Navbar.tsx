@@ -226,27 +226,18 @@ const Navbar = () => {
 
           {/* ── Left: Logo ── */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            {showResolvedLogo ? (
-              <img
-                key={activeLogoSrc}
-                src={activeLogoSrc}
-                alt="Madrasah Matters"
-                className="object-contain"
-                style={{
-                  /* Responsive logo: scales from ~32px on mobile to ~48px on desktop */
-                  height: "clamp(32px, 5vw, 48px)",
-                  width: "auto",
-                  transform: `translate(${logoOffsetX}px, ${logoOffsetY}px) scale(${logoScale / 100})`,
-                }}
-                onError={() => setLogoLoadFailed(true)}
-              />
-            ) : (
-              <div
-                className="rounded-md bg-white/10 animate-pulse"
-                style={{ width: "140px", height: "40px" }}
-                aria-label="Loading logo"
-              />
-            )}
+            <img
+              key={activeLogoSrc}
+              src={activeLogoSrc}
+              alt="Madrasah Matters"
+              className="object-contain"
+              style={{
+                height: "clamp(32px, 5vw, 48px)",
+                width: "auto",
+                transform: `translate(${logoOffsetX}px, ${logoOffsetY}px) scale(${logoScale / 100})`,
+              }}
+              onError={() => setLogoLoadFailed(true)}
+            />
           </Link>
 
           {/* ── Center: Navigation (Desktop only) ── */}
