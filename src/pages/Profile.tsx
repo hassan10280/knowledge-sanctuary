@@ -543,7 +543,8 @@ const Profile = () => {
                         <div className="absolute bottom-2.5 right-2.5 flex gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           {!addr.is_default && (
                             <button onClick={async () => {
-                              await supabase.rpc("set_default_address", { p_addr_id: addr.id, p_user_id: user.id });
+                              await supabase.from("billing_addresses").update({ is_default: false }).eq("user_id", user.id).neq("id", addr.id);
+                              await supabase.from("billing_addresses").update({ is_default: true }).eq("id", addr.id);
                               loadAddresses();
                               invalidateAddresses();
                               toast.success("Default address updated");
