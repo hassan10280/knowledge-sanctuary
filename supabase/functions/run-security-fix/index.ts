@@ -27,7 +27,19 @@ Deno.serve(async (req) => {
 
     try {
       // 1. Remove admin_notifications from realtime publication
-      await conn.queryObject(`ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.admin_notifications;`);
+      // DROP TABLE IF EXISTS not supported in ALTER PUBLICATION, use DO block
+      await conn.queryObject(`
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM pg_publication_tables 
+            WHERE pubname = 'supabase_realtime' 
+            AND tablename = 'admin_notifications'
+          ) THEN
+            ALTER PUBLICATION supabase_realtime DROP TABLE public.admin_notifications;
+          END IF;
+        END $$;
+      `);
       results.push("Removed admin_notifications from supabase_realtime publication");
 
       // 2. Drop old public coupon SELECT policy and create authenticated one
