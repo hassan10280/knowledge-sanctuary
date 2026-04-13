@@ -255,7 +255,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (action === "run_sql") {
       const { sql } = body;
       if (!sql || typeof sql !== "string") {
         return new Response(JSON.stringify({ error: "SQL required" }), {
