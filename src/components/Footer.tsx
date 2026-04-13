@@ -30,19 +30,6 @@ const Footer = () => {
   const communityLinks = get("community_links", []) as Array<{ label: string; href: string }>;
   const supportLinks = get("support_links", []) as Array<{ label: string; href: string }>;
 
-  const LinkList = ({ title, links }: { title: string; links: Array<{ label: string; href: string }> }) => (
-    <div>
-      <h4 className="tracking-meta text-white/70 mb-4">{title}</h4>
-      <ul className="space-y-2.5">
-        {links.map((link) => (
-          <li key={link.label}>
-            <Link to={link.href} className="text-sm text-white/45 hover:text-white transition-colors duration-300">{link.label}</Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
   return (
     <footer className="relative overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-[hsl(var(--sky-deep))] via-[hsl(var(--sky-glow))] to-[hsl(var(--sky-deep))]" />
