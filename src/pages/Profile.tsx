@@ -44,9 +44,11 @@ const Profile = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Password
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPw, setShowNewPw] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [changingPw, setChangingPw] = useState(false);
 
   // Email change
@@ -157,12 +159,23 @@ const Profile = () => {
   };
 
   const handleChangePassword = async () => {
+    if (!currentPassword.trim()) { toast.error("Please enter your current password"); return; }
     if (newPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     if (newPassword !== confirmPassword) { toast.error("Passwords don't match"); return; }
     setChangingPw(true);
+    // Verify current password first
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({
+      email: user!.email!,
+      password: currentPassword,
+    });
+    if (verifyErr) {
+      toast.error("Current password is incorrect");
+      setChangingPw(false);
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) toast.error(error.message);
-    else { toast.success("Password updated!"); setNewPassword(""); setConfirmPassword(""); }
+    else { toast.success("Password updated!"); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }
     setChangingPw(false);
   };
 
@@ -245,7 +258,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black/40 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-50">
       <Navbar />
 
       {/* Hidden avatar input */}
@@ -312,7 +325,7 @@ const Profile = () => {
             </div>
 
             {/* ── Tab Content Area ── */}
-            <div className="px-4 sm:px-6 py-5 sm:py-6 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto mobile-drawer-scrollbar">
+            <div className="px-4 sm:px-6 py-5 sm:py-6 max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-300px)] overflow-y-auto mobile-drawer-scrollbar">
 
               {/* ════════ PROFILE TAB ════════ */}
               <TabsContent value="profile" className="mt-0">
@@ -527,10 +540,10 @@ const Profile = () => {
                         {addr.address_line2 && <p className="text-xs text-slate-400">{addr.address_line2}</p>}
                         <p className="text-xs text-slate-400">{addr.city}, {addr.postcode}</p>
                         {addr.phone && <p className="text-xs text-slate-400 mt-1">{addr.phone}</p>}
-                        <div className="absolute bottom-2.5 right-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-2.5 right-2.5 flex gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           {!addr.is_default && (
                             <button onClick={async () => {
-                              await supabase.from("billing_addresses").update({ is_default: false }).eq("user_id", user.id);
+                              await supabase.from("billing_addresses").update({ is_default: false }).eq("user_id", user.id).neq("id", addr.id);
                               await supabase.from("billing_addresses").update({ is_default: true }).eq("id", addr.id);
                               loadAddresses();
                               invalidateAddresses();
@@ -562,6 +575,15 @@ const Profile = () => {
                     <h3 className="text-sm font-semibold text-[hsl(207,68%,28%)] flex items-center gap-2 mb-3"><Lock className="h-3.5 w-3.5" />Change Password</h3>
                     <div className="space-y-3">
                       <div className="space-y-1.5">
+                        <Label className="text-xs text-slate-500">Current Password</Label>
+                        <div className="relative">
+                          <Input type={showCurrentPw ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Enter current password" className="h-10 rounded-xl border-slate-200 pr-10 focus:border-[hsl(var(--gold))] focus:ring-[hsl(var(--gold))]/20" />
+                          <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
                         <Label className="text-xs text-slate-500">New Password</Label>
                         <div className="relative">
                           <Input type={showNewPw ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min. 6 characters" className="h-10 rounded-xl border-slate-200 pr-10 focus:border-[hsl(var(--gold))] focus:ring-[hsl(var(--gold))]/20" />
@@ -575,7 +597,7 @@ const Profile = () => {
                         <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" className="h-10 rounded-xl border-slate-200 focus:border-[hsl(var(--gold))] focus:ring-[hsl(var(--gold))]/20" />
                       </div>
                     </div>
-                    <Button onClick={handleChangePassword} disabled={changingPw || !newPassword} className="mt-3 w-full gap-2 rounded-xl bg-[hsl(207,68%,28%)] hover:bg-[hsl(207,68%,24%)] h-10">
+                    <Button onClick={handleChangePassword} disabled={changingPw || !currentPassword || !newPassword} className="mt-3 w-full gap-2 rounded-xl bg-[hsl(207,68%,28%)] hover:bg-[hsl(207,68%,24%)] h-10">
                       {changingPw ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
                       Update Password
                     </Button>
