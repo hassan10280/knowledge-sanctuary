@@ -64,6 +64,13 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/order-success" element={<OrderSuccess />} />
                 <Route path="/orders" element={<Orders />} />
+                {/* Redirect legacy/navbar routes to home */}
+                <Route path="/browse" element={<Navigate to="/" replace />} />
+                <Route path="/publications" element={<Navigate to="/" replace />} />
+                <Route path="/subjects" element={<Navigate to="/" replace />} />
+                <Route path="/categories" element={<Navigate to="/" replace />} />
+                <Route path="/new" element={<Navigate to="/" replace />} />
+                <Route path="/membership" element={<Navigate to="/" replace />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
