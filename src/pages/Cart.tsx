@@ -81,7 +81,7 @@ const Cart = () => {
   };
 
   // Auto-apply coupon
-  const { data: allCoupons } = useCoupons();
+  const { data: allCoupons } = useAutoApplyCoupons();
   const autoApplyAttemptedRef = useRef(false);
   useEffect(() => {
     if (appliedCoupon || !allCoupons || items.length === 0 || autoApplyAttemptedRef.current) return;
