@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturesBar from "@/components/FeaturesBar";
@@ -47,17 +47,26 @@ const HomePageLoader = () => (
   </div>
 );
 
+const LOADING_TIMEOUT_MS = 3000;
+
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [timedOut, setTimedOut] = useState(false);
   const headerQuery = useSiteSettings("header");
   const heroQuery = useSiteSettings("hero");
   const footerQuery = useSiteSettings("footer");
   const booksQuery = useBooks();
   const categoriesQuery = useCategories();
 
-  const isInitialLoading = [headerQuery, heroQuery, footerQuery, booksQuery, categoriesQuery].some(
+  const queriesStillLoading = [headerQuery, heroQuery, footerQuery, booksQuery, categoriesQuery].some(
     (query) => query.isLoading && !query.data,
   );
+
+  useEffect(() => {
+    if (!queriesStillLoading) return;
+    const timer = setTimeout(() => setTimedOut(true), LOADING_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [queriesStillLoading]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -66,7 +75,7 @@ const Index = () => {
     }
   };
 
-  if (isInitialLoading) {
+  if (queriesStillLoading && !timedOut) {
     return <HomePageLoader />;
   }
 
