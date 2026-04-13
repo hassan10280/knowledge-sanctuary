@@ -442,6 +442,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "coupon_user_usage_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "coupon_user_usage_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -684,6 +691,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1124,7 +1138,77 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      book_ratings_public: {
+        Row: {
+          book_id: string | null
+          created_at: string | null
+          id: string | null
+          rating: number | null
+        }
+        Insert: {
+          book_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          rating?: number | null
+        }
+        Update: {
+          book_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_ratings_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons_public: {
+        Row: {
+          auto_apply: boolean | null
+          code: string | null
+          discount_type: string | null
+          discount_value: number | null
+          expiry_date: string | null
+          first_order_only: boolean | null
+          id: string | null
+          is_active: boolean | null
+          max_discount_amount: number | null
+          min_order_amount: number | null
+          wholesale_only: boolean | null
+        }
+        Insert: {
+          auto_apply?: boolean | null
+          code?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          expiry_date?: string | null
+          first_order_only?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_order_amount?: number | null
+          wholesale_only?: boolean | null
+        }
+        Update: {
+          auto_apply?: boolean | null
+          code?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          expiry_date?: string | null
+          first_order_only?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_order_amount?: number | null
+          wholesale_only?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       deduct_stock: {

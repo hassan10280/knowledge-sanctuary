@@ -8,7 +8,7 @@ export function useBookRatings(bookId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("book_ratings")
-        .select("*")
+        .select("id, book_id, rating, created_at")
         .eq("book_id", bookId!);
       if (error) throw error;
       return data;
