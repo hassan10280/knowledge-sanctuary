@@ -38,7 +38,7 @@ export function useDeleteQuantityTier() {
   });
 }
 
-// Coupons
+// Coupons (admin-only, full data)
 export function useCoupons() {
   return useQuery({
     queryKey: ["coupons"],
@@ -47,6 +47,22 @@ export function useCoupons() {
         .from("coupons")
         .select("*")
         .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// Public-safe coupon query for auto-apply (minimal fields only)
+export function useAutoApplyCoupons() {
+  return useQuery({
+    queryKey: ["coupons-auto-apply"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("id, code, discount_type, discount_value, min_order_amount, max_discount_amount, wholesale_only, expiry_date, auto_apply, first_order_only, is_active, usage_limit, used_count")
+        .eq("is_active", true)
+        .eq("auto_apply", true);
       if (error) throw error;
       return data;
     },

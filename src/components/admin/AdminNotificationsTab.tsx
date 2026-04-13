@@ -69,10 +69,18 @@ export default function AdminNotificationsTab() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const channel = supabase.channel("admin-notifications-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "admin_notifications" }, () => refetch())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      if (!isAdmin) return;
+      channel = supabase.channel("admin-notifications-realtime")
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "admin_notifications" }, () => refetch())
+        .subscribe();
+    };
+    setup();
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [refetch]);
 
   const filtered = useMemo(() => {
