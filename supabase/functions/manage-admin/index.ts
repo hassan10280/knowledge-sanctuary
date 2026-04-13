@@ -80,7 +80,6 @@ Deno.serve(async (req) => {
         .insert({ user_id: targetUser.id, role: "admin" });
       if (insertErr) throw insertErr;
 
-      // Audit log
       await supabaseAdmin.from("audit_logs").insert({
         user_id: caller.id,
         action: "admin_role_added",
@@ -112,7 +111,6 @@ Deno.serve(async (req) => {
         .eq("id", role_id);
       if (delErr) throw delErr;
 
-      // Audit log
       await supabaseAdmin.from("audit_logs").insert({
         user_id: caller.id,
         action: "admin_role_removed",
@@ -142,7 +140,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Approve wholesale application (server-side role assignment)
     if (action === "approve_wholesale") {
       const { application_id, target_user_id } = body;
       if (!application_id || !target_user_id) {
@@ -151,20 +148,17 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Update application status
       const { error: appErr } = await supabaseAdmin
         .from("wholesale_applications")
         .update({ status: "approved", reviewed_by: caller.id, reviewed_at: new Date().toISOString() })
         .eq("id", application_id);
       if (appErr) throw appErr;
 
-      // Upsert wholesale role
       const { error: roleErr } = await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: target_user_id, role: "wholesale" }, { onConflict: "user_id,role" });
       if (roleErr) throw roleErr;
 
-      // Audit log
       await supabaseAdmin.from("audit_logs").insert({
         user_id: caller.id,
         action: "wholesale_approved",
@@ -177,7 +171,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Reject wholesale application
     if (action === "reject_wholesale") {
       const { application_id, admin_notes } = body;
       if (!application_id) {
@@ -192,7 +185,6 @@ Deno.serve(async (req) => {
         .eq("id", application_id);
       if (appErr) throw appErr;
 
-      // Audit log
       await supabaseAdmin.from("audit_logs").insert({
         user_id: caller.id,
         action: "wholesale_rejected",
@@ -205,7 +197,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // List ALL users with their roles
     if (action === "list_all_users") {
       const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
       if (listErr) throw listErr;
@@ -233,6 +224,33 @@ Deno.serve(async (req) => {
       });
 
       return new Response(JSON.stringify({ users: enriched }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Create a coupon (admin-only, service role)
+    if (action === "create_coupon") {
+      const { coupon } = body;
+      if (!coupon || !coupon.code) {
+        return new Response(JSON.stringify({ error: "coupon data with code required" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data, error: insertErr } = await supabaseAdmin
+        .from("coupons")
+        .upsert(coupon)
+        .select()
+        .single();
+      if (insertErr) throw insertErr;
+
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: caller.id,
+        action: "coupon_created",
+        details: { code: coupon.code },
+      });
+
+      return new Response(JSON.stringify({ success: true, coupon: data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
