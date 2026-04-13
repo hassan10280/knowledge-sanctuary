@@ -43,11 +43,8 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
 
         queryClient.invalidateQueries();
         queryClient.refetchQueries({ type: "active" });
-      }, 120);
+      }, 300);
     };
-
-    const scheduleFullSync = () => scheduleSync();
-    const scheduleSiteSettingsSync = () => scheduleSync("site_settings");
 
     const channel = supabase.channel("app-live-sync");
 
@@ -65,19 +62,8 @@ const DataSyncProvider = ({ children }: { children: ReactNode }) => {
 
     channel.subscribe();
 
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        scheduleFullSync();
-      }
-    };
-
-    window.addEventListener("focus", scheduleFullSync);
-    document.addEventListener("visibilitychange", handleVisibility);
-
     return () => {
       if (invalidateTimer) clearTimeout(invalidateTimer);
-      window.removeEventListener("focus", scheduleFullSync);
-      document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
   }, [queryClient]);

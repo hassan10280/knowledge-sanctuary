@@ -367,6 +367,26 @@ const Auth = () => {
                     <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-[hsl(var(--sky-deep))] to-[hsl(var(--sky))] hover:from-[hsl(var(--sky))] hover:to-[hsl(var(--sky-deep))] text-white font-semibold h-11 text-base shadow-lg shadow-[hsl(var(--sky))]/30 transition-all duration-300">
                       <LogIn className="h-4 w-4 mr-2" />{loading ? "Signing in..." : "Sign In"}
                     </Button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!email.trim() || !email.includes("@")) {
+                          toast.error("Please enter your email address first");
+                          return;
+                        }
+                        setLoading(true);
+                        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                          redirectTo: `${window.location.origin}/auth`,
+                        });
+                        if (error) toast.error(error.message);
+                        else toast.success("Password reset link sent! Check your email.", { duration: 6000 });
+                        setLoading(false);
+                      }}
+                      className="w-full text-center text-sm text-[hsl(var(--sky-deep))] hover:text-[hsl(var(--sky))] font-medium hover:underline transition-colors mt-2"
+                    >
+                      Forgot your password?
+                    </button>
                   </form>
 
                   <div className="relative my-6">

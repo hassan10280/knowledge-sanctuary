@@ -26,31 +26,11 @@ const statusColors: Record<string, string> = {
 };
 
 const Orders = () => {
-  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      navigate("/auth", { state: { from: "/orders" } });
-      return;
-    }
-
-    const fetchOrders = async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("id, total, status, created_at, shipping_cost, payment_method")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      setOrders((data as OrderSummary[]) || []);
-      setLoading(false);
-    };
-
-    fetchOrders();
-  }, [user, authLoading, navigate]);
+    navigate("/profile?tab=orders", { replace: true });
+  }, [navigate]);
 
   if (authLoading || loading) {
     return (
