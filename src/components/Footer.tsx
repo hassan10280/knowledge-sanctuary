@@ -1,6 +1,23 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import logoWhite from "@/assets/logo-white.png";
+
+const LinkList = React.forwardRef<HTMLDivElement, { title: string; links: Array<{ label: string; href: string }> }>(
+  ({ title, links }, ref) => (
+    <div ref={ref}>
+      <h4 className="tracking-meta text-white/70 mb-4">{title}</h4>
+      <ul className="space-y-2.5">
+        {links.map((link) => (
+          <li key={link.label}>
+            <Link to={link.href} className="text-sm text-white/45 hover:text-white transition-colors duration-300">{link.label}</Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+);
+LinkList.displayName = "LinkList";
 
 const Footer = () => {
   const { data: settings } = useSiteSettings("footer");
@@ -28,19 +45,6 @@ const Footer = () => {
   const libraryLinks = get("library_links", []) as Array<{ label: string; href: string }>;
   const communityLinks = get("community_links", []) as Array<{ label: string; href: string }>;
   const supportLinks = get("support_links", []) as Array<{ label: string; href: string }>;
-
-  const LinkList = ({ title, links }: { title: string; links: Array<{ label: string; href: string }> }) => (
-    <div>
-      <h4 className="tracking-meta text-white/70 mb-4">{title}</h4>
-      <ul className="space-y-2.5">
-        {links.map((link) => (
-          <li key={link.label}>
-            <Link to={link.href} className="text-sm text-white/45 hover:text-white transition-colors duration-300">{link.label}</Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 
   return (
     <footer className="relative overflow-hidden">

@@ -17,8 +17,8 @@ function getOrCreateSessionId(): string {
   return sid;
 }
 
-/** Update guest cart via secure edge function (server-side session validation) */
-async function guestCartUpdate(recordId: string, sessionId: string, data: Record<string, unknown>) {
+/** Call the guest-cart-update edge function */
+async function guestCartCall(data: Record<string, unknown>) {
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   const url = `https://${projectId}.supabase.co/functions/v1/guest-cart-update`;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -30,16 +30,11 @@ async function guestCartUpdate(recordId: string, sessionId: string, data: Record
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
     },
-    body: JSON.stringify({
-      action: "update",
-      record_id: recordId,
-      session_id: sessionId,
-      ...data,
-    }),
+    body: JSON.stringify(data),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Unknown error" }));
-    throw new Error(err.error || "Guest cart update failed");
+    throw new Error(err.error || "Guest cart call failed");
   }
   return res.json();
 }
@@ -55,15 +50,18 @@ export function useAbandonedCartTracker() {
 
   const updateCart = useCallback(async (rid: string, data: Record<string, unknown>) => {
     if (user?.id) {
-      // Authenticated users update directly via RLS
       const { error } = await supabase
         .from("abandoned_carts")
         .update(data as any)
         .eq("id", rid);
       if (error) throw error;
     } else {
-      // Guest users go through secure edge function
-      await guestCartUpdate(rid, getOrCreateSessionId(), data);
+      await guestCartCall({
+        action: "update",
+        record_id: rid,
+        session_id: getOrCreateSessionId(),
+        ...data,
+      });
     }
   }, [user?.id]);
 
@@ -133,28 +131,48 @@ export function useAbandonedCartTracker() {
           recordIdRef.current = null;
           localStorage.removeItem(CART_RECORD_KEY);
           lastSavedRef.current = "";
-          // Immediately try to create a new record
           savingRef.current = false;
           return saveCartSnapshot();
         }
       } else {
-        // INSERT uses the default client — public INSERT is allowed for all
-        const { data, error } = await supabase
-          .from("abandoned_carts")
-          .insert({
-            session_id: sessionId,
-            user_id: user?.id || null,
-            cart_items: cartItems as any,
-            subtotal: totalPrice,
-            status: "active",
-          })
-          .select("id")
-          .single();
+        // INSERT — authenticated users use direct client, guests use edge function
+        if (user?.id) {
+          const { data, error } = await supabase
+            .from("abandoned_carts")
+            .insert({
+              session_id: sessionId,
+              user_id: user.id,
+              cart_items: cartItems as any,
+              subtotal: totalPrice,
+              status: "active",
+            })
+            .select("id")
+            .single();
 
-        if (!error && data?.id) {
-          recordIdRef.current = data.id;
-          localStorage.setItem(CART_RECORD_KEY, data.id);
-          lastSavedRef.current = cartData;
+          if (!error && data?.id) {
+            recordIdRef.current = data.id;
+            localStorage.setItem(CART_RECORD_KEY, data.id);
+            lastSavedRef.current = cartData;
+          }
+        } else {
+          // Guest: use edge function for insert too
+          try {
+            const result = await guestCartCall({
+              action: "insert",
+              session_id: sessionId,
+              user_id: null,
+              cart_items: cartItems,
+              subtotal: totalPrice,
+              status: "active",
+            });
+            if (result?.id) {
+              recordIdRef.current = result.id;
+              localStorage.setItem(CART_RECORD_KEY, result.id);
+              lastSavedRef.current = cartData;
+            }
+          } catch (e) {
+            console.warn("[AbandonedCart] Guest insert failed:", e);
+          }
         }
       }
     } finally {
@@ -187,7 +205,6 @@ export function useAbandonedCartTracker() {
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
         if (user?.id) {
-          // Authenticated: direct REST API
           const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/abandoned_carts?id=eq.${rid}`;
           try {
             fetch(url, {
@@ -208,7 +225,6 @@ export function useAbandonedCartTracker() {
             });
           } catch { /* best-effort */ }
         } else {
-          // Guest: edge function
           const url = `https://${projectId}.supabase.co/functions/v1/guest-cart-update`;
           try {
             fetch(url, {
