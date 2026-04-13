@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { createGuestCartClient } from "@/lib/guest-cart-client";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -18,10 +17,31 @@ function getOrCreateSessionId(): string {
   return sid;
 }
 
-/** Returns the appropriate Supabase client — with x-session-id header for guests */
-function getCartClient(userId: string | undefined) {
-  if (userId) return supabase;
-  return createGuestCartClient(getOrCreateSessionId());
+/** Update guest cart via secure edge function (server-side session validation) */
+async function guestCartUpdate(recordId: string, sessionId: string, data: Record<string, unknown>) {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const url = `https://${projectId}.supabase.co/functions/v1/guest-cart-update`;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    },
+    body: JSON.stringify({
+      action: "update",
+      record_id: recordId,
+      session_id: sessionId,
+      ...data,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(err.error || "Guest cart update failed");
+  }
+  return res.json();
 }
 
 export function useAbandonedCartTracker() {
@@ -33,6 +53,20 @@ export function useAbandonedCartTracker() {
   const lastSavedRef = useRef<string>("");
   const savingRef = useRef(false);
 
+  const updateCart = useCallback(async (rid: string, data: Record<string, unknown>) => {
+    if (user?.id) {
+      // Authenticated users update directly via RLS
+      const { error } = await supabase
+        .from("abandoned_carts")
+        .update(data as any)
+        .eq("id", rid);
+      if (error) throw error;
+    } else {
+      // Guest users go through secure edge function
+      await guestCartUpdate(rid, getOrCreateSessionId(), data);
+    }
+  }, [user?.id]);
+
   const resetAbandonTimer = useCallback(() => {
     if (abandonTimerRef.current) clearTimeout(abandonTimerRef.current);
     if (items.length === 0) return;
@@ -40,14 +74,13 @@ export function useAbandonedCartTracker() {
     abandonTimerRef.current = setTimeout(async () => {
       const rid = recordIdRef.current;
       if (!rid) return;
-      const client = getCartClient(user?.id);
-      await client
-        .from("abandoned_carts")
-        .update({ status: "abandoned" })
-        .eq("id", rid)
-        .eq("status", "active");
+      try {
+        await updateCart(rid, { status: "abandoned" });
+      } catch (e) {
+        console.warn("[AbandonedCart] Failed to mark abandoned", e);
+      }
     }, ABANDON_TIMEOUT_MS);
-  }, [items.length, user?.id]);
+  }, [items.length, updateCart]);
 
   const saveCartSnapshot = useCallback(async () => {
     if (savingRef.current) return;
@@ -57,11 +90,9 @@ export function useAbandonedCartTracker() {
       if (rid) {
         savingRef.current = true;
         try {
-          const client = getCartClient(user?.id);
-          await client
-            .from("abandoned_carts")
-            .update({ status: "recovered", recovered_at: new Date().toISOString() })
-            .eq("id", rid);
+          await updateCart(rid, { status: "recovered", recovered_at: new Date().toISOString() });
+        } catch {
+          // best effort
         } finally {
           savingRef.current = false;
         }
@@ -85,28 +116,23 @@ export function useAbandonedCartTracker() {
         quantity: i.quantity,
       }));
 
-      const client = getCartClient(user?.id);
       const rid = recordIdRef.current;
 
       if (rid) {
-        const { error } = await client
-          .from("abandoned_carts")
-          .update({
+        try {
+          await updateCart(rid, {
             session_id: sessionId,
             user_id: user?.id || null,
-            cart_items: cartItems as any,
+            cart_items: cartItems,
             subtotal: totalPrice,
             status: "active",
-          })
-          .eq("id", rid);
-
-        if (error) {
-          console.warn("[AbandonedCart] Update failed, creating new record", error.message);
+          });
+          lastSavedRef.current = cartData;
+        } catch {
+          console.warn("[AbandonedCart] Update failed, creating new record");
           recordIdRef.current = null;
           localStorage.removeItem(CART_RECORD_KEY);
           lastSavedRef.current = "";
-        } else {
-          lastSavedRef.current = cartData;
         }
       } else {
         // INSERT uses the default client — public INSERT is allowed for all
@@ -131,7 +157,7 @@ export function useAbandonedCartTracker() {
     } finally {
       savingRef.current = false;
     }
-  }, [items, totalPrice, user?.id]);
+  }, [items, totalPrice, user?.id, updateCart]);
 
   useEffect(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -154,37 +180,53 @@ export function useAbandonedCartTracker() {
       if (items.length > 0 && recordIdRef.current) {
         const sessionId = getOrCreateSessionId();
         const rid = recordIdRef.current;
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-        const url = `${supabaseUrl}/rest/v1/abandoned_carts?id=eq.${rid}`;
-        const body = JSON.stringify({
-          cart_items: items.map((i) => ({
-            id: i.id,
-            title: i.title,
-            price: i.price,
-            quantity: i.quantity,
-          })),
-          subtotal: totalPrice,
-          session_id: sessionId,
-          user_id: user?.id || null,
-        });
-
-        try {
-          fetch(url, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: supabaseKey,
-              Authorization: `Bearer ${supabaseKey}`,
-              Prefer: "return=minimal",
-              "x-session-id": sessionId,
-            },
-            body,
-            keepalive: true,
-          });
-        } catch {
-          // Best-effort save on tab close
+        if (user?.id) {
+          // Authenticated: direct REST API
+          const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/abandoned_carts?id=eq.${rid}`;
+          try {
+            fetch(url, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({
+                cart_items: items.map((i) => ({
+                  id: i.id, title: i.title, price: i.price, quantity: i.quantity,
+                })),
+                subtotal: totalPrice,
+              }),
+              keepalive: true,
+            });
+          } catch { /* best-effort */ }
+        } else {
+          // Guest: edge function
+          const url = `https://${projectId}.supabase.co/functions/v1/guest-cart-update`;
+          try {
+            fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+              },
+              body: JSON.stringify({
+                action: "update",
+                record_id: rid,
+                session_id: sessionId,
+                cart_items: items.map((i) => ({
+                  id: i.id, title: i.title, price: i.price, quantity: i.quantity,
+                })),
+                subtotal: totalPrice,
+              }),
+              keepalive: true,
+            });
+          } catch { /* best-effort */ }
         }
       }
     };
