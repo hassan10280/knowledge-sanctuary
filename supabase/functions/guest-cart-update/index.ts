@@ -26,15 +26,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify the session_id matches the record — server-side validation
+    // Verify the session_id or user_id matches the record — server-side validation
     const { data: existing } = await supabaseAdmin
       .from("abandoned_carts")
-      .select("id, session_id")
+      .select("id, session_id, user_id")
       .eq("id", record_id)
       .single();
 
-    if (!existing || existing.session_id !== session_id) {
-      return new Response(JSON.stringify({ error: "Unauthorized: session mismatch" }), {
+    if (!existing) {
+      return new Response(JSON.stringify({ error: "Record not found", code: "NOT_FOUND" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Allow if session_id matches OR if user_id matches (for logged-in users whose session changed)
+    const sessionMatch = existing.session_id === session_id;
+    const userMatch = user_id && existing.user_id && existing.user_id === user_id;
+    if (!sessionMatch && !userMatch) {
+      return new Response(JSON.stringify({ error: "Unauthorized: session mismatch", code: "SESSION_MISMATCH" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
