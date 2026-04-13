@@ -255,35 +255,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (action === "run_sql") {
-      const { sql } = body;
-      if (!sql || typeof sql !== "string") {
-        return new Response(JSON.stringify({ error: "SQL required" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const dbUrl = Deno.env.get("SUPABASE_DB_URL");
-      if (!dbUrl) throw new Error("SUPABASE_DB_URL not configured");
-      
-      const { Pool } = await import("https://deno.land/x/postgres@v0.19.3/mod.ts");
-      const pool = new Pool(dbUrl, 1);
-      const conn = await pool.connect();
-      try {
-        const result = await conn.queryObject(sql);
-        await supabaseAdmin.from("audit_logs").insert({
-          user_id: caller.id,
-          action: "run_sql",
-          details: { sql: sql.substring(0, 500) },
-        });
-        return new Response(JSON.stringify({ success: true, rows: result.rows }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } finally {
-        conn.release();
-        await pool.end();
-      }
-    }
+
 
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
